@@ -13,9 +13,11 @@ func Seq2[A, B any](
 		start := ctx.Checkpoint()
 
 		ra := a.Match(ctx)
-		if ra.Kind != Matched {
-			ctx.Restore(start)
 
+		if ra.Kind != Matched {
+			if ra.Kind == NoMatch {
+				ctx.Restore(start)
+			}
 			return Match[Pair[A, B]]{
 				Kind:  ra.Kind,
 				Start: start.Pos,
@@ -25,9 +27,11 @@ func Seq2[A, B any](
 		}
 
 		rb := b.Match(ctx)
-		if rb.Kind != Matched {
-			ctx.Restore(start)
 
+		if rb.Kind != Matched {
+			if rb.Kind == NoMatch {
+				ctx.Restore(start)
+			}
 			return Match[Pair[A, B]]{
 				Kind:  rb.Kind,
 				Start: start.Pos,
@@ -64,7 +68,9 @@ func Seq3[A, B, C any](
 
 		ra := a.Match(ctx)
 		if ra.Kind != Matched {
-			ctx.Restore(start)
+			if ra.Kind == NoMatch {
+				ctx.Restore(start)
+			}
 
 			return Match[Trio[A, B, C]]{
 				Kind:  ra.Kind,
@@ -76,7 +82,9 @@ func Seq3[A, B, C any](
 
 		rb := b.Match(ctx)
 		if rb.Kind != Matched {
-			ctx.Restore(start)
+			if rb.Kind == NoMatch {
+				ctx.Restore(start)
+			}
 
 			return Match[Trio[A, B, C]]{
 				Kind:  rb.Kind,
@@ -88,7 +96,9 @@ func Seq3[A, B, C any](
 
 		rc := c.Match(ctx)
 		if rc.Kind != Matched {
-			ctx.Restore(start)
+			if rc.Kind == NoMatch {
+				ctx.Restore(start)
+			}
 
 			return Match[Trio[A, B, C]]{
 				Kind:  rc.Kind,

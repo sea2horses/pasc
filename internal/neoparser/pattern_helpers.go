@@ -164,7 +164,9 @@ func Many1[T any](p Pattern[T]) Pattern[[]T] {
 		first := p.Match(ctx)
 
 		if first.Kind != Matched {
-			ctx.Restore(start)
+			if first.Kind == NoMatch {
+				ctx.Restore(start)
+			}
 
 			return Match[[]T]{
 				Kind:  first.Kind,
@@ -247,10 +249,13 @@ func SepBy[T, S any](
 			next := item.Match(ctx)
 
 			if next.Kind != Matched {
+				if next.Kind == Failed {
+					return Match[[]T]{Kind: Failed, Start: start.Pos, End: next.End, Err: next.Err}
+				}
 				return Match[[]T]{
 					Kind:  Failed,
 					Start: start.Pos,
-					End:   ctx.Pos,
+					End:   max(ctx.Pos, next.End),
 					Err:   ItemAfterSeparator,
 				}
 			}
@@ -304,7 +309,9 @@ func Between[L, T, R any](
 
 		l := left.Match(ctx)
 		if l.Kind != Matched {
-			ctx.Restore(start)
+			if l.Kind == NoMatch {
+				ctx.Restore(start)
+			}
 
 			return Match[T]{
 				Kind:  l.Kind,
@@ -346,37 +353,19 @@ func Between[L, T, R any](
 func OneOf[T any](patterns ...Pattern[T]) Pattern[T] {
 	return PatternFunc[T](func(ctx *Context) Match[T] {
 		start := ctx.Checkpoint()
-
-		var best *Match[T]
-
+		furthest := start.Pos
 		for _, pattern := range patterns {
 			ctx.Restore(start)
-
 			result := pattern.Match(ctx)
-
-			if result.Kind == Matched {
+			if result.End > furthest {
+				furthest = result.End
+			}
+			if result.Kind == Matched || result.Kind == Failed {
 				return result
 			}
-
-			if result.Kind == Failed {
-				if best == nil || result.End > best.End {
-					copy := result
-					best = &copy
-				}
-			}
 		}
-
 		ctx.Restore(start)
-
-		if best != nil {
-			return *best
-		}
-
-		return Match[T]{
-			Kind:  NoMatch,
-			Start: start.Pos,
-			End:   start.Pos,
-		}
+		return Match[T]{Kind: NoMatch, Start: start.Pos, End: furthest}
 	})
 }
 
@@ -390,7 +379,9 @@ func Bind[A, B any](
 		a := first.Match(ctx)
 
 		if a.Kind != Matched {
-			ctx.Restore(start)
+			if a.Kind == NoMatch {
+				ctx.Restore(start)
+			}
 
 			return Match[B]{
 				Kind:  a.Kind,
@@ -403,6 +394,10 @@ func Bind[A, B any](
 		b := next(a.Value).Match(ctx)
 
 		if b.Kind != Matched {
+			if b.Kind == NoMatch {
+				ctx.Restore(start)
+			}
+			b.Start = start.Pos
 			return b
 		}
 
@@ -426,13 +421,13 @@ func ChainBind[T any](
 		start := first.Start
 
 		for {
-			pos := ctx.Pos
+			before := ctx.Checkpoint()
 
 			result := next(value).Match(ctx)
 
 			switch result.Kind {
 			case NoMatch:
-				ctx.Pos = pos
+				ctx.Restore(before)
 
 				return Match[T]{
 					Kind:  Matched,
@@ -442,10 +437,11 @@ func ChainBind[T any](
 				}
 
 			case Failed:
+				result.Start = start
 				return result
 
 			case Matched:
-				if ctx.Pos == pos {
+				if ctx.Pos == before.Pos {
 					panic("ChainBind: pattern matched without consuming input")
 				}
 
@@ -493,7 +489,7 @@ func Peek[T any](pattern Pattern[T]) Pattern[T] {
 
 		result := pattern.Match(ctx)
 
-		ctx.Pos = start.Pos
+		ctx.Restore(start)
 
 		return result
 	})
@@ -540,187 +536,5 @@ func Until[T any, U any](
 			Start: start.Pos,
 			End:   ctx.Pos,
 		}
-	})
-}
-
-func Then[A, B any](
-	prefix Pattern[A],
-	body Pattern[B],
-) Pattern[B] {
-	return PatternFunc[B](func(ctx *Context) Match[B] {
-		start := ctx.Checkpoint()
-
-		first := prefix.Match(ctx)
-
-		switch first.Kind {
-		case NoMatch:
-			ctx.Restore(start)
-			return Match[B]{
-				Kind:  NoMatch,
-				Start: start.Pos,
-				End:   start.Pos,
-			}
-
-		case Failed:
-			return Match[B]{
-				Kind:  Failed,
-				Start: start.Pos,
-				End:   first.End,
-				Err:   first.Err,
-			}
-		}
-
-		second := body.Match(ctx)
-
-		switch second.Kind {
-		case Matched:
-			second.Start = start.Pos
-			return second
-
-		case Failed:
-			return Match[B]{
-				Kind:  Failed,
-				Start: start.Pos,
-				End:   second.End,
-				Err:   second.Err,
-			}
-
-		case NoMatch:
-			return Match[B]{
-				Kind:  Failed,
-				Start: start.Pos,
-				End:   ctx.Pos,
-				Err:   ExpectedContinuation,
-			}
-		}
-
-		panic("unreachable")
-	})
-}
-
-type DispatchCase[T any] interface {
-	Match(*Context) Match[T]
-}
-
-type dispatchCase[A, T any] struct {
-	prefix      Pattern[A]
-	body        Pattern[T]
-	expectation Expectation
-}
-
-func Case[A, T any](
-	prefix Pattern[A],
-	body Pattern[T],
-) DispatchCase[T] {
-	return dispatchCase[A, T]{
-		prefix: prefix,
-		body:   body,
-	}
-}
-
-func CaseExpected[A, T any](
-	prefix Pattern[A],
-	body Pattern[T],
-	expectation Expectation,
-) DispatchCase[T] {
-	return dispatchCase[A, T]{
-		prefix:      prefix,
-		body:        body,
-		expectation: expectation,
-	}
-}
-
-func (c dispatchCase[A, T]) Match(
-	ctx *Context,
-) Match[T] {
-	start := ctx.Checkpoint()
-
-	prefix := c.prefix.Match(ctx)
-
-	switch prefix.Kind {
-	case NoMatch:
-		ctx.Restore(start)
-
-		return Match[T]{
-			Kind:  NoMatch,
-			Start: start.Pos,
-			End:   start.Pos,
-		}
-
-	case Failed:
-		return Match[T]{
-			Kind:  Failed,
-			Start: start.Pos,
-			End:   prefix.End,
-			Err:   prefix.Err,
-		}
-
-	case Matched:
-		body := c.body.Match(ctx)
-
-		switch body.Kind {
-		case Matched:
-			body.Start = start.Pos
-			return body
-
-		case Failed:
-			return Match[T]{
-				Kind:  Failed,
-				Start: start.Pos,
-				End:   body.End,
-				Err:   body.Err,
-			}
-
-		case NoMatch:
-			return Match[T]{
-				Kind:  Failed,
-				Start: start.Pos,
-				End:   ctx.Pos,
-				Err:   ExpectedContinuation,
-			}
-		}
-	}
-
-	panic("unreachable")
-}
-
-func Dispatch[T any](
-	cases ...DispatchCase[T],
-) Pattern[T] {
-	return PatternFunc[T](func(ctx *Context) Match[T] {
-		start := ctx.Checkpoint()
-
-		for _, c := range cases {
-			result := c.Match(ctx)
-
-			switch result.Kind {
-			case Matched, Failed:
-				return result
-
-			case NoMatch:
-				ctx.Restore(start)
-			}
-		}
-
-		return Match[T]{
-			Kind:  NoMatch,
-			Start: start.Pos,
-			End:   start.Pos,
-		}
-	})
-}
-
-func DispatchOr[T any](
-	fallback Pattern[T],
-	cases ...DispatchCase[T],
-) Pattern[T] {
-	return PatternFunc[T](func(ctx *Context) Match[T] {
-		result := Dispatch(cases...).Match(ctx)
-
-		if result.Kind != NoMatch {
-			return result
-		}
-
-		return fallback.Match(ctx)
 	})
 }
