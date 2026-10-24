@@ -4,6 +4,7 @@ import (
 	"pseint-compiled/internal/ast"
 	"pseint-compiled/internal/lexer"
 	"pseint-compiled/internal/models"
+	"pseint-compiled/internal/semantic"
 	"slices"
 )
 
@@ -156,7 +157,11 @@ func Expression() Pattern[ast.Expr] {
 				topPrec := top.Precedence()
 
 				// Assuming all binary operators are left-associative
-				if topPrec < currentPrec {
+				shouldReduce := topPrec > currentPrec ||
+					(topPrec == currentPrec &&
+						current.Type.Associativity() == semantic.LeftAssociative)
+
+				if !shouldReduce {
 					break
 				}
 

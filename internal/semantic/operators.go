@@ -2,6 +2,13 @@ package semantic
 
 import "slices"
 
+type Associativity uint8
+
+const (
+	LeftAssociative  Associativity = iota
+	RightAssociative               // Literally only ^
+)
+
 type OperatorType uint8
 
 const (
@@ -25,6 +32,15 @@ const (
 
 	UNRECOGNIZED // fallback
 )
+
+func (op OperatorType) Associativity() Associativity {
+	switch op {
+	case POWER:
+		return RightAssociative
+	default:
+		return LeftAssociative
+	}
+}
 
 func (op OperatorType) String() string {
 	switch op {
