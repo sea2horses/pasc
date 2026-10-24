@@ -19,6 +19,7 @@ func Statement() Pattern[ast.Stmt] {
 		Switch(),
 		Dimension(),
 		Timeout(),
+		ClearScreen(),
 	)
 }
 
