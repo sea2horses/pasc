@@ -5,95 +5,75 @@ import (
 	"slices"
 )
 
-type RecoveryStrategy interface {
-	Recover(*Context) RecoveryResult
-}
+type RecoveryStrategy interface{ Recover(*Context) RecoveryResult }
+type RecoveryResult struct{ Start, End uint32 }
 
-type RecoveryResult struct {
-	Start uint32
-	End   uint32
-}
-
-// Recover and produce a fallback AST value.
-func RecoverWith[T any](
-	p Pattern[T],
-	strategy RecoveryStrategy,
-	fallback func(ParseError) T,
-) Pattern[T] {
-	return PatternFunc[T](func(ctx *Context) Match[T] {
-		result := p.Match(ctx)
-
-		if result.Kind == Failed {
-			strategy.Recover(ctx)
-			return Match[T]{
-				Kind:  Matched,
-				Value: fallback(result.Err),
-				Start: result.Start,
-				End:   result.End,
-				Err:   result.Err,
-			}
-		}
-
-		return result
-	})
-}
-
-func Recover[T any](
-	p Pattern[T],
-	strategy RecoveryStrategy,
-) Pattern[T] {
-	return PatternFunc[T](func(ctx *Context) Match[T] {
-		result := p.Match(ctx)
-
-		if result.Kind == Failed {
-			strategy.Recover(ctx)
-		}
-
-		return result
-	})
-}
-
+// Synchronization stops BEFORE the boundary, leaving it for the enclosing parser.
 type Synchronize struct {
 	Tokens   []lexer.TokenType
 	Keywords []lexer.Keyword
 }
 
-func (s *Synchronize) Recover(ctx *Context) {
+func (s Synchronize) Recover(ctx *Context) RecoveryResult {
+	start := ctx.Pos
 	for !ctx.EOF() {
 		tok := ctx.Peek()
-
-		kw, ok := lexer.MapToKeyword([]rune(tok.Value))
-		if ok && slices.Contains(s.Keywords, kw) || slices.Contains(s.Tokens, tok.Type) {
+		if slices.Contains(s.Tokens, tok.Type) {
+			break
+		}
+		if tok.Type == lexer.KEYWORD {
+			if kw, ok := lexer.MapToKeyword([]rune(tok.Value)); ok && slices.Contains(s.Keywords, kw) {
+				break
+			}
 		}
 		ctx.Advance()
 	}
+	return RecoveryResult{Start: start, End: ctx.Pos}
 }
 
 type UntilNewline struct{}
 
-func (UntilNewline) Recover(ctx *Context) {
-	for !ctx.EOF() {
-		if ctx.Peek().Type == lexer.NEWLINE {
-			return
-		}
-
-		ctx.Advance()
-	}
+func (UntilNewline) Recover(ctx *Context) RecoveryResult {
+	return Synchronize{Tokens: []lexer.TokenType{lexer.NEWLINE}}.Recover(ctx)
 }
 
-type UntilKeywords struct {
-	Keywords []lexer.Keyword
+type UntilKeywords struct{ Keywords []lexer.Keyword }
+
+func (s UntilKeywords) Recover(ctx *Context) RecoveryResult {
+	return Synchronize{Keywords: s.Keywords}.Recover(ctx)
 }
-
-func (uk UntilKeywords) Recover(ctx *Context) {
-	for !ctx.EOF() {
-		tok := ctx.Peek()
-
-		kw, ok := lexer.MapToKeyword([]rune(tok.Value))
-		if tok.Type == lexer.KEYWORD && ok && slices.Contains(uk.Keywords, kw) {
-			return
+func RecoverWith[T any](p Pattern[T], strategy RecoveryStrategy, fallback func(ParseError) T) Pattern[T] {
+	return PatternFunc[T](func(ctx *Context) Match[T] {
+		result := p.Match(ctx)
+		if result.Kind != Failed {
+			return result
 		}
-
-		ctx.Advance()
-	}
+		err := result.Err
+		if err == nil {
+			err = failureAt(ctx, max(ctx.Pos, result.End), "invalid syntax")
+		}
+		ctx.Diagnostics = append(ctx.Diagnostics, err)
+		// A child can report a furthest error position after restoring its cursor.
+		if ctx.Pos < result.End {
+			ctx.Pos = min(result.End, uint32(len(ctx.Tokens)))
+		}
+		recovered := strategy.Recover(ctx)
+		return Match[T]{Kind: Matched, Value: fallback(err), Start: result.Start, End: max(result.End, recovered.End)}
+	})
+}
+func Recover[T any](p Pattern[T], strategy RecoveryStrategy) Pattern[T] {
+	return PatternFunc[T](func(ctx *Context) Match[T] {
+		result := p.Match(ctx)
+		if result.Kind == Failed {
+			if result.Err == nil {
+				result.Err = failureAt(ctx, max(ctx.Pos, result.End), "invalid syntax")
+			}
+			ctx.Diagnostics = append(ctx.Diagnostics, result.Err)
+			if ctx.Pos < result.End {
+				ctx.Pos = min(result.End, uint32(len(ctx.Tokens)))
+			}
+			strategy.Recover(ctx)
+		}
+		return result
+	})
 }

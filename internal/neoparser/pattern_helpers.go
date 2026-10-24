@@ -181,6 +181,7 @@ func Many1[T any](p Pattern[T]) Pattern[[]T] {
 		rest := Many(p).Match(ctx)
 
 		if rest.Kind == Failed {
+			rest.Start = start.Pos
 			return rest
 		}
 
@@ -327,7 +328,7 @@ func Between[L, T, R any](
 				Kind:  Failed,
 				Start: start.Pos,
 				End:   value.End,
-				Err:   value.Err,
+				Err:   ensureError(ctx, value, "expected delimited content"),
 			}
 		}
 
@@ -337,7 +338,7 @@ func Between[L, T, R any](
 				Kind:  Failed,
 				Start: start.Pos,
 				End:   r.End,
-				Err:   r.Err,
+				Err:   ensureError(ctx, r, "expected closing delimiter"),
 			}
 		}
 

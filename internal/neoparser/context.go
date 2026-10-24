@@ -54,7 +54,7 @@ func (c *Context) Span(start uint32, end uint32) models.Span {
 	}
 
 	t1 := c.Tokens[start]
-	t2 := c.Tokens[end]
+	t2 := c.Tokens[end-1]
 
 	return models.JoinSpans(t1.Span, t2.Span)
 }

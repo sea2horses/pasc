@@ -7,7 +7,7 @@ import (
 )
 
 func Atom() Pattern[ast.Expr] {
-	return OneOf[ast.Expr](
+	return OneOf(
 		Identifier(),
 		StringLiteral(),
 		NumberLiteral(),
