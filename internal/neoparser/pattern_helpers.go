@@ -76,7 +76,7 @@ func (o OptionalValue[T]) Or(def T) T {
 
 func Optional[T any](p Pattern[T]) Pattern[OptionalValue[T]] {
 	return PatternFunc[OptionalValue[T]](func(ctx *Context) Match[OptionalValue[T]] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 		result := p.Match(ctx)
 
 		switch result.Kind {
@@ -98,15 +98,15 @@ func Optional[T any](p Pattern[T]) Pattern[OptionalValue[T]] {
 				Err:   result.Err,
 			}
 		default:
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			return Match[OptionalValue[T]]{
 				Kind: Matched,
 				Value: OptionalValue[T]{
 					Some: false,
 				},
-				Start: start,
-				End:   start,
+				Start: start.Pos,
+				End:   start.Pos,
 			}
 		}
 	})
@@ -120,28 +120,28 @@ func AsAny[T any](p Pattern[T]) Pattern[any] {
 
 func Many[T any](p Pattern[T]) Pattern[[]T] {
 	return PatternFunc[[]T](func(ctx *Context) Match[[]T] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 		values := []T{}
 
 		for {
-			before := ctx.Pos
+			before := ctx.Checkpoint()
 			result := p.Match(ctx)
 
 			if result.Kind == Failed {
 				return Match[[]T]{
 					Kind:  Failed,
-					Start: start,
+					Start: start.Pos,
 					End:   result.End,
 					Err:   result.Err,
 				}
 			}
 
 			if result.Kind == NoMatch {
-				ctx.Reset(before)
+				ctx.Restore(before)
 				break
 			}
 
-			if ctx.Pos == before {
+			if ctx.Pos == before.Pos {
 				panic("Many() received a pattern that matched without consuming input")
 			}
 
@@ -151,7 +151,7 @@ func Many[T any](p Pattern[T]) Pattern[[]T] {
 		return Match[[]T]{
 			Kind:  Matched,
 			Value: values,
-			Start: start,
+			Start: start.Pos,
 			End:   ctx.Pos,
 		}
 	})
@@ -159,16 +159,16 @@ func Many[T any](p Pattern[T]) Pattern[[]T] {
 
 func Many1[T any](p Pattern[T]) Pattern[[]T] {
 	return PatternFunc[[]T](func(ctx *Context) Match[[]T] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 
 		first := p.Match(ctx)
 
 		if first.Kind != Matched {
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			return Match[[]T]{
 				Kind:  first.Kind,
-				Start: start,
+				Start: start.Pos,
 				End:   first.End,
 				Err:   first.Err,
 			}
@@ -187,7 +187,7 @@ func Many1[T any](p Pattern[T]) Pattern[[]T] {
 		return Match[[]T]{
 			Kind:  Matched,
 			Value: values,
-			Start: start,
+			Start: start.Pos,
 			End:   ctx.Pos,
 		}
 	})
@@ -198,26 +198,26 @@ func SepBy[T, S any](
 	separator Pattern[S],
 ) Pattern[[]T] {
 	return PatternFunc[[]T](func(ctx *Context) Match[[]T] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 		values := []T{}
 
 		first := item.Match(ctx)
 
 		if first.Kind == NoMatch {
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			return Match[[]T]{
 				Kind:  Matched,
 				Value: values,
-				Start: start,
-				End:   start,
+				Start: start.Pos,
+				End:   start.Pos,
 			}
 		}
 
 		if first.Kind == Failed {
 			return Match[[]T]{
 				Kind:  Failed,
-				Start: start,
+				Start: start.Pos,
 				End:   first.End,
 				Err:   first.Err,
 			}
@@ -226,19 +226,19 @@ func SepBy[T, S any](
 		values = append(values, first.Value)
 
 		for {
-			beforeSeparator := ctx.Pos
+			beforeSeparator := ctx.Checkpoint()
 
 			sep := separator.Match(ctx)
 
 			if sep.Kind == NoMatch {
-				ctx.Reset(beforeSeparator)
+				ctx.Restore(beforeSeparator)
 				break
 			}
 
 			if sep.Kind == Failed {
 				return Match[[]T]{
 					Kind:  Failed,
-					Start: start,
+					Start: start.Pos,
 					End:   sep.End,
 					Err:   sep.Err,
 				}
@@ -249,7 +249,7 @@ func SepBy[T, S any](
 			if next.Kind != Matched {
 				return Match[[]T]{
 					Kind:  Failed,
-					Start: start,
+					Start: start.Pos,
 					End:   ctx.Pos,
 					Err: &ParseError{
 						Position: ctx.Pos,
@@ -264,7 +264,7 @@ func SepBy[T, S any](
 		return Match[[]T]{
 			Kind:  Matched,
 			Value: values,
-			Start: start,
+			Start: start.Pos,
 			End:   ctx.Pos,
 		}
 	})
@@ -275,7 +275,7 @@ func SepBy1[T, S any](
 	separator Pattern[S],
 ) Pattern[[]T] {
 	return PatternFunc[[]T](func(ctx *Context) Match[[]T] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 
 		result := SepBy(item, separator).Match(ctx)
 
@@ -284,12 +284,12 @@ func SepBy1[T, S any](
 		}
 
 		if len(result.Value) == 0 {
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			return Match[[]T]{
 				Kind:  NoMatch,
-				Start: start,
-				End:   start,
+				Start: start.Pos,
+				End:   start.Pos,
 			}
 		}
 
@@ -303,15 +303,15 @@ func Between[L, T, R any](
 	right Pattern[R],
 ) Pattern[T] {
 	return PatternFunc[T](func(ctx *Context) Match[T] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 
 		l := left.Match(ctx)
 		if l.Kind != Matched {
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			return Match[T]{
 				Kind:  l.Kind,
-				Start: start,
+				Start: start.Pos,
 				End:   l.End,
 				Err:   l.Err,
 			}
@@ -321,7 +321,7 @@ func Between[L, T, R any](
 		if value.Kind != Matched {
 			return Match[T]{
 				Kind:  Failed,
-				Start: start,
+				Start: start.Pos,
 				End:   value.End,
 				Err:   value.Err,
 			}
@@ -331,7 +331,7 @@ func Between[L, T, R any](
 		if r.Kind != Matched {
 			return Match[T]{
 				Kind:  Failed,
-				Start: start,
+				Start: start.Pos,
 				End:   r.End,
 				Err:   r.Err,
 			}
@@ -340,7 +340,7 @@ func Between[L, T, R any](
 		return Match[T]{
 			Kind:  Matched,
 			Value: value.Value,
-			Start: start,
+			Start: start.Pos,
 			End:   ctx.Pos,
 		}
 	})
@@ -348,12 +348,12 @@ func Between[L, T, R any](
 
 func OneOf[T any](patterns ...Pattern[T]) Pattern[T] {
 	return PatternFunc[T](func(ctx *Context) Match[T] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 
 		var best *Match[T]
 
 		for _, pattern := range patterns {
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			result := pattern.Match(ctx)
 
@@ -369,7 +369,7 @@ func OneOf[T any](patterns ...Pattern[T]) Pattern[T] {
 			}
 		}
 
-		ctx.Reset(start)
+		ctx.Restore(start)
 
 		if best != nil {
 			return *best
@@ -377,8 +377,8 @@ func OneOf[T any](patterns ...Pattern[T]) Pattern[T] {
 
 		return Match[T]{
 			Kind:  NoMatch,
-			Start: start,
-			End:   start,
+			Start: start.Pos,
+			End:   start.Pos,
 		}
 	})
 }
@@ -388,16 +388,16 @@ func Bind[A, B any](
 	next func(A) Pattern[B],
 ) Pattern[B] {
 	return PatternFunc[B](func(ctx *Context) Match[B] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 
 		a := first.Match(ctx)
 
 		if a.Kind != Matched {
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			return Match[B]{
 				Kind:  a.Kind,
-				Start: start,
+				Start: start.Pos,
 				End:   a.End,
 				Err:   a.Err,
 			}
@@ -409,7 +409,7 @@ func Bind[A, B any](
 			return b
 		}
 
-		b.Start = start
+		b.Start = start.Pos
 		return b
 	})
 }
@@ -492,11 +492,11 @@ func Locate[T any](p Pattern[T]) Pattern[Located[T]] {
 
 func Peek[T any](pattern Pattern[T]) Pattern[T] {
 	return PatternFunc[T](func(ctx *Context) Match[T] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 
 		result := pattern.Match(ctx)
 
-		ctx.Pos = start
+		ctx.Pos = start.Pos
 
 		return result
 	})
@@ -507,7 +507,7 @@ func Until[T any, U any](
 	terminator Pattern[U],
 ) Pattern[[]T] {
 	return PatternFunc[[]T](func(ctx *Context) Match[[]T] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 		values := []T{}
 
 		for {
@@ -522,7 +522,7 @@ func Until[T any, U any](
 			if !result.OK() {
 				return Match[[]T]{
 					Kind:  result.Kind,
-					Start: start,
+					Start: start.Pos,
 					End:   ctx.Pos,
 					Err:   result.Err,
 				}
@@ -540,7 +540,7 @@ func Until[T any, U any](
 		return Match[[]T]{
 			Kind:  Matched,
 			Value: values,
-			Start: start,
+			Start: start.Pos,
 			End:   ctx.Pos,
 		}
 	})

@@ -44,10 +44,6 @@ func (c *Context) Mark() uint32 {
 	return c.Pos
 }
 
-func (c *Context) Reset(pos uint32) {
-	c.Pos = pos
-}
-
 // Gets two absolute positions in the token tape,
 // Gets the tokens located in both positions and joins their spans
 func (c *Context) Span(start uint32, end uint32) models.Span {
@@ -61,4 +57,23 @@ func (c *Context) Span(start uint32, end uint32) models.Span {
 	t2 := c.Tokens[end]
 
 	return models.JoinSpans(t1.Span, t2.Span)
+}
+
+/* Checkpoint logic */
+
+type Checkpoint struct {
+	Pos             uint32
+	DiagnosticCount int
+}
+
+func (c *Context) Checkpoint() Checkpoint {
+	return Checkpoint{
+		Pos:             c.Pos,
+		DiagnosticCount: len(c.Diagnostics),
+	}
+}
+
+func (c *Context) Restore(cp Checkpoint) {
+	c.Pos = cp.Pos
+	c.Diagnostics = c.Diagnostics[:cp.DiagnosticCount]
 }

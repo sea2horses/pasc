@@ -10,15 +10,15 @@ func Seq2[A, B any](
 	b Pattern[B],
 ) Pattern[Pair[A, B]] {
 	return PatternFunc[Pair[A, B]](func(ctx *Context) Match[Pair[A, B]] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 
 		ra := a.Match(ctx)
 		if ra.Kind != Matched {
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			return Match[Pair[A, B]]{
 				Kind:  ra.Kind,
-				Start: start,
+				Start: start.Pos,
 				End:   ra.End,
 				Err:   ra.Err,
 			}
@@ -26,11 +26,11 @@ func Seq2[A, B any](
 
 		rb := b.Match(ctx)
 		if rb.Kind != Matched {
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			return Match[Pair[A, B]]{
 				Kind:  rb.Kind,
-				Start: start,
+				Start: start.Pos,
 				End:   rb.End,
 				Err:   rb.Err,
 			}
@@ -42,7 +42,7 @@ func Seq2[A, B any](
 				First:  ra.Value,
 				Second: rb.Value,
 			},
-			Start: start,
+			Start: start.Pos,
 			End:   ctx.Pos,
 		}
 	})
@@ -60,15 +60,15 @@ func Seq3[A, B, C any](
 	c Pattern[C],
 ) Pattern[Trio[A, B, C]] {
 	return PatternFunc[Trio[A, B, C]](func(ctx *Context) Match[Trio[A, B, C]] {
-		start := ctx.Pos
+		start := ctx.Checkpoint()
 
 		ra := a.Match(ctx)
 		if ra.Kind != Matched {
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			return Match[Trio[A, B, C]]{
 				Kind:  ra.Kind,
-				Start: start,
+				Start: start.Pos,
 				End:   ra.End,
 				Err:   ra.Err,
 			}
@@ -76,11 +76,11 @@ func Seq3[A, B, C any](
 
 		rb := b.Match(ctx)
 		if rb.Kind != Matched {
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			return Match[Trio[A, B, C]]{
 				Kind:  rb.Kind,
-				Start: start,
+				Start: start.Pos,
 				End:   rb.End,
 				Err:   rb.Err,
 			}
@@ -88,11 +88,11 @@ func Seq3[A, B, C any](
 
 		rc := c.Match(ctx)
 		if rc.Kind != Matched {
-			ctx.Reset(start)
+			ctx.Restore(start)
 
 			return Match[Trio[A, B, C]]{
 				Kind:  rc.Kind,
-				Start: start,
+				Start: start.Pos,
 				End:   rc.End,
 				Err:   rc.Err,
 			}
@@ -105,7 +105,7 @@ func Seq3[A, B, C any](
 				Second: rb.Value,
 				Third:  rc.Value,
 			},
-			Start: start,
+			Start: start.Pos,
 			End:   ctx.Pos,
 		}
 	})
