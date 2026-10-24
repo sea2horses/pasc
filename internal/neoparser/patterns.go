@@ -100,7 +100,7 @@ func Name() Pattern[string] {
 func Newline() Pattern[lexer.Token] {
 	return Expected(
 		Tok(lexer.NEWLINE),
-		ExpectedCustom("newline"),
+		ExpectedNewline{},
 	)
 }
 

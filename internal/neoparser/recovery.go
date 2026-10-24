@@ -18,7 +18,7 @@ type RecoveryResult struct {
 func RecoverWith[T any](
 	p Pattern[T],
 	strategy RecoveryStrategy,
-	fallback func(*ParseError) T,
+	fallback func(ParseError) T,
 ) Pattern[T] {
 	return PatternFunc[T](func(ctx *Context) Match[T] {
 		result := p.Match(ctx)

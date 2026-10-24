@@ -1,38 +1,59 @@
 package neoparser
 
 import (
+	"fmt"
 	"pseint-compiled/internal/lexer"
 	"pseint-compiled/internal/models"
 )
 
-type ParseError struct {
-	Position uint32
-
-	Message  string
-	Expected []Expectation
-	Found    *lexer.Token
-
-	Help   string
-	Labels []Label
+type ParseError interface {
+	Error() string
 }
 
-type ExpectationKind uint8
+type LiteralErrors string
 
 const (
-	ExpectToken ExpectationKind = iota
-	ExpectKeyword
-	ExpectExpression
-	ExpectType
-	ExpectCustom
+	ItemAfterSeparator LiteralErrors = "expected item after separator"
 )
 
-type Expectation struct {
-	Kind ExpectationKind
-
-	Token   lexer.TokenType
-	Keyword lexer.Keyword
-	Label   string
+func (le LiteralErrors) Error() string {
+	return fmt.Sprintf("%s", le)
 }
+
+type Expectation interface {
+	Expected() string
+	Error() string
+}
+
+type ExpectedToken struct {
+	Kind lexer.TokenType
+}
+
+func (et ExpectedToken) Expected() string {
+	return fmt.Sprintf("expected token '%s'", et.Kind)
+}
+
+func (et ExpectedToken) Error() string { return et.Expected() }
+
+type ExpectedKeyword struct {
+	Keyword lexer.Keyword
+}
+
+func (kw ExpectedKeyword) Expected() string {
+	return fmt.Sprintf("expected keyword '%s'", kw.Keyword)
+}
+
+func (kw ExpectedKeyword) Error() string { return kw.Expected() }
+
+type ExpectedExpression struct{}
+
+func (ee ExpectedExpression) Expected() string { return "expected expression" }
+func (ee ExpectedExpression) Error() string    { return ee.Expected() }
+
+type ExpectedNewline struct{}
+
+func (ee ExpectedNewline) Expected() string { return "expected newline" }
+func (ee ExpectedNewline) Error() string    { return ee.Expected() }
 
 type Label struct {
 	Span    models.Span
@@ -52,38 +73,11 @@ func Expected[T any](
 			return result
 		}
 
-		found := ctx.Peek()
-
 		return Match[T]{
 			Kind:  Failed,
 			Start: start,
 			End:   ctx.Pos,
-			Err: &ParseError{
-				Position: ctx.Pos,
-				Expected: []Expectation{expectation},
-				Found:    found,
-			},
+			Err:   expectation,
 		}
 	})
-}
-
-func ExpectedToken(t lexer.TokenType) Expectation {
-	return Expectation{
-		Kind:  ExpectToken,
-		Token: t,
-	}
-}
-
-func ExpectedKeyword(k lexer.Keyword) Expectation {
-	return Expectation{
-		Kind:    ExpectKeyword,
-		Keyword: k,
-	}
-}
-
-func ExpectedCustom(label string) Expectation {
-	return Expectation{
-		Kind:  ExpectCustom,
-		Label: label,
-	}
 }

@@ -251,10 +251,7 @@ func SepBy[T, S any](
 					Kind:  Failed,
 					Start: start.Pos,
 					End:   ctx.Pos,
-					Err: &ParseError{
-						Position: ctx.Pos,
-						Message:  "expected item after separator",
-					},
+					Err:   ItemAfterSeparator,
 				}
 			}
 
@@ -356,8 +353,24 @@ func OneOf[T any](patterns ...Pattern[T]) Pattern[T] {
 			ctx.Restore(start)
 
 			result := pattern.Match(ctx)
+			committed := ctx.cut != start.Cut
 
 			if result.Kind == Matched {
+				/* A cut belongs to this choice */
+				ctx.cut = start.Cut
+				return result
+			}
+
+			if committed {
+				if result.Kind == NoMatch {
+					result.Kind = Failed
+				}
+
+				if result.Err != nil {
+					/* TODO: Custom error */
+				}
+
+				ctx.cut = start.Cut
 				return result
 			}
 
@@ -544,4 +557,30 @@ func Until[T any, U any](
 			End:   ctx.Pos,
 		}
 	})
+}
+
+/* For error recovery! */
+func Cut() Pattern[struct{}] {
+	return PatternFunc[struct{}](func(ctx *Context) Match[struct{}] {
+		ctx.cut++
+
+		return Match[struct{}]{
+			Kind:  Matched,
+			Start: ctx.Pos,
+			End:   ctx.Pos,
+		}
+	})
+}
+
+func Require[A, B any](
+	prefix Pattern[A],
+	body Pattern[B],
+) Pattern[B] {
+	return Right(
+		prefix,
+		Right(
+			Cut(),
+			body,
+		),
+	)
 }

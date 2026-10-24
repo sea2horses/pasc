@@ -15,7 +15,7 @@ type Match[T any] struct {
 	Start uint32
 	End   uint32
 
-	Err *ParseError
+	Err ParseError
 }
 
 func (m *Match[T]) OK() bool {
