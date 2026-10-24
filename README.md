@@ -1,32 +1,37 @@
 <div align="center">
 
-![ascii-art](assets/ascii-art.png)
+![pasc-inverted-banner](assets/pasc-inverted-banner.svg)
 
-**Compilador experimental de pseudocódigo PSeInt a ejecutables nativos mediante Go.**
+# `PASC`
 
-[![Go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/)
-[![Estado](https://img.shields.io/badge/estado-en%20desarrollo-f59e0b)](#estado-del-proyecto)
-[![Plataforma](https://img.shields.io/badge/plataforma-multiplataforma-3c3c3c)](#requisitos)
-[![Código fuente](https://img.shields.io/badge/GitHub-sea2horses%2Fpseint--compiler-181717?logo=github)](https://github.com/sea2horses/pseint-compiler)
+**Compilador experimental de pseudocódigo PSeInt**
+
+[![Go](https://img.shields.io/badge/go-1.25%2B-blue?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
+[![Pseint](https://img.shields.io/badge/compilador%20de-pseint-yellow?style=for-the-badge&logoColor=white)](https://pseint.sourceforge.net/)
+[![Plataforma](https://img.shields.io/badge/multiplataforma-3c3c3c?style=for-the-badge)](#requisitos)
 
 </div>
 
-PASC toma un archivo `.psc`, comprueba su sintaxis y sus tipos, lo traduce a Go y genera un binario nativo. Está pensado como una base moderna para ejecutar pseudocódigo de estilo PSeInt con mejores diagnósticos y aprovechando el compilador de Go como backend.
+`pasc` es un compilador y analizador que busca implementar el lenguaje de PSeInt. Es una herramienta tanto de ejecución como de análisis de código, que toma un archivo `.psc` y lo traduce a un binario nativo mediante el compilador de Go. Gracias a esto, `pasc` deja ejecutar un programa escrito en PSeInt sin necesidad de descargar el programa del todo, y además, ofrece una significativa mejora de rendimiento.
 
 > [!IMPORTANT]
-> El proyecto está en una etapa temprana (`Indev`). Ya puede ejecutar programas útiles, pero todavía no implementa todo el lenguaje de PSeInt ni debe considerarse compatible al 100 %.
+> El proyecto sigue en etapa de desarrollo. Ya puede ejecutar programas útiles, pero todavía no implementa todo el lenguaje de PSeInt ni debe considerarse compatible al 100 %.
 
-## Lo mejor del proyecto
+## Ventajas
 
-![comparativa](assets/comparative.gif)
+- **Compilación real:** El pseudocódigo se transforma en Go y después en un ejecutable que puede ser ejecutado en otras computadoras de manera nativa.
+![Compilation](assets/compilation.png)
+- **Errores fáciles de ubicar:** Sistema moderno de diagnósticos, muestra el archivo, la línea, la columna, el fragmento afectado y un resumen de errores y advertencias.
+![Diagnostic2](assets/diagnostic-2.png)
+- **Análisis a tiempo de compilación:** Valida operaciones y asignaciones antes de generar el programa, con soporte para conversiones numéricas seguras.
+![Diagnostic1](assets/diagnostic-1.png)
+![Diagnostic3](assets/diagnostic-3.png)
+- **Sintaxis familiar:** Implementa la flexibilidad del lenguaje de PSeInt.
+- **Rápidez:** Al compilarse de manera nativa, `pasc` ofrece una mejora de rendimiento significativa contra PSeInt.
+![DonutDemo](assets/donut-demo.gif)
 
-- **Compilación real:** el pseudocódigo se transforma en Go y después en un ejecutable nativo.
-- **Análisis por etapas:** incluye lexer, parser, árbol sintáctico tipado, análisis semántico y generación de código.
-- **Errores fáciles de ubicar:** muestra el archivo, la línea, la columna, el fragmento afectado y un resumen de errores y advertencias.
-- **Tipado y conversiones:** valida operaciones y asignaciones antes de generar el programa, con soporte para conversiones numéricas seguras.
-- **Sintaxis familiar:** reconoce palabras clave sin distinguir mayúsculas y minúsculas.
-- **Entrada y salida interactiva:** permite leer y escribir varios valores, además de limpiar la terminal.
-- **Modo de depuración:** expone tokens, árboles y código generado para facilitar el desarrollo del compilador.
+(Esto es una dona corriendo a tiempo real en codigo de pseint compilado por `pasc`, deberías probar la [demo](demos/donut.psc), puntos extra si la pruebas en PSeInt vs `pasc`)
+- **Extensible y modular:** Posee una arquitectura mucho más moderna que permite facilmente extender las capacidades del compilador.
 
 ## Funcionalidades disponibles
 
@@ -47,28 +52,35 @@ Actualmente se soportan:
 
 - [Go 1.25 o posterior](https://go.dev/dl/).
 - Git, únicamente si vas a clonar el repositorio.
+- (Opcional pero recomendado) [Just] para correr los comandos
 
 El compilador invoca a Go internamente para construir el programa generado, por lo que `go` debe estar disponible en el `PATH` incluso después de compilar esta herramienta. (Mejora que se debe hacer)
+
+**No se necesita Go para ejecutar el programa ya una vez compilado**
 
 ## Instalación
 
 Clona el repositorio y compila la herramienta:
 
 ```bash
-git clone https://github.com/sea2horses/pseint-compiler.git
-cd pseint-compiler
-go build -o pseintc .
+git clone https://github.com/sea2horses/pasc.git
+cd pasc
+go build
 ```
 
 También puedes usarla directamente desde el código fuente con `go run .`.
+
+Para instalar la herramienta puedes usar `go install` en la carpeta del repo, y de esa manera obtendras acceso al comando `pascc`.
 
 ## Uso
 
 Ejecuta el compilador indicando un archivo `.psc` con `-file`:
 
 ```bash
-./pseintc -file demos/hello_world.psc
+./pascc -file demos/hello_world.psc
 ```
+
+(En el caso de windows, usar `pascc.exe`)
 
 O, sin construir primero el compilador:
 
@@ -105,7 +117,7 @@ FinAlgoritmo
 Compílalo y ejecútalo:
 
 ```bash
-./pseintc -file mayoria_edad.psc
+pascc -file mayoria_edad.psc
 ```
 
 ### Información de depuración
@@ -113,23 +125,26 @@ Compílalo y ejecútalo:
 Usa `-debug` para ver las etapas internas, como los tokens, el AST, el árbol tipado y el código Go generado:
 
 ```bash
-./pseintc -debug -file demos/operations.psc
+pascc -debug -file demos/operations.psc
 ```
 
 ## Estado del proyecto
 
-La base del compilador ya funciona de extremo a extremo, pero aún faltan piezas importantes para alcanzar una experiencia completa y una compatibilidad amplia con PSeInt:
+PSeInt es un lenguaje extremadamente raro, con bastantes cosas "interesantes". Por lo que aun faltan muchos comportamientos por replicar!
 
-- Añadir ciclos `Para` y `Repetir ... Hasta Que`.
-- Implementar subprocesos, funciones y retorno de valores.
-- Incorporar arreglos/dimensiones y acceso por índices.
-- Agregar caracteres y más variantes de la sintaxis de PSeInt.
-- Completar el operador de potencia, que el lexer reconoce pero el análisis semántico todavía no admite.
-- Permitir compilar sin ejecutar, elegir el nombre y la ubicación del binario, y mostrar una opción de versión o ayuda más completa.
-- Manejar de forma explícita errores y entradas largas durante `Leer`.
-- Ampliar y estabilizar las reglas de alcance, asignación implícita y conversiones numéricas.
-- Crear una suite automatizada de pruebas unitarias, de integración y de programas `.psc`.
-- Publicar versiones etiquetadas, binarios precompilados y una licencia para el proyecto.
+Actualmente falta:
+
+- Redimensionar
+- Subprocesos, funciones y retorno de valores.
+- Sintaxis Flexible
+- Aliases como `Proceso` o `:=`
+- El ciclo `Para Cada`
+- El operador de potencia `^`
+- Funciones como `Subcadena`
+- Modo no-scope (porque PSeInt por alguna razón no tiene scopes??)
+- Perfiles
+- Arreglos en índice 1
+- Repetir
 
 ## Probar los ejemplos
 
@@ -152,3 +167,5 @@ Actualmente no hay casos de prueba automatizados; este comando funciona como com
 ## Contribuciones
 
 Las contribuciones son bienvenidas, especialmente para ampliar la sintaxis compatible, mejorar los diagnósticos y añadir pruebas. Antes de hacer un cambio grande, conviene abrir un issue para acordar el alcance y evitar implementaciones duplicadas.
+
+El uso de IA está aceptado con **moderación**.
