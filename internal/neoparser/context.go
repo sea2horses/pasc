@@ -9,8 +9,6 @@ type Context struct {
 	Tokens      []lexer.Token
 	Pos         uint32
 	Diagnostics []ParseError
-
-	cut uint64
 }
 
 func (c *Context) EOF() bool {
@@ -73,12 +71,10 @@ func (c *Context) Checkpoint() Checkpoint {
 	return Checkpoint{
 		Pos:             c.Pos,
 		DiagnosticCount: len(c.Diagnostics),
-		Cut:             c.cut,
 	}
 }
 
 func (c *Context) Restore(cp Checkpoint) {
 	c.Pos = cp.Pos
 	c.Diagnostics = c.Diagnostics[:cp.DiagnosticCount]
-	c.cut = cp.Cut
 }

@@ -353,24 +353,8 @@ func OneOf[T any](patterns ...Pattern[T]) Pattern[T] {
 			ctx.Restore(start)
 
 			result := pattern.Match(ctx)
-			committed := ctx.cut != start.Cut
 
 			if result.Kind == Matched {
-				/* A cut belongs to this choice */
-				ctx.cut = start.Cut
-				return result
-			}
-
-			if committed {
-				if result.Kind == NoMatch {
-					result.Kind = Failed
-				}
-
-				if result.Err != nil {
-					/* TODO: Custom error */
-				}
-
-				ctx.cut = start.Cut
 				return result
 			}
 
@@ -559,28 +543,184 @@ func Until[T any, U any](
 	})
 }
 
-/* For error recovery! */
-func Cut() Pattern[struct{}] {
-	return PatternFunc[struct{}](func(ctx *Context) Match[struct{}] {
-		ctx.cut++
+func Then[A, B any](
+	prefix Pattern[A],
+	body Pattern[B],
+) Pattern[B] {
+	return PatternFunc[B](func(ctx *Context) Match[B] {
+		start := ctx.Checkpoint()
 
-		return Match[struct{}]{
-			Kind:  Matched,
-			Start: ctx.Pos,
-			End:   ctx.Pos,
+		first := prefix.Match(ctx)
+
+		switch first.Kind {
+		case NoMatch:
+			ctx.Restore(start)
+			return Match[B]{
+				Kind:  NoMatch,
+				Start: start.Pos,
+				End:   start.Pos,
+			}
+
+		case Failed:
+			return Match[B]{
+				Kind:  Failed,
+				Start: start.Pos,
+				End:   first.End,
+				Err:   first.Err,
+			}
+		}
+
+		second := body.Match(ctx)
+
+		switch second.Kind {
+		case Matched:
+			second.Start = start.Pos
+			return second
+
+		case Failed:
+			return Match[B]{
+				Kind:  Failed,
+				Start: start.Pos,
+				End:   second.End,
+				Err:   second.Err,
+			}
+
+		case NoMatch:
+			return Match[B]{
+				Kind:  Failed,
+				Start: start.Pos,
+				End:   ctx.Pos,
+				Err:   ExpectedContinuation,
+			}
+		}
+
+		panic("unreachable")
+	})
+}
+
+type DispatchCase[T any] interface {
+	Match(*Context) Match[T]
+}
+
+type dispatchCase[A, T any] struct {
+	prefix      Pattern[A]
+	body        Pattern[T]
+	expectation Expectation
+}
+
+func Case[A, T any](
+	prefix Pattern[A],
+	body Pattern[T],
+) DispatchCase[T] {
+	return dispatchCase[A, T]{
+		prefix: prefix,
+		body:   body,
+	}
+}
+
+func CaseExpected[A, T any](
+	prefix Pattern[A],
+	body Pattern[T],
+	expectation Expectation,
+) DispatchCase[T] {
+	return dispatchCase[A, T]{
+		prefix:      prefix,
+		body:        body,
+		expectation: expectation,
+	}
+}
+
+func (c dispatchCase[A, T]) Match(
+	ctx *Context,
+) Match[T] {
+	start := ctx.Checkpoint()
+
+	prefix := c.prefix.Match(ctx)
+
+	switch prefix.Kind {
+	case NoMatch:
+		ctx.Restore(start)
+
+		return Match[T]{
+			Kind:  NoMatch,
+			Start: start.Pos,
+			End:   start.Pos,
+		}
+
+	case Failed:
+		return Match[T]{
+			Kind:  Failed,
+			Start: start.Pos,
+			End:   prefix.End,
+			Err:   prefix.Err,
+		}
+
+	case Matched:
+		body := c.body.Match(ctx)
+
+		switch body.Kind {
+		case Matched:
+			body.Start = start.Pos
+			return body
+
+		case Failed:
+			return Match[T]{
+				Kind:  Failed,
+				Start: start.Pos,
+				End:   body.End,
+				Err:   body.Err,
+			}
+
+		case NoMatch:
+			return Match[T]{
+				Kind:  Failed,
+				Start: start.Pos,
+				End:   ctx.Pos,
+				Err:   ExpectedContinuation,
+			}
+		}
+	}
+
+	panic("unreachable")
+}
+
+func Dispatch[T any](
+	cases ...DispatchCase[T],
+) Pattern[T] {
+	return PatternFunc[T](func(ctx *Context) Match[T] {
+		start := ctx.Checkpoint()
+
+		for _, c := range cases {
+			result := c.Match(ctx)
+
+			switch result.Kind {
+			case Matched, Failed:
+				return result
+
+			case NoMatch:
+				ctx.Restore(start)
+			}
+		}
+
+		return Match[T]{
+			Kind:  NoMatch,
+			Start: start.Pos,
+			End:   start.Pos,
 		}
 	})
 }
 
-func Require[A, B any](
-	prefix Pattern[A],
-	body Pattern[B],
-) Pattern[B] {
-	return Right(
-		prefix,
-		Right(
-			Cut(),
-			body,
-		),
-	)
+func DispatchOr[T any](
+	fallback Pattern[T],
+	cases ...DispatchCase[T],
+) Pattern[T] {
+	return PatternFunc[T](func(ctx *Context) Match[T] {
+		result := Dispatch(cases...).Match(ctx)
+
+		if result.Kind != NoMatch {
+			return result
+		}
+
+		return fallback.Match(ctx)
+	})
 }

@@ -3,7 +3,6 @@ package neoparser
 import (
 	"fmt"
 	"pseint-compiled/internal/lexer"
-	"pseint-compiled/internal/models"
 )
 
 type ParseError interface {
@@ -17,13 +16,27 @@ const (
 )
 
 func (le LiteralErrors) Error() string {
-	return fmt.Sprintf("%s", le)
+	return string(le)
 }
 
 type Expectation interface {
 	Expected() string
 	Error() string
 }
+
+type LiteralExpectations string
+
+const (
+	ExpectedContinuation LiteralExpectations = "expected continuation"
+	ExpectedExpression   LiteralExpectations = "expected expression"
+	ExpectedNewline      LiteralExpectations = "expected newline"
+)
+
+func (le LiteralExpectations) Expected() string {
+	return string(le)
+}
+
+func (le LiteralExpectations) Error() string { return le.Expected() }
 
 type ExpectedToken struct {
 	Kind lexer.TokenType
@@ -44,21 +57,6 @@ func (kw ExpectedKeyword) Expected() string {
 }
 
 func (kw ExpectedKeyword) Error() string { return kw.Expected() }
-
-type ExpectedExpression struct{}
-
-func (ee ExpectedExpression) Expected() string { return "expected expression" }
-func (ee ExpectedExpression) Error() string    { return ee.Expected() }
-
-type ExpectedNewline struct{}
-
-func (ee ExpectedNewline) Expected() string { return "expected newline" }
-func (ee ExpectedNewline) Error() string    { return ee.Expected() }
-
-type Label struct {
-	Span    models.Span
-	Message string
-}
 
 func Expected[T any](
 	p Pattern[T],
