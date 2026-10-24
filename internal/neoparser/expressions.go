@@ -8,36 +8,30 @@ import (
 )
 
 func Operand() Pattern[ast.Expr] {
-	return Bind(
-		Map(
-			Seq2(
-				Many(
-					UnaryOperator(),
-				),
-				Atom(),
+	return Map(
+		Seq2(
+			Many(
+				UnaryOperator(),
 			),
-			func(p Pair[[]*ast.Operator, ast.Expr]) ast.Expr {
-				new_expr := p.Second
-				slices.Reverse(p.First)
-				for _, o := range p.First {
-					new_expr = &ast.UnaryOperation{
-						NodeInfo: ast.NodeInfo{
-							Span: models.JoinSpans(new_expr.NodeSpan(), o.Span),
-						},
-						Op:   *o,
-						Expr: new_expr,
-					}
-				}
-				return new_expr
-			},
+			/* Allows postfix chaining hello[1][2]()[3] */
+			ChainBind(
+				Atom(),
+				Postfix,
+			),
 		),
-		func(exp ast.Expr) Pattern[ast.Expr] {
-			return Map(
-				Optional(Postfix(exp)),
-				func(o OptionalValue[ast.Expr]) ast.Expr {
-					return o.Or(exp)
-				},
-			)
+		func(p Pair[[]*ast.Operator, ast.Expr]) ast.Expr {
+			new_expr := p.Second
+			slices.Reverse(p.First)
+			for _, o := range p.First {
+				new_expr = &ast.UnaryOperation{
+					NodeInfo: ast.NodeInfo{
+						Span: models.JoinSpans(new_expr.NodeSpan(), o.Span),
+					},
+					Op:   *o,
+					Expr: new_expr,
+				}
+			}
+			return new_expr
 		},
 	)
 }

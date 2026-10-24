@@ -414,6 +414,50 @@ func Bind[A, B any](
 	})
 }
 
+func ChainBind[T any](
+	initial Pattern[T],
+	next func(T) Pattern[T],
+) Pattern[T] {
+	return PatternFunc[T](func(ctx *Context) Match[T] {
+		first := initial.Match(ctx)
+
+		if first.Kind != Matched {
+			return first
+		}
+
+		value := first.Value
+		start := first.Start
+
+		for {
+			pos := ctx.Pos
+
+			result := next(value).Match(ctx)
+
+			switch result.Kind {
+			case NoMatch:
+				ctx.Pos = pos
+
+				return Match[T]{
+					Kind:  Matched,
+					Value: value,
+					Start: start,
+					End:   ctx.Pos,
+				}
+
+			case Failed:
+				return result
+
+			case Matched:
+				if ctx.Pos == pos {
+					panic("ChainBind: pattern matched without consuming input")
+				}
+
+				value = result.Value
+			}
+		}
+	})
+}
+
 type Located[T any] struct {
 	Value T
 	Span  models.Span
