@@ -72,7 +72,8 @@ func Recover[T any](p Pattern[T], strategy RecoveryStrategy) Pattern[T] {
 			if ctx.Pos < result.End {
 				ctx.Pos = min(result.End, uint32(len(ctx.Tokens)))
 			}
-			strategy.Recover(ctx)
+			recovered := strategy.Recover(ctx)
+			result.End = max(result.End, recovered.End)
 		}
 		return result
 	})

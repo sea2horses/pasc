@@ -12,7 +12,7 @@ func IfStmt() Pattern[ast.Stmt] {
 			Seq3(
 				Locate(
 					Left(
-						Expression(),
+						Expected(Expression(), ExpectedExpression),
 						Optional(
 							Kw(lexer.ENTONCES),
 						),
@@ -23,10 +23,7 @@ func IfStmt() Pattern[ast.Stmt] {
 					Optional(
 						ElseStmt(),
 					),
-					Seq2(
-						Newline(),
-						Kw(lexer.FINSI),
-					),
+					Expected(Kw(lexer.FINSI), ExpectedKeyword{Keyword: lexer.FINSI}),
 				),
 			),
 		),
@@ -71,7 +68,7 @@ func While() Pattern[ast.Stmt] {
 						Kw(lexer.MIENTRAS),
 						Optional(Kw(lexer.QUE)),
 					),
-					Expression(),
+					Expected(Expression(), ExpectedExpression),
 					Optional(
 						Kw(lexer.HACER),
 					),
@@ -79,10 +76,7 @@ func While() Pattern[ast.Stmt] {
 			),
 			Left(
 				StatementBlock(),
-				Seq2(
-					Newline(),
-					Kw(lexer.FINMIENTRAS),
-				),
+				Expected(Kw(lexer.FINMIENTRAS), ExpectedKeyword{Keyword: lexer.FINMIENTRAS}),
 			),
 		),
 		func(p Pair[Located[ast.Expr], []ast.Stmt]) ast.Stmt {
@@ -105,19 +99,19 @@ func For() Pattern[ast.Stmt] {
 					Seq3(
 						Right(
 							Kw(lexer.PARA),
-							Assignment(),
+							Expected(Assignment(), ExpectedStatement),
 						),
 						Right(
-							Kw(lexer.HASTA),
-							Expression(),
+							Expected(Kw(lexer.HASTA), ExpectedKeyword{Keyword: lexer.HASTA}),
+							Expected(Expression(), ExpectedExpression),
 						),
 						Optional(
 							Right(
 								Seq2(
 									Kw(lexer.CON),
-									Kw(lexer.PASO),
+									Expected(Kw(lexer.PASO), ExpectedKeyword{Keyword: lexer.PASO}),
 								),
-								Expression(),
+								Expected(Expression(), ExpectedExpression),
 							),
 						),
 					),
@@ -126,10 +120,7 @@ func For() Pattern[ast.Stmt] {
 			),
 			Left(
 				StatementBlock(),
-				Seq2(
-					Newline(),
-					Kw(lexer.FINPARA),
-				),
+				Expected(Kw(lexer.FINPARA), ExpectedKeyword{Keyword: lexer.FINPARA}),
 			),
 		),
 		func(t Pair[Located[Trio[ast.Stmt, ast.Expr, OptionalValue[ast.Expr]]], []ast.Stmt]) ast.Stmt {
@@ -155,12 +146,13 @@ func Switch() Pattern[ast.Stmt] {
 				Locate(
 					Between(
 						Kw(lexer.SEGUN),
-						Expression(),
+						Expected(Expression(), ExpectedExpression),
 						Optional(Kw(lexer.HACER)),
 					),
 				),
-				Many(
-					SwitchCase(),
+				Right(
+					Expected(Newline(), ExpectedNewline),
+					Right(Many(Newline()), switchCases()),
 				),
 				Optional(
 					Right(
@@ -169,7 +161,7 @@ func Switch() Pattern[ast.Stmt] {
 					),
 				),
 			),
-			Kw(lexer.FINSEGUN),
+			Expected(Kw(lexer.FINSEGUN), ExpectedKeyword{Keyword: lexer.FINSEGUN}),
 		),
 		func(t Trio[Located[ast.Expr], []*ast.Case, OptionalValue[[]ast.Stmt]]) ast.Stmt {
 			return &ast.Switch{
@@ -195,10 +187,10 @@ func DefaultHeader() Pattern[any] {
 	return AsAny(Seq2(
 		Seq3(
 			Kw(lexer.DE),
-			Kw(lexer.OTRO),
-			Kw(lexer.MODO),
+			Expected(Kw(lexer.OTRO), ExpectedKeyword{Keyword: lexer.OTRO}),
+			Expected(Kw(lexer.MODO), ExpectedKeyword{Keyword: lexer.MODO}),
 		),
-		Tok(lexer.COLON),
+		Expected(Tok(lexer.COLON), ExpectedToken{Kind: lexer.COLON}),
 	))
 }
 
@@ -209,16 +201,7 @@ func SwitchCase() Pattern[*ast.Case] {
 			Locate(
 				CaseHeader(),
 			),
-			Until(
-				Left(
-					Statement(),
-					Newline(),
-				),
-				OneOf(
-					AsAny(CaseHeader()),
-					DefaultHeader(),
-				),
-			),
+			statementBlock(true),
 		),
 		func(c Pair[Located[ast.Expr], []ast.Stmt]) *ast.Case {
 			return &ast.Case{
@@ -230,4 +213,25 @@ func SwitchCase() Pattern[*ast.Case] {
 			}
 		},
 	)
+}
+
+// A malformed case header must not prevent later cases from being parsed.
+func switchCases() Pattern[[]*ast.Case] {
+	return PatternFunc[[]*ast.Case](func(ctx *Context) Match[[]*ast.Case] {
+		start := ctx.Pos
+		cases := []*ast.Case{}
+		recovery := Synchronize{Tokens: []lexer.TokenType{lexer.NEWLINE}, Keywords: blockBoundaries}
+		for !atBlockBoundary(ctx, false) {
+			before := ctx.Pos
+			result := Recover(Expected(SwitchCase(), LiteralExpectations("expected switch case")), recovery).Match(ctx)
+			if result.OK() {
+				cases = append(cases, result.Value)
+			}
+			skipNewlines(ctx)
+			if ctx.Pos == before && !atBlockBoundary(ctx, false) {
+				ctx.Advance()
+			}
+		}
+		return Match[[]*ast.Case]{Kind: Matched, Value: cases, Start: start, End: ctx.Pos}
+	})
 }

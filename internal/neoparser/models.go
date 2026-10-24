@@ -18,10 +18,10 @@ type Match[T any] struct {
 	Err ParseError
 }
 
-func (m *Match[T]) OK() bool {
+func (m Match[T]) OK() bool {
 	return m.Kind == Matched
 }
 
-func (m *Match[T]) Consumed() bool {
+func (m Match[T]) Consumed() bool {
 	return m.End > m.Start
 }

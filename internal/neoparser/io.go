@@ -15,12 +15,12 @@ func Write() Pattern[ast.Stmt] {
 					AsAny(
 						Seq2(
 							Kw(lexer.SIN),
-							Kw(lexer.SALTAR),
+							Expected(Kw(lexer.SALTAR), ExpectedKeyword{Keyword: lexer.SALTAR}),
 						),
 					),
 				),
 				SepBy1(
-					Expression(),
+					Expected(Expression(), ExpectedExpression),
 					Tok(lexer.COMMA),
 				),
 			),
@@ -42,7 +42,7 @@ func Read() Pattern[ast.Stmt] {
 		After(
 			Kw(lexer.LEER),
 			SepBy1(
-				Expression(),
+				Expected(Expression(), ExpectedExpression),
 				Tok(lexer.COMMA),
 			),
 		),

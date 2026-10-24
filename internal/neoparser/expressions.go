@@ -10,16 +10,15 @@ import (
 
 func Operand() Pattern[ast.Expr] {
 	return Map(
-		Seq2(
-			Many(
-				UnaryOperator(),
-			),
-			/* Allows postfix chaining hello[1][2]()[3] */
-			ChainBind(
-				Atom(),
-				Postfix,
-			),
-		),
+		Bind(Many(UnaryOperator()), func(ops []*ast.Operator) Pattern[Pair[[]*ast.Operator, ast.Expr]] {
+			base := ChainBind(Atom(), Postfix)
+			if len(ops) > 0 {
+				base = Expected(base, ExpectedExpression)
+			}
+			return Map(base, func(expr ast.Expr) Pair[[]*ast.Operator, ast.Expr] {
+				return Pair[[]*ast.Operator, ast.Expr]{First: ops, Second: expr}
+			})
+		}),
 		func(p Pair[[]*ast.Operator, ast.Expr]) ast.Expr {
 			new_expr := p.Second
 			slices.Reverse(p.First)
@@ -49,8 +48,8 @@ func Index(target ast.Expr) Pattern[ast.Expr] {
 		Many1(
 			Between(
 				Tok(lexer.L_BRACKET),
-				Expression(),
-				Tok(lexer.R_BRACKET),
+				Expected(Expression(), ExpectedExpression),
+				Expected(Tok(lexer.R_BRACKET), ExpectedToken{Kind: lexer.R_BRACKET}),
 			),
 		),
 		func(indices []ast.Expr, span models.Span) ast.Expr {
@@ -70,7 +69,7 @@ func Call(target ast.Expr) Pattern[ast.Expr] {
 		Between(
 			Tok(lexer.L_PARENTHESES),
 			SepBy(Expression(), Tok(lexer.COMMA)),
-			Tok(lexer.R_PARENTHESES),
+			Expected(Tok(lexer.R_PARENTHESES), ExpectedToken{Kind: lexer.R_PARENTHESES}),
 		),
 		func(arguments []ast.Expr, span models.Span) ast.Expr {
 			return &ast.Call{
@@ -123,9 +122,9 @@ func Expression() Pattern[ast.Expr] {
 
 		if !first.OK() {
 			return Match[ast.Expr]{
-				Kind:  Failed,
+				Kind:  first.Kind,
 				Start: start,
-				End:   ctx.Pos,
+				End:   first.End,
 				Err:   first.Err,
 			}
 		}
@@ -171,7 +170,7 @@ func Expression() Pattern[ast.Expr] {
 			operatorStack = append(operatorStack, *current)
 
 			// Once an operator matches, its RHS is mandatory
-			operand := Operand().Match(ctx)
+			operand := Expected(Operand(), ExpectedExpression).Match(ctx)
 
 			if !operand.OK() {
 				return Match[ast.Expr]{

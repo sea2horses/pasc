@@ -22,6 +22,8 @@ const (
 	ExpectedContinuation LiteralExpectations = "expected continuation"
 	ExpectedExpression   LiteralExpectations = "expected expression"
 	ExpectedNewline      LiteralExpectations = "expected newline"
+	ExpectedType         LiteralExpectations = "expected type"
+	ExpectedStatement    LiteralExpectations = "expected statement"
 )
 
 func (e LiteralExpectations) Expected() string { return string(e) }

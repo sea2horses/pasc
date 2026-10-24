@@ -98,10 +98,7 @@ func Name() Pattern[string] {
 }
 
 func Newline() Pattern[lexer.Token] {
-	return Expected(
-		Tok(lexer.NEWLINE),
-		ExpectedNewline,
-	)
+	return Tok(lexer.NEWLINE)
 }
 
 func Type() Pattern[*ast.TypeRef] {

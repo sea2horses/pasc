@@ -49,7 +49,7 @@ func (c *Context) Mark() uint32 {
 func (c *Context) Span(start uint32, end uint32) models.Span {
 	/* Get span from other token */
 	length := uint32(len(c.Tokens))
-	if start >= length || end >= length {
+	if start >= length || end > length || end <= start {
 		return models.Span{}
 	}
 

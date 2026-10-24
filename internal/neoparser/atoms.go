@@ -46,7 +46,7 @@ func NumberLiteral() Pattern[ast.Expr] {
 			Optional(
 				Right(
 					Tok(lexer.DOT),
-					RawNumber(),
+					Expected(RawNumber(), ExpectedToken{Kind: lexer.NUMBER_LITERAL}),
 				),
 			),
 		),
@@ -91,7 +91,7 @@ func Identifier() Pattern[ast.Expr] {
 func ParenthesizedExpression() Pattern[ast.Expr] {
 	return Between(
 		Tok(lexer.L_PARENTHESES),
-		Expression(),
-		Tok(lexer.R_PARENTHESES),
+		Expected(Expression(), ExpectedExpression),
+		Expected(Tok(lexer.R_PARENTHESES), ExpectedToken{Kind: lexer.R_PARENTHESES}),
 	)
 }

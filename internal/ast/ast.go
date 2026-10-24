@@ -55,7 +55,7 @@ type NumberLiteral struct {
 }
 
 func (nl NumberLiteral) String() string {
-	return fmt.Sprintf("%d.%d", nl.Int, nl.Frac)
+	return fmt.Sprintf("%s.%s", nl.Int, nl.Frac)
 }
 
 type BoolLiteral struct {
@@ -220,7 +220,8 @@ func (i If) String() string {
 
 	builder.WriteString(fmt.Sprintf("If '%s' {\n", i.Condition))
 	for _, stmt := range i.Stmts {
-		builder.WriteString(stmt.String() + "\n")
+		builder.WriteString(stmt.String())
+		builder.WriteRune('\n')
 	}
 	builder.WriteString("} ")
 	if i.Else != nil {
@@ -240,7 +241,8 @@ func (e Else) String() string {
 
 	builder.WriteString("Else {\n")
 	for _, stmt := range e.Stmts {
-		builder.WriteString(stmt.String() + "\n")
+		builder.WriteString(stmt.String())
+		builder.WriteRune('\n')
 	}
 	builder.WriteString("}")
 
@@ -258,7 +260,8 @@ func (w While) String() string {
 
 	builder.WriteString(fmt.Sprintf("While '%s' {\n", w.Condition))
 	for _, stmt := range w.Stmts {
-		builder.WriteString(stmt.String() + "\n")
+		builder.WriteString(stmt.String())
+		builder.WriteRune('\n')
 	}
 	builder.WriteString("}")
 
@@ -304,13 +307,15 @@ func (s Switch) String() string {
 
 	builder.WriteString(fmt.Sprintf("Switch '%s': {\n", s.Base))
 	for _, c := range s.Cases {
-		builder.WriteString(c.String() + "\n")
+		builder.WriteString(c.String())
+		builder.WriteRune('\n')
 	}
 
 	if s.Default != nil {
-		builder.WriteString(fmt.Sprintf("Default: {\n"))
+		builder.WriteString("Default: {\n")
 		for _, stmt := range s.Default {
-			builder.WriteString(stmt.String() + "\n")
+			builder.WriteString(stmt.String())
+			builder.WriteRune('\n')
 		}
 		builder.WriteString("}")
 	}
@@ -330,7 +335,8 @@ func (c Case) String() string {
 
 	builder.WriteString(fmt.Sprintf("Case '%s': {\n", c.Clause))
 	for _, stmt := range c.Stmts {
-		builder.WriteString(stmt.String() + "\n")
+		builder.WriteString(stmt.String())
+		builder.WriteRune('\n')
 	}
 	builder.WriteString("}")
 
@@ -377,7 +383,8 @@ func (mf MainFunction) String() string {
 
 	builder.WriteString(fmt.Sprintf("MainFunction '%s' {\n", mf.Name))
 	for _, stmt := range mf.Stmts {
-		builder.WriteString(stmt.String() + "\n")
+		builder.WriteString(stmt.String())
+		builder.WriteRune('\n')
 	}
 	builder.WriteString("}")
 

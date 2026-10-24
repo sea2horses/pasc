@@ -23,11 +23,63 @@ func Statement() Pattern[ast.Stmt] {
 	)
 }
 
+// StatementBlock consumes line breaks and leaves structural boundaries to its caller.
 func StatementBlock() Pattern[[]ast.Stmt] {
-	return SepBy(
-		Statement(),
-		Tok(lexer.NEWLINE),
-	)
+	return statementBlock(false)
+}
+
+var blockBoundaries = []lexer.Keyword{
+	lexer.FINALGORITMO, lexer.SINO, lexer.FINSI, lexer.FINMIENTRAS,
+	lexer.FINPARA, lexer.FINSEGUN, lexer.DE,
+}
+
+func atBlockBoundary(ctx *Context, cases bool) bool {
+	if ctx.EOF() {
+		return true
+	}
+	for _, kw := range blockBoundaries {
+		if Peek(Kw(kw)).Match(ctx).OK() {
+			return true
+		}
+	}
+	return cases && Peek(CaseHeader()).Match(ctx).OK()
+}
+
+func skipNewlines(ctx *Context) {
+	for Newline().Match(ctx).OK() {
+	}
+}
+
+func statementBlock(cases bool) Pattern[[]ast.Stmt] {
+	return PatternFunc[[]ast.Stmt](func(ctx *Context) Match[[]ast.Stmt] {
+		start := ctx.Pos
+		// Headers and statements must end on their own line.
+		if !ctx.EOF() && !Newline().Match(ctx).OK() {
+			ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, ExpectedNewline.Expected()))
+		}
+		skipNewlines(ctx)
+		stmts := []ast.Stmt{}
+		recovery := Synchronize{Tokens: []lexer.TokenType{lexer.NEWLINE}, Keywords: blockBoundaries}
+		for !atBlockBoundary(ctx, cases) {
+			before := ctx.Pos
+			result := Recover(Expected(Statement(), ExpectedStatement), recovery).Match(ctx)
+			if result.OK() {
+				stmts = append(stmts, result.Value)
+			}
+			if ctx.EOF() || atBlockBoundary(ctx, cases) {
+				break
+			}
+			if result.OK() && !Newline().Match(ctx).OK() {
+				ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, ExpectedNewline.Expected()))
+				recovery.Recover(ctx)
+			}
+			skipNewlines(ctx)
+			if ctx.Pos == before {
+				ctx.Advance()
+			}
+		}
+		return Match[[]ast.Stmt]{Kind: Matched, Value: stmts, Start: start, End: ctx.Pos}
+	})
 }
 
 func MainFunction() Pattern[*ast.MainFunction] {
@@ -36,15 +88,12 @@ func MainFunction() Pattern[*ast.MainFunction] {
 			Locate(
 				Right(
 					Kw(lexer.ALGORITMO),
-					Name(),
+					Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
 				),
 			),
 			Left(
 				StatementBlock(),
-				Seq2(
-					Newline(),
-					Kw(lexer.FINALGORITMO),
-				),
+				Expected(Kw(lexer.FINALGORITMO), ExpectedKeyword{Keyword: lexer.FINALGORITMO}),
 			),
 		),
 		func(p Pair[Located[string], []ast.Stmt]) *ast.MainFunction {
@@ -66,12 +115,12 @@ func Declaration() Pattern[ast.Stmt] {
 				Kw(lexer.DEFINIR),
 				Seq2(
 					SepBy1(
-						Name(),
+						Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
 						Tok(lexer.COMMA),
 					),
 					Right(
-						Kw(lexer.COMO),
-						Type(),
+						Expected(Kw(lexer.COMO), ExpectedKeyword{Keyword: lexer.COMO}),
+						Expected(Type(), ExpectedType),
 					),
 				),
 			),
@@ -103,7 +152,7 @@ func Assignment() Pattern[ast.Stmt] {
 						),
 					),
 				),
-				Expression(),
+				Expected(Expression(), ExpectedExpression),
 			),
 		),
 		func(p Pair[ast.Expr, ast.Expr], span models.Span) ast.Stmt {
@@ -123,14 +172,14 @@ func Dimension() Pattern[ast.Stmt] {
 		After(
 			Kw(lexer.DIMENSIONAR),
 			Seq2(
-				Name(),
+				Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
 				Between(
-					Tok(lexer.L_BRACKET),
+					Expected(Tok(lexer.L_BRACKET), ExpectedToken{Kind: lexer.L_BRACKET}),
 					SepBy1(
-						Expression(),
+						Expected(Expression(), ExpectedExpression),
 						Tok(lexer.COMMA),
 					),
-					Tok(lexer.R_BRACKET),
+					Expected(Tok(lexer.R_BRACKET), ExpectedToken{Kind: lexer.R_BRACKET}),
 				),
 			),
 		),
@@ -151,8 +200,8 @@ func Timeout() Pattern[ast.Stmt] {
 		After(
 			Kw(lexer.ESPERAR),
 			Seq2(
-				Expression(),
-				TimeUnit(),
+				Expected(Expression(), ExpectedExpression),
+				Expected(TimeUnit(), LiteralExpectations("expected time unit")),
 			),
 		),
 		func(p Pair[ast.Expr, semantic.TimeUnit], span models.Span) ast.Stmt {
@@ -172,7 +221,7 @@ func ClearScreen() Pattern[ast.Stmt] {
 		Locate(
 			AsAny(Seq2(
 				Kw(lexer.BORRAR),
-				Kw(lexer.PANTALLA),
+				Expected(Kw(lexer.PANTALLA), ExpectedKeyword{Keyword: lexer.PANTALLA}),
 			)),
 		),
 		func(p Located[any]) ast.Stmt {
