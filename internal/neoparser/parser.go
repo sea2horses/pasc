@@ -1,10 +1,10 @@
 package neoparser
 
 import (
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/diagnostics"
-	"pseint-compiled/internal/lexer"
-	"pseint-compiled/internal/models"
+	"pascc/internal/ast"
+	"pascc/internal/diagnostics"
+	"pascc/internal/lexer"
+	"pascc/internal/models"
 	"slices"
 )
 

@@ -2,7 +2,7 @@ package parser
 
 import (
 	"fmt"
-	"pseint-compiled/internal/lexer"
+	"pascc/internal/lexer"
 )
 
 type ParserError string

@@ -1,8 +1,8 @@
 package analyzer
 
 import (
-	"pseint-compiled/internal/ast"
-	tast "pseint-compiled/internal/ast_typed"
+	"pascc/internal/ast"
+	tast "pascc/internal/ast_typed"
 )
 
 func (a *Analyzer) analyze_operator(op ast.Operator) *tast.Operator {

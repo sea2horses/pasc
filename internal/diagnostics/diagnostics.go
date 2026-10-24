@@ -3,7 +3,7 @@ package diagnostics
 import (
 	"errors"
 	"fmt"
-	"pseint-compiled/internal/models"
+	"pascc/internal/models"
 	"strings"
 )
 

@@ -1,8 +1,8 @@
 package analyzer
 
 import (
-	tast "pseint-compiled/internal/ast_typed"
-	"pseint-compiled/internal/semantic"
+	tast "pascc/internal/ast_typed"
+	"pascc/internal/semantic"
 )
 
 func tryConvert(src tast.TypedExpr, to semantic.Type) (*tast.Cast, bool) {

@@ -2,8 +2,8 @@ package tast
 
 import (
 	"fmt"
-	"pseint-compiled/internal/models"
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/models"
+	"pascc/internal/semantic"
 	"strings"
 )
 

@@ -1,8 +1,8 @@
 package neoparser
 
 import (
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/diagnostics"
+	"pascc/internal/ast"
+	"pascc/internal/diagnostics"
 	"strings"
 	"testing"
 )

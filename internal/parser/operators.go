@@ -1,10 +1,10 @@
 package parser
 
 import (
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/diagnostics"
-	"pseint-compiled/internal/lexer"
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/ast"
+	"pascc/internal/diagnostics"
+	"pascc/internal/lexer"
+	"pascc/internal/semantic"
 )
 
 func (p *Parser) parse_operator_type() semantic.OperatorType {

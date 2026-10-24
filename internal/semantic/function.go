@@ -1,6 +1,6 @@
 package semantic
 
-import "pseint-compiled/internal/utils"
+import "pascc/internal/utils"
 
 type FunctionType struct {
 	Params []Type

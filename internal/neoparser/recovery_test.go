@@ -1,7 +1,7 @@
 package neoparser
 
 import (
-	"pseint-compiled/internal/lexer"
+	"pascc/internal/lexer"
 	"testing"
 )
 

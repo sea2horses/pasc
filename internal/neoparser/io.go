@@ -1,9 +1,9 @@
 package neoparser
 
 import (
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/lexer"
-	"pseint-compiled/internal/models"
+	"pascc/internal/ast"
+	"pascc/internal/lexer"
+	"pascc/internal/models"
 )
 
 func Write() Pattern[ast.Stmt] {

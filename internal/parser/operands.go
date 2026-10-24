@@ -2,9 +2,9 @@ package parser
 
 import (
 	"errors"
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/diagnostics"
-	"pseint-compiled/internal/lexer"
+	"pascc/internal/ast"
+	"pascc/internal/diagnostics"
+	"pascc/internal/lexer"
 )
 
 func (p *Parser) parse_operand() (ast.Expr, error) {

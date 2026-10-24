@@ -2,7 +2,7 @@ package semantic
 
 import (
 	"fmt"
-	"pseint-compiled/internal/utils"
+	"pascc/internal/utils"
 	"strings"
 )
 

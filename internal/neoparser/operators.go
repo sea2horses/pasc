@@ -1,9 +1,9 @@
 package neoparser
 
 import (
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/lexer"
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/ast"
+	"pascc/internal/lexer"
+	"pascc/internal/semantic"
 )
 
 func UnaryOperator() Pattern[*ast.Operator] {

@@ -1,6 +1,6 @@
 package neoparser
 
-import "pseint-compiled/internal/models"
+import "pascc/internal/models"
 
 func Map[A, B any](p Pattern[A], fn func(A) B) Pattern[B] {
 	return PatternFunc[B](func(ctx *Context) Match[B] {

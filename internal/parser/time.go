@@ -2,9 +2,9 @@ package parser
 
 import (
 	"errors"
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/lexer"
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/ast"
+	"pascc/internal/lexer"
+	"pascc/internal/semantic"
 )
 
 func (p *Parser) parse_timeout() (*ast.TimeOut, error) {

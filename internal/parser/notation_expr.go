@@ -1,10 +1,10 @@
 package parser
 
 import (
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/diagnostics"
-	"pseint-compiled/internal/models"
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/ast"
+	"pascc/internal/diagnostics"
+	"pascc/internal/models"
+	"pascc/internal/semantic"
 	"slices"
 )
 

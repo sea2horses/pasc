@@ -2,7 +2,7 @@ package analyzer
 
 import (
 	"fmt"
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/semantic"
 )
 
 type ErrIncorrectType struct {

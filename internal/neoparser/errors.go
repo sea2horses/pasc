@@ -2,7 +2,7 @@ package neoparser
 
 import (
 	"fmt"
-	"pseint-compiled/internal/lexer"
+	"pascc/internal/lexer"
 )
 
 // ParseError records an absolute token position at the point of failure.

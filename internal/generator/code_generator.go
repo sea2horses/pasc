@@ -3,9 +3,9 @@ package generator
 import (
 	"bytes"
 	"fmt"
-	tast "pseint-compiled/internal/ast_typed"
-	"pseint-compiled/internal/semantic"
-	"pseint-compiled/internal/utils"
+	tast "pascc/internal/ast_typed"
+	"pascc/internal/semantic"
+	"pascc/internal/utils"
 	"strings"
 )
 

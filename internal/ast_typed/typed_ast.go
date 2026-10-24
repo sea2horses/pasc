@@ -2,9 +2,9 @@ package tast
 
 import (
 	"fmt"
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/models"
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/ast"
+	"pascc/internal/models"
+	"pascc/internal/semantic"
 )
 
 type Node interface {

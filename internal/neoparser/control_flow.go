@@ -1,8 +1,8 @@
 package neoparser
 
 import (
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/lexer"
+	"pascc/internal/ast"
+	"pascc/internal/lexer"
 )
 
 func IfStmt() Pattern[ast.Stmt] {

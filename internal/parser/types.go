@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/lexer"
+	"pascc/internal/ast"
+	"pascc/internal/lexer"
 )
 
 func (p *Parser) parse_type() (*ast.TypeRef, error) {

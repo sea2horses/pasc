@@ -2,9 +2,9 @@ package ast
 
 import (
 	"fmt"
-	"pseint-compiled/internal/models"
-	"pseint-compiled/internal/semantic"
-	"pseint-compiled/internal/utils"
+	"pascc/internal/models"
+	"pascc/internal/semantic"
+	"pascc/internal/utils"
 	"strings"
 )
 

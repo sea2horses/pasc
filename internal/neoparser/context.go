@@ -1,8 +1,8 @@
 package neoparser
 
 import (
-	"pseint-compiled/internal/lexer"
-	"pseint-compiled/internal/models"
+	"pascc/internal/lexer"
+	"pascc/internal/models"
 )
 
 type Context struct {

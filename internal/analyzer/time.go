@@ -1,9 +1,9 @@
 package analyzer
 
 import (
-	"pseint-compiled/internal/ast"
-	tast "pseint-compiled/internal/ast_typed"
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/ast"
+	tast "pascc/internal/ast_typed"
+	"pascc/internal/semantic"
 )
 
 func (a *Analyzer) analyze_timeout(to *ast.TimeOut) *tast.TimeOut {
