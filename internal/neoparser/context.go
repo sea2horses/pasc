@@ -6,8 +6,9 @@ import (
 )
 
 type Context struct {
-	Tokens []lexer.Token
-	Pos    uint32
+	Tokens      []lexer.Token
+	Pos         uint32
+	Diagnostics []ParseError
 }
 
 func (c *Context) EOF() bool {

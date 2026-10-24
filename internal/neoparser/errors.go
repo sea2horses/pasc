@@ -48,7 +48,7 @@ func Expected[T any](
 
 		result := p.Match(ctx)
 
-		if result.Kind == Matched {
+		if result.Kind != NoMatch {
 			return result
 		}
 
