@@ -25,7 +25,7 @@ func IfStmt() Pattern[ast.Stmt] {
 					),
 					Seq2(
 						Newline(),
-						Kw(lexer.SINO),
+						Kw(lexer.FINSI),
 					),
 				),
 			),

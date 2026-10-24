@@ -80,6 +80,8 @@ func Kw(expected lexer.Keyword) Pattern[lexer.Keyword] {
 			}
 		}
 
+		ctx.Advance()
+
 		return Match[lexer.Keyword]{
 			Kind:  Matched,
 			Value: kw,

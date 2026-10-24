@@ -22,6 +22,7 @@ func (c *Context) Peek() *lexer.Token {
 	return &c.Tokens[c.Pos]
 }
 
+// Peeks at a token a number of indices (offset) from the current position!
 func (c *Context) PeekAt(offset uint32) *lexer.Token {
 	pos := c.Pos + offset
 
@@ -46,14 +47,17 @@ func (c *Context) Reset(pos uint32) {
 	c.Pos = pos
 }
 
+// Gets two absolute positions in the token tape,
+// Gets the tokens located in both positions and joins their spans
 func (c *Context) Span(start uint32, end uint32) models.Span {
 	/* Get span from other token */
-	t1 := c.PeekAt(start)
-	t2 := c.PeekAt(end)
-
-	if t1 == nil || t2 == nil {
+	length := uint32(len(c.Tokens))
+	if start >= length || end >= length {
 		return models.Span{}
 	}
+
+	t1 := c.Tokens[start]
+	t2 := c.Tokens[end]
 
 	return models.JoinSpans(t1.Span, t2.Span)
 }
