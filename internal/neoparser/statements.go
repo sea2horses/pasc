@@ -11,6 +11,7 @@ func Statement() Pattern[ast.Stmt] {
 	return OneOf(
 		Declaration(),
 		Assignment(),
+		ExpressionStatement(),
 		Write(),
 		Read(),
 		IfStmt(),
@@ -21,6 +22,14 @@ func Statement() Pattern[ast.Stmt] {
 		Timeout(),
 		ClearScreen(),
 	)
+}
+
+// ExpressionStatement permits expressions such as standalone function calls.
+// Assignment is tried first so an assignment's required RHS cannot be skipped.
+func ExpressionStatement() Pattern[ast.Stmt] {
+	return MapWithLocation(Expression(), func(expr ast.Expr, span models.Span) ast.Stmt {
+		return &ast.ExprStmt{NodeInfo: ast.NodeInfo{Span: span}, Expr: expr}
+	})
 }
 
 // StatementBlock consumes line breaks and leaves structural boundaries to its caller.

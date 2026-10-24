@@ -257,7 +257,7 @@ func SepBy[T, S any](
 					Kind:  Failed,
 					Start: start.Pos,
 					End:   max(ctx.Pos, next.End),
-					Err:   ItemAfterSeparator,
+					Err:   failureAt(ctx, max(ctx.Pos, next.End), ItemAfterSeparator.Error()),
 				}
 			}
 
