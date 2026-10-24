@@ -31,7 +31,7 @@ func Write() Pattern[ast.Stmt] {
 					Span: span,
 				},
 				Print:   p.Second,
-				Newline: p.First.Some,
+				Newline: !p.First.Some,
 			}
 		},
 	)
