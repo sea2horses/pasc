@@ -6,7 +6,36 @@ import (
 )
 
 type RecoveryStrategy interface {
-	Recover(*Context)
+	Recover(*Context) RecoveryResult
+}
+
+type RecoveryResult struct {
+	Start uint32
+	End   uint32
+}
+
+// Recover and produce a fallback AST value.
+func RecoverWith[T any](
+	p Pattern[T],
+	strategy RecoveryStrategy,
+	fallback func(*ParseError) T,
+) Pattern[T] {
+	return PatternFunc[T](func(ctx *Context) Match[T] {
+		result := p.Match(ctx)
+
+		if result.Kind == Failed {
+			strategy.Recover(ctx)
+			return Match[T]{
+				Kind:  Matched,
+				Value: fallback(result.Err),
+				Start: result.Start,
+				End:   result.End,
+				Err:   result.Err,
+			}
+		}
+
+		return result
+	})
 }
 
 func Recover[T any](
@@ -22,6 +51,22 @@ func Recover[T any](
 
 		return result
 	})
+}
+
+type Synchronize struct {
+	Tokens   []lexer.TokenType
+	Keywords []lexer.Keyword
+}
+
+func (s *Synchronize) Recover(ctx *Context) {
+	for !ctx.EOF() {
+		tok := ctx.Peek()
+
+		kw, ok := lexer.MapToKeyword([]rune(tok.Value))
+		if ok && slices.Contains(s.Keywords, kw) || slices.Contains(s.Tokens, tok.Type) {
+		}
+		ctx.Advance()
+	}
 }
 
 type UntilNewline struct{}
