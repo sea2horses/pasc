@@ -63,11 +63,19 @@ func BinaryOperator() Pattern[*ast.Operator] {
 					semantic.MODULO,
 				),
 				If(
+					Tok(lexer.R_ANGLE),
+					semantic.GREATER,
+				),
+				If(
 					Seq2(
 						Tok(lexer.R_ANGLE),
 						Tok(lexer.EQUALS),
 					),
 					semantic.GREATER_EQ,
+				),
+				If(
+					Tok(lexer.L_ANGLE),
+					semantic.LESSER,
 				),
 				If(
 					Seq2(
