@@ -92,3 +92,31 @@ func TestParseDiagnostics(t *testing.T) {
 		})
 	}
 }
+
+func TestRecoveredDiagnosticSpans(t *testing.T) {
+	ctx := parseContext(t, "algoritmo demo\ndefinir como entero\nfoo(1,)\nescribir 42\nfinalgoritmo\n")
+	p := Parser{Tokens: ctx.Tokens}
+	node, ds := p.Parse()
+	if node != nil || len(ds) != 2 {
+		t.Fatalf("node=%#v diagnostics=%v", node, ds)
+	}
+	// Both errors occur well before the parser's final cursor. Each diagnostic
+	// must retain its own offending token, rather than the recovery boundary.
+	for i, target := range []struct {
+		line  uint32
+		value string
+	}{{2, "como"}, {3, ")"}} {
+		found := false
+		for _, tok := range ctx.Tokens {
+			if tok.Span.Start.Line == target.line && tok.Value == target.value {
+				found = true
+				if ds[i].Span != tok.Span {
+					t.Fatalf("diagnostic %d has span %+v, want %+v", i, ds[i].Span, tok.Span)
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("missing target token: %+v", target)
+		}
+	}
+}

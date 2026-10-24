@@ -30,10 +30,7 @@ func (p *Parser) Parse() (ast.Node, []diagnostics.Diagnostic) {
 		}
 	}
 	for _, err := range ctx.Diagnostics {
-		pos := ctx.Pos
-		if syntax, ok := err.(*SyntaxError); ok {
-			pos = syntax.Position
-		}
+		pos := err.TokenPosition()
 		span := models.Span{}
 		if pos < uint32(len(p.Tokens)) {
 			span = p.Tokens[pos].Span

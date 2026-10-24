@@ -87,3 +87,33 @@ func TestSpanAtEOF(t *testing.T) {
 		t.Fatalf("lost span at EOF: %+v", result)
 	}
 }
+
+func TestErrorLocationSurvivesRollbackAndRecovery(t *testing.T) {
+	for _, withFallback := range []bool{false, true} {
+		ctx := parseContext(t, "foo bar baz\nnext")
+		pattern := PatternFunc[string](func(ctx *Context) Match[string] {
+			checkpoint := ctx.Checkpoint()
+			ctx.Advance()
+			err := failureAt(ctx, ctx.Pos, "expected something else")
+			ctx.Restore(checkpoint)
+			return Match[string]{Kind: Failed, Start: checkpoint.Pos, End: err.TokenPosition(), Err: err}
+		})
+		var recovered Match[string]
+		if withFallback {
+			recovered = RecoverWith(pattern, UntilNewline{}, func(err ParseError) string {
+				if err.TokenPosition() != 1 {
+					t.Fatalf("fallback lost position: %d", err.TokenPosition())
+				}
+				return "fallback"
+			}).Match(ctx)
+		} else {
+			recovered = Recover(pattern, UntilNewline{}).Match(ctx)
+		}
+		if ctx.Pos != 3 || recovered.End != 3 || len(ctx.Diagnostics) != 1 {
+			t.Fatalf("recovery failed: %+v at %d", recovered, ctx.Pos)
+		}
+		if ctx.Diagnostics[0].TokenPosition() != 1 {
+			t.Fatalf("error moved during recovery: %d", ctx.Diagnostics[0].TokenPosition())
+		}
+	}
+}

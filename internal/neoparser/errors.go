@@ -5,7 +5,12 @@ import (
 	"pseint-compiled/internal/lexer"
 )
 
-type ParseError interface{ Error() string }
+// ParseError records an absolute token position at the point of failure.
+// The position must survive cursor rollback and recovery; len(Tokens) denotes EOF.
+type ParseError interface {
+	Error() string
+	TokenPosition() uint32
+}
 type LiteralErrors string
 
 const ItemAfterSeparator LiteralErrors = "expected item after separator"
@@ -45,6 +50,8 @@ type SyntaxError struct {
 	Expected string
 	Found    *lexer.Token
 }
+
+func (e *SyntaxError) TokenPosition() uint32 { return e.Position }
 
 func (e *SyntaxError) Error() string {
 	if e.Found == nil {
