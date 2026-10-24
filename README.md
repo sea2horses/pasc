@@ -19,6 +19,8 @@
 
 ## Ventajas
 
+<div align="center">
+
 - **Compilación real:** El pseudocódigo se transforma en Go y después en un ejecutable que puede ser ejecutado en otras computadoras de manera nativa.
 ![Compilation](assets/compilation.png)
 - **Errores fáciles de ubicar:** Sistema moderno de diagnósticos, muestra el archivo, la línea, la columna, el fragmento afectado y un resumen de errores y advertencias.
@@ -27,11 +29,13 @@
 ![Diagnostic1](assets/diagnostic-1.png)
 ![Diagnostic3](assets/diagnostic-3.png)
 - **Sintaxis familiar:** Implementa la flexibilidad del lenguaje de PSeInt.
-- **Rápidez:** Al compilarse de manera nativa, `pasc` ofrece una mejora de rendimiento significativa contra PSeInt.
+- **Rápidez:** Al compilarse de manera nativa, `pasc` ofrece una mejora de rendimiento significativa contra PSeInt.<br>
 ![DonutDemo](assets/donut-demo.gif)
 
 (Esto es una dona corriendo a tiempo real en codigo de pseint compilado por `pasc`, deberías probar la [demo](demos/donut.psc), puntos extra si la pruebas en PSeInt vs `pasc`)
 - **Extensible y modular:** Posee una arquitectura mucho más moderna que permite facilmente extender las capacidades del compilador.
+
+</div>
 
 ## Funcionalidades disponibles
 
