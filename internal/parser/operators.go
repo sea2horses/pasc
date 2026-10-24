@@ -2,105 +2,139 @@ package parser
 
 import (
 	"pascc/internal/ast"
-	"pascc/internal/diagnostics"
 	"pascc/internal/lexer"
 	"pascc/internal/semantic"
 )
 
-func (p *Parser) parse_operator_type() semantic.OperatorType {
-	init_position := p.position
-	tok, err := p.get()
-	if err != nil {
-		return semantic.UNRECOGNIZED
-	}
-
-	switch tok.Type {
-	case lexer.PLUS:
-		p.eat_token(lexer.PLUS)
-		return semantic.ADD
-	case lexer.MINUS:
-		p.eat_token(lexer.MINUS)
-		return semantic.SUBTRACT
-	case lexer.ASTERISK:
-		p.eat_token(lexer.ASTERISK)
-		return semantic.MULTIPLY
-	case lexer.SLASH:
-		p.eat_token(lexer.SLASH)
-		return semantic.DIVIDE
-	case lexer.L_ANGLE:
-		p.eat_token(lexer.L_ANGLE)
-
-		if tok, err := p.get(); err == nil && tok.Type == lexer.EQUALS {
-			p.eat_token(lexer.EQUALS)
-			return semantic.LESSER_EQ
-		}
-		return semantic.LESSER
-	case lexer.R_ANGLE:
-		p.eat_token(lexer.R_ANGLE)
-		if tok, err := p.get(); err == nil && tok.Type == lexer.EQUALS {
-			p.eat_token(lexer.EQUALS)
-			return semantic.GREATER_EQ
-		}
-		return semantic.GREATER
-	case lexer.EQUALS:
-		p.eat_token(lexer.EQUALS)
-		if tok, err := p.get(); err == nil && tok.Type == lexer.EQUALS {
-			p.eat_token(lexer.EQUALS)
-			return semantic.EQUALS
-		}
-		/* Restart position */
-		p.position = init_position
-		return semantic.UNRECOGNIZED
-	case lexer.MODULO:
-		p.eat_token(lexer.MODULO)
-		return semantic.MODULO
-	case lexer.EX_MARK:
-		p.eat_token(lexer.EX_MARK)
-		if tok, err := p.get(); err == nil && tok.Type == lexer.EQUALS {
-			p.eat_token(lexer.EQUALS)
-			return semantic.NOT_EQUALS
-		}
-		return semantic.NOT
-	/* This is fucking up everything */
-	case lexer.KEYWORD:
-		_, err := p.eat_keyword(lexer.MOD)
-		if err != nil {
-			/* Restart position */
-			p.position = init_position
-			return semantic.UNRECOGNIZED
-		}
-		return semantic.MODULO
-	case lexer.AMPERSAND:
-		p.eat_token(lexer.AMPERSAND)
-		if tok, err := p.get(); err == nil && tok.Type == lexer.AMPERSAND {
-			p.eat_token(lexer.AMPERSAND)
-			return semantic.AND
-		}
-		/* Restart position */
-		p.position = init_position
-		return semantic.UNRECOGNIZED
-	case lexer.PIPE:
-		p.eat_token(lexer.PIPE)
-		if tok, err := p.get(); err == nil && tok.Type == lexer.PIPE {
-			p.eat_token(lexer.PIPE)
-			return semantic.OR
-		}
-		/* Restart position */
-		p.position = init_position
-		return semantic.UNRECOGNIZED
-	}
-	return semantic.UNRECOGNIZED
+func UnaryOperator() Pattern[*ast.Operator] {
+	return Map(
+		Locate(
+			OneOf(
+				If(
+					Tok(lexer.MINUS),
+					semantic.SUBTRACT,
+				),
+				If(
+					Tok(lexer.EX_MARK),
+					semantic.NOT,
+				),
+			),
+		),
+		func(o Located[semantic.OperatorType]) *ast.Operator {
+			return &ast.Operator{
+				NodeInfo: ast.NodeInfo{
+					Span: o.Span,
+				},
+				Type: o.Value,
+			}
+		},
+	)
 }
 
-func (p *Parser) parse_operator() *ast.Operator {
-	diagnostics.Dbg("Parsing operator!")
-	start := p.mark()
-	op_type := p.parse_operator_type()
-	diagnostics.Dbg("Resolved Type: ", op_type)
-
-	if op_type == semantic.UNRECOGNIZED {
-		return nil
-	} else {
-		return &ast.Operator{Type: op_type, NodeInfo: p.infoFrom(start)}
-	}
+func BinaryOperator() Pattern[*ast.Operator] {
+	return Map(
+		Locate(
+			OneOf(
+				If(
+					Tok(lexer.PLUS),
+					semantic.ADD,
+				),
+				If(
+					Tok(lexer.MINUS),
+					semantic.SUBTRACT,
+				),
+				If(
+					Tok(lexer.ASTERISK),
+					semantic.MULTIPLY,
+				),
+				If(
+					Tok(lexer.SLASH),
+					semantic.DIVIDE,
+				),
+				If(
+					OneOf(
+						AsAny(
+							Tok(lexer.MODULO),
+						),
+						AsAny(
+							Kw(lexer.MOD),
+						),
+					),
+					semantic.MODULO,
+				),
+				If(
+					Seq2(
+						Tok(lexer.R_ANGLE),
+						Tok(lexer.EQUALS),
+					),
+					semantic.GREATER_EQ,
+				),
+				If(
+					Tok(lexer.R_ANGLE),
+					semantic.GREATER,
+				),
+				If(
+					Seq2(
+						Tok(lexer.L_ANGLE),
+						Tok(lexer.EQUALS),
+					),
+					semantic.LESSER_EQ,
+				),
+				If(
+					Tok(lexer.L_ANGLE),
+					semantic.LESSER,
+				),
+				If(
+					Seq2(
+						Tok(lexer.EQUALS),
+						Tok(lexer.EQUALS),
+					),
+					semantic.EQUALS,
+				),
+				If(
+					Seq2(
+						Tok(lexer.EX_MARK),
+						Tok(lexer.EQUALS),
+					),
+					semantic.NOT_EQUALS,
+				),
+				If(
+					OneOf(
+						AsAny(
+							Seq2(
+								Tok(lexer.AMPERSAND),
+								Tok(lexer.AMPERSAND),
+							),
+						),
+						AsAny(
+							Tok(lexer.AMPERSAND),
+						),
+					),
+					semantic.AND,
+				),
+				If(
+					OneOf(
+						AsAny(
+							Seq2(
+								Tok(lexer.PIPE),
+								Tok(lexer.PIPE),
+							),
+						),
+						AsAny(
+							Tok(lexer.PIPE),
+						),
+					),
+					semantic.OR,
+				),
+			),
+		),
+		func(o Located[semantic.OperatorType]) *ast.Operator {
+			return &ast.Operator{
+				NodeInfo: ast.NodeInfo{
+					Span: o.Span,
+				},
+				Type: o.Value,
+			}
+		},
+	)
 }

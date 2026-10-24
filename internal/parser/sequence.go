@@ -1,4 +1,4 @@
-package neoparser
+package parser
 
 type Pair[A, B any] struct {
 	First  A

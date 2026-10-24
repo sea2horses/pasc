@@ -2,33 +2,198 @@ package parser
 
 import (
 	"pascc/internal/ast"
-	"pascc/internal/diagnostics"
 	"pascc/internal/lexer"
+	"pascc/internal/models"
+	"pascc/internal/semantic"
+	"slices"
 )
 
-func (p *Parser) parse_expression() (ast.Expr, error) {
-	diagnostics.Dbg("Parsing expression...")
-	tk, _ := p.get()
-	diagnostics.Dbgfmt("On token: %+v\n", tk)
-	postfix, err := p.read_infix_to_postfix()
-	if err != nil {
-		return nil, err
-	}
-	return p.postfix_to_expression(postfix)
+func Operand() Pattern[ast.Expr] {
+	return Map(
+		Bind(Many(UnaryOperator()), func(ops []*ast.Operator) Pattern[Pair[[]*ast.Operator, ast.Expr]] {
+			base := ChainBind(Atom(), Postfix)
+			if len(ops) > 0 {
+				base = Expected(base, ExpectedExpression)
+			}
+			return Map(base, func(expr ast.Expr) Pair[[]*ast.Operator, ast.Expr] {
+				return Pair[[]*ast.Operator, ast.Expr]{First: ops, Second: expr}
+			})
+		}),
+		func(p Pair[[]*ast.Operator, ast.Expr]) ast.Expr {
+			new_expr := p.Second
+			slices.Reverse(p.First)
+			for _, o := range p.First {
+				new_expr = &ast.UnaryOperation{
+					NodeInfo: ast.NodeInfo{
+						Span: models.JoinSpans(new_expr.NodeSpan(), o.Span),
+					},
+					Op:   *o,
+					Expr: new_expr,
+				}
+			}
+			return new_expr
+		},
+	)
 }
 
-func (p *Parser) parse_expression_list() ([]ast.Expr, error) {
-	expr_list := []ast.Expr{}
-	for {
-		expr, _ := p.parse_expression()
-		if expr != nil {
-			expr_list = append(expr_list, expr)
+func Postfix(target ast.Expr) Pattern[ast.Expr] {
+	return OneOf(
+		Index(target),
+		Call(target),
+	)
+}
+
+func Index(target ast.Expr) Pattern[ast.Expr] {
+	return MapWithLocation(
+		Many1(
+			Between(
+				Tok(lexer.L_BRACKET),
+				Expected(Expression(), ExpectedExpression),
+				Expected(Tok(lexer.R_BRACKET), ExpectedToken{Kind: lexer.R_BRACKET}),
+			),
+		),
+		func(indices []ast.Expr, span models.Span) ast.Expr {
+			return &ast.Index{
+				NodeInfo: ast.NodeInfo{
+					Span: models.JoinSpans(target.NodeSpan(), span),
+				},
+				Indexes: indices,
+				Target:  target,
+			}
+		},
+	)
+}
+
+func Call(target ast.Expr) Pattern[ast.Expr] {
+	return MapWithLocation(
+		Between(
+			Tok(lexer.L_PARENTHESES),
+			SepBy(Expression(), Tok(lexer.COMMA)),
+			Expected(Tok(lexer.R_PARENTHESES), ExpectedToken{Kind: lexer.R_PARENTHESES}),
+		),
+		func(arguments []ast.Expr, span models.Span) ast.Expr {
+			return &ast.Call{
+				NodeInfo: ast.NodeInfo{
+					Span: models.JoinSpans(target.NodeSpan(), span),
+				},
+				Callable:  target,
+				Arguments: arguments,
+			}
+		},
+	)
+}
+
+func Expression() Pattern[ast.Expr] {
+	return PatternFunc[ast.Expr](func(ctx *Context) Match[ast.Expr] {
+		operandStack := []ast.Expr{}
+		operatorStack := []ast.Operator{}
+
+		start := ctx.Pos
+
+		execute := func() {
+			n := len(operandStack)
+
+			lhs := operandStack[n-2]
+			rhs := operandStack[n-1]
+			operandStack = operandStack[:n-2]
+
+			n = len(operatorStack)
+			op := operatorStack[n-1]
+			operatorStack = operatorStack[:n-1]
+
+			expr := &ast.BinaryOperation{
+				NodeInfo: ast.NodeInfo{
+					Span: models.JoinSpans(
+						lhs.NodeSpan(),
+						rhs.NodeSpan(),
+						op.NodeSpan(),
+					),
+				},
+				LHS: lhs,
+				Op:  op,
+				RHS: rhs,
+			}
+
+			operandStack = append(operandStack, expr)
 		}
 
-		if tok, err := p.get(); err != nil || tok.Type != lexer.COMMA {
-			break
+		// Parse the first operand
+		first := Operand().Match(ctx)
+
+		if !first.OK() {
+			return Match[ast.Expr]{
+				Kind:  first.Kind,
+				Start: start,
+				End:   first.End,
+				Err:   first.Err,
+			}
 		}
-		p.eat_token(lexer.COMMA)
-	}
-	return expr_list, nil
+
+		operandStack = append(operandStack, first.Value)
+
+		for {
+			operator := BinaryOperator().Match(ctx)
+
+			if !operator.OK() {
+
+				if operator.Kind == Failed {
+					return Match[ast.Expr]{
+						Kind:  Failed,
+						Start: operator.Start,
+						End:   operator.End,
+						Err:   operator.Err,
+					}
+				}
+				break
+			}
+
+			current := operator.Value
+			currentPrec := current.Precedence()
+
+			// Reduce pending operators
+			for len(operatorStack) > 0 {
+				top := operatorStack[len(operatorStack)-1]
+				topPrec := top.Precedence()
+
+				// Assuming all binary operators are left-associative
+				shouldReduce := topPrec > currentPrec ||
+					(topPrec == currentPrec &&
+						current.Type.Associativity() == semantic.LeftAssociative)
+
+				if !shouldReduce {
+					break
+				}
+
+				execute()
+			}
+
+			operatorStack = append(operatorStack, *current)
+
+			// Once an operator matches, its RHS is mandatory
+			operand := Expected(Operand(), ExpectedExpression).Match(ctx)
+
+			if !operand.OK() {
+				return Match[ast.Expr]{
+					Kind:  Failed,
+					Start: start,
+					End:   ctx.Pos,
+					Err:   operand.Err,
+				}
+			}
+
+			operandStack = append(operandStack, operand.Value)
+		}
+
+		// Reduce remaining operators
+		for len(operatorStack) > 0 {
+			execute()
+		}
+
+		return Match[ast.Expr]{
+			Kind:  Matched,
+			Value: operandStack[0],
+			Start: start,
+			End:   ctx.Pos,
+		}
+	})
 }

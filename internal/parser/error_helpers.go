@@ -1,4 +1,4 @@
-package neoparser
+package parser
 
 func ensureError[T any](ctx *Context, result Match[T], expected string) ParseError {
 	if result.Err != nil {

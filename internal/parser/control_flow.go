@@ -2,272 +2,236 @@ package parser
 
 import (
 	"pascc/internal/ast"
-	"pascc/internal/diagnostics"
 	"pascc/internal/lexer"
 )
 
-func (p *Parser) parse_if() (ast.Stmt, error) {
-	diagnostics.Dbg("Parsing if...")
-	start, checkpoint := p.PositionSnapshot()
-	_, err := p.eat_keyword(lexer.SI)
-	if err != nil {
-		p.Report(p.currentSpan(), "%s", ErrExpectedKeyword{Expected: lexer.SI})
-	}
+func IfStmt() Pattern[ast.Stmt] {
+	return Map(
+		After(
+			Kw(lexer.SI),
+			Seq3(
+				Locate(
+					Left(
+						Expected(Expression(), ExpectedExpression),
+						Optional(
+							Kw(lexer.ENTONCES),
+						),
+					),
+				),
+				StatementBlock(),
+				Left(
+					Optional(
+						ElseStmt(),
+					),
+					Expected(Kw(lexer.FINSI), ExpectedKeyword{Keyword: lexer.FINSI}),
+				),
+			),
+		),
+		func(p Trio[Located[ast.Expr], []ast.Stmt, OptionalValue[*ast.Else]]) ast.Stmt {
+			return &ast.If{
+				NodeInfo: ast.NodeInfo{
+					Span: p.First.Span,
+				},
+				Condition: p.First.Value,
+				Stmts:     p.Second,
+				Else:      p.Third.Or(nil),
+			}
+		},
+	)
+}
 
-	condition, err := p.parse_expression()
+func ElseStmt() Pattern[*ast.Else] {
+	return Map(
+		Seq2(
+			Locate(
+				Kw(lexer.SINO),
+			),
+			StatementBlock(),
+		),
+		func(p Pair[Located[lexer.Keyword], []ast.Stmt]) *ast.Else {
+			return &ast.Else{
+				NodeInfo: ast.NodeInfo{
+					Span: p.First.Span,
+				},
+				Stmts: p.Second,
+			}
+		},
+	)
+}
 
-	_, err = p.eat_keyword(lexer.ENTONCES)
-	if err != nil {
-		p.Warn(p.currentSpan(), "%s", ErrExpectedKeyword{Expected: lexer.ENTONCES})
-	}
+func While() Pattern[ast.Stmt] {
+	return Map(
+		Seq2(
+			Locate(
+				Between(
+					Seq2(
+						Kw(lexer.MIENTRAS),
+						Optional(Kw(lexer.QUE)),
+					),
+					Expected(Expression(), ExpectedExpression),
+					Optional(
+						Kw(lexer.HACER),
+					),
+				),
+			),
+			Left(
+				StatementBlock(),
+				Expected(Kw(lexer.FINMIENTRAS), ExpectedKeyword{Keyword: lexer.FINMIENTRAS}),
+			),
+		),
+		func(p Pair[Located[ast.Expr], []ast.Stmt]) ast.Stmt {
+			return &ast.While{
+				NodeInfo: ast.NodeInfo{
+					Span: p.First.Span,
+				},
+				Condition: p.First.Value,
+				Stmts:     p.Second,
+			}
+		},
+	)
+}
 
-	_, err = p.eat_token(lexer.NEWLINE)
-	if err != nil {
-		p.Report(p.currentSpan(), "expected newline")
-		p.skip_to_nextline()
-	}
+func For() Pattern[ast.Stmt] {
+	return Map(
+		Seq2(
+			Locate(
+				Left(
+					Seq3(
+						Right(
+							Kw(lexer.PARA),
+							Expected(Assignment(), ExpectedStatement),
+						),
+						Right(
+							Expected(Kw(lexer.HASTA), ExpectedKeyword{Keyword: lexer.HASTA}),
+							Expected(Expression(), ExpectedExpression),
+						),
+						Optional(
+							Right(
+								Seq2(
+									Kw(lexer.CON),
+									Expected(Kw(lexer.PASO), ExpectedKeyword{Keyword: lexer.PASO}),
+								),
+								Expected(Expression(), ExpectedExpression),
+							),
+						),
+					),
+					Optional(Kw(lexer.HACER)),
+				),
+			),
+			Left(
+				StatementBlock(),
+				Expected(Kw(lexer.FINPARA), ExpectedKeyword{Keyword: lexer.FINPARA}),
+			),
+		),
+		func(t Pair[Located[Trio[ast.Stmt, ast.Expr, OptionalValue[ast.Expr]]], []ast.Stmt]) ast.Stmt {
+			header := t.First.Value
 
-	info := p.infoFrom(start)
+			return &ast.For{
+				NodeInfo: ast.NodeInfo{
+					Span: t.First.Span,
+				},
+				Start: header.First.(*ast.Assignment),
+				Until: header.Second,
+				Step:  header.Third.Or(nil),
+				Stmts: t.Second,
+			}
+		},
+	)
+}
 
-	/* Parse if statement block */
-	stmts, err := p.parse_statement_block(lexer.FINSI, lexer.SINO)
+func Switch() Pattern[ast.Stmt] {
+	return Map(
+		Left(
+			Seq3(
+				Locate(
+					Between(
+						Kw(lexer.SEGUN),
+						Expected(Expression(), ExpectedExpression),
+						Optional(Kw(lexer.HACER)),
+					),
+				),
+				Right(
+					Expected(Newline(), ExpectedNewline),
+					Right(Many(Newline()), switchCases()),
+				),
+				Optional(
+					Right(
+						DefaultHeader(),
+						StatementBlock(),
+					),
+				),
+			),
+			Expected(Kw(lexer.FINSEGUN), ExpectedKeyword{Keyword: lexer.FINSEGUN}),
+		),
+		func(t Trio[Located[ast.Expr], []*ast.Case, OptionalValue[[]ast.Stmt]]) ast.Stmt {
+			return &ast.Switch{
+				NodeInfo: ast.NodeInfo{
+					Span: t.First.Span,
+				},
+				Base:    t.First.Value,
+				Cases:   t.Second,
+				Default: t.Third.Or(nil),
+			}
+		},
+	)
+}
 
-	var else_branch *ast.Else = nil
+func CaseHeader() Pattern[ast.Expr] {
+	return Left(
+		Expression(),
+		Tok(lexer.COLON),
+	)
+}
 
-	/* Check for else branch */
-	if tok, err := p.get(); err == nil && tok.Type == lexer.KEYWORD {
-		if keyword, ok := lexer.MapToKeyword([]rune(tok.Value)); ok && keyword == lexer.SINO {
-			else_branch, err = p.parse_else()
-			if err != nil {
-				return nil, err
+func DefaultHeader() Pattern[any] {
+	return AsAny(Seq2(
+		Seq3(
+			Kw(lexer.DE),
+			Expected(Kw(lexer.OTRO), ExpectedKeyword{Keyword: lexer.OTRO}),
+			Expected(Kw(lexer.MODO), ExpectedKeyword{Keyword: lexer.MODO}),
+		),
+		Expected(Tok(lexer.COLON), ExpectedToken{Kind: lexer.COLON}),
+	))
+}
+
+func SwitchCase() Pattern[*ast.Case] {
+	return Map(
+		Seq2(
+			/* Header */
+			Locate(
+				CaseHeader(),
+			),
+			statementBlock(true),
+		),
+		func(c Pair[Located[ast.Expr], []ast.Stmt]) *ast.Case {
+			return &ast.Case{
+				NodeInfo: ast.NodeInfo{
+					Span: c.First.Span,
+				},
+				Clause: c.First.Value,
+				Stmts:  c.Second,
+			}
+		},
+	)
+}
+
+// A malformed case header must not prevent later cases from being parsed.
+func switchCases() Pattern[[]*ast.Case] {
+	return PatternFunc[[]*ast.Case](func(ctx *Context) Match[[]*ast.Case] {
+		start := ctx.Pos
+		cases := []*ast.Case{}
+		recovery := Synchronize{Tokens: []lexer.TokenType{lexer.NEWLINE}, Keywords: blockBoundaries}
+		for !atBlockBoundary(ctx, false) {
+			before := ctx.Pos
+			result := Recover(Expected(SwitchCase(), LiteralExpectations("expected switch case")), recovery).Match(ctx)
+			if result.OK() {
+				cases = append(cases, result.Value)
+			}
+			skipNewlines(ctx)
+			if ctx.Pos == before && !atBlockBoundary(ctx, false) {
+				ctx.Advance()
 			}
 		}
-	}
-
-	_, err = p.eat_keyword(lexer.FINSI)
-	if err != nil {
-		p.Report(p.currentSpan(), "%s", ErrExpectedKeyword{Expected: lexer.FINSI})
-		p.Info(info.Span, "%s", "declared here")
-	}
-
-	if p.AnyErrorSince(checkpoint) {
-		return nil, ErrInvalidStatement
-	}
-	return &ast.If{Condition: condition, Stmts: stmts, Else: else_branch, NodeInfo: info}, nil
-}
-
-func (p *Parser) parse_else() (*ast.Else, error) {
-	start, checkpoint := p.PositionSnapshot()
-
-	_, err := p.eat_keyword(lexer.SINO)
-	if err != nil {
-		p.Report(p.currentSpan(), "%s", ErrExpectedKeyword{Expected: lexer.SINO})
-	}
-
-	_, err = p.eat_token(lexer.NEWLINE)
-	if err != nil {
-		p.Report(p.currentSpan(), "expected newline")
-	}
-
-	info := p.infoFrom(start)
-
-	/* Parse if statement block */
-	stmts, err := p.parse_statement_block(lexer.FINSI)
-
-	if p.AnyErrorSince(checkpoint) {
-		return nil, ErrInvalidStatement
-	}
-	return &ast.Else{Stmts: stmts, NodeInfo: info}, nil
-}
-
-func (p *Parser) parse_switch() (ast.Stmt, error) {
-	diagnostics.Dbg("Parsing switch...")
-	start, checkpoint := p.PositionSnapshot()
-
-	_, err := p.eat_keyword(lexer.SEGUN)
-	if err != nil {
-		p.Report(p.currentSpan(), "%s", ErrExpectedKeyword{Expected: lexer.SEGUN})
-	}
-
-	expr, err := p.parse_expression()
-	if err != nil {
-		p.Report(p.currentSpan(), "expected expression")
-	}
-
-	if _, err = p.eat_keyword(lexer.HACER); err != nil {
-		p.Warn(p.currentSpan(), "%s", ErrExpectedKeyword{Expected: lexer.HACER})
-	}
-	if _, err = p.eat_token(lexer.NEWLINE); err != nil {
-		p.Report(p.currentSpan(), "expected newline")
-	}
-
-	info := ast.NodeInfo{Span: p.spanFrom(start)}
-
-	cases := []*ast.Case{}
-	var defaultStmts []ast.Stmt
-
-	for {
-		p.skip_newlines()
-		if p.eof() || p.atKeyword(lexer.FINSEGUN) {
-			break
-		}
-
-		if p.atDefaultCase() {
-			defaultStmts, err = p.parse_default_case()
-			if err != nil {
-				break
-			}
-			p.skip_newlines()
-			break
-		}
-
-		var c *ast.Case
-		c, err = p.parse_case()
-		if err != nil {
-			p.Report(p.currentSpan(), "expected case expression followed by ':'")
-			p.skip_to_nextline()
-			continue
-		}
-		cases = append(cases, c)
-	}
-
-	if _, err = p.eat_keyword(lexer.FINSEGUN); err != nil {
-		p.Report(p.currentSpan(), "%s", ErrExpectedKeyword{Expected: lexer.FINSEGUN})
-	}
-
-	if p.AnyErrorSince(checkpoint) {
-		return nil, ErrInvalidStatement
-	}
-
-	return &ast.Switch{
-		NodeInfo: info,
-		Base:     expr,
-		Cases:    cases,
-		Default:  defaultStmts,
-	}, nil
-}
-
-func (p *Parser) try_parse_case() (*ast.Case, error) {
-	start := p.mark()
-	clause, err := p.parse_expression()
-	if err != nil {
-		return nil, err
-	}
-	if _, err = p.eat_token(lexer.COLON); err != nil {
-		return nil, err
-	}
-	if _, err = p.eat_token(lexer.NEWLINE); err != nil {
-		return nil, err
-	}
-	return &ast.Case{Clause: clause, NodeInfo: p.infoFrom(start)}, nil
-}
-
-func (p *Parser) parse_case() (*ast.Case, error) {
-	diagnostics.Dbg("Parsing case...")
-	start, checkpoint := p.PositionSnapshot()
-
-	/* Parse the clause */
-	_case, err := p.try_parse_case()
-	if err != nil {
-		return nil, err
-	}
-
-	info := p.infoFrom(start)
-
-	/* Parse statements up to the next case label/default/end marker. */
-	stmts, err := p.parse_switch_statement_block()
-
-	if err != nil {
-		return nil, err
-	}
-
-	if p.AnyErrorSince(checkpoint) {
-		return nil, ErrInvalidStatement
-	}
-
-	return &ast.Case{Clause: _case.Clause, Stmts: stmts, NodeInfo: info}, nil
-}
-
-func (p *Parser) parse_default_case() ([]ast.Stmt, error) {
-	if _, err := p.eat_keyword(lexer.DE); err != nil {
-		return nil, err
-	}
-	if _, err := p.eat_keyword(lexer.OTRO); err != nil {
-		return nil, err
-	}
-	if _, err := p.eat_keyword(lexer.MODO); err != nil {
-		return nil, err
-	}
-	if _, err := p.eat_token(lexer.COLON); err != nil {
-		return nil, err
-	}
-	if _, err := p.eat_token(lexer.NEWLINE); err != nil {
-		return nil, err
-	}
-	return p.parse_switch_statement_block()
-}
-
-func (p *Parser) parse_switch_statement_block() ([]ast.Stmt, error) {
-	var stmts []ast.Stmt
-	for {
-		p.skip_newlines()
-		if p.eof() || p.atKeyword(lexer.FINSEGUN) || p.atDefaultCase() || p.lineHasTopLevelColon() {
-			return stmts, nil
-		}
-
-		stmt, err := p.parse_statement()
-		if err != nil || stmt == nil {
-			p.Report(p.currentSpan(), "extraneous statement")
-			p.skip_to_nextline()
-			continue
-		}
-		stmts = append(stmts, stmt)
-		if _, err = p.eat_token(lexer.NEWLINE); err != nil && !p.eof() {
-			p.Report(p.currentSpan(), "expected newline after statement")
-		}
-	}
-}
-
-func (p *Parser) atKeyword(expected lexer.Keyword) bool {
-	tok, err := p.get()
-	if err != nil || tok.Type != lexer.KEYWORD {
-		return false
-	}
-	kw, ok := lexer.MapToKeyword([]rune(tok.Value))
-	return ok && kw == expected
-}
-
-func (p *Parser) atDefaultCase() bool {
-	if !p.atKeyword(lexer.DE) || p.position+2 >= uint32(len(p.Tokens)) {
-		return false
-	}
-	for offset, expected := range []lexer.Keyword{lexer.OTRO, lexer.MODO} {
-		tok := p.Tokens[p.position+uint32(offset)+1]
-		kw, ok := lexer.MapToKeyword([]rune(tok.Value))
-		if tok.Type != lexer.KEYWORD || !ok || kw != expected {
-			return false
-		}
-	}
-	return true
-}
-
-// A top-level colon is the switch grammar's discriminator: `expr:` starts a
-// case, while the same expression without a colon is an ordinary statement.
-func (p *Parser) lineHasTopLevelColon() bool {
-	depth := 0
-	for i := p.position; i < uint32(len(p.Tokens)); i++ {
-		switch p.Tokens[i].Type {
-		case lexer.NEWLINE:
-			return false
-		case lexer.L_PARENTHESES, lexer.L_BRACKET:
-			depth++
-		case lexer.R_PARENTHESES, lexer.R_BRACKET:
-			if depth > 0 {
-				depth--
-			}
-		case lexer.COLON:
-			return depth == 0
-		}
-	}
-	return false
+		return Match[[]*ast.Case]{Kind: Matched, Value: cases, Start: start, End: ctx.Pos}
+	})
 }

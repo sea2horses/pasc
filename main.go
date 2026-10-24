@@ -13,7 +13,7 @@ import (
 	"pascc/internal/diagnostics"
 	"pascc/internal/generator"
 	"pascc/internal/lexer"
-	"pascc/internal/neoparser"
+	"pascc/internal/parser"
 	"path/filepath"
 	"runtime"
 )
@@ -104,7 +104,7 @@ func run() error {
 	}
 
 	diagnostics.Dbg("AST Parsing...")
-	parser := neoparser.Parser{Tokens: tokens}
+	parser := parser.Parser{Tokens: tokens}
 	ast_tree, ds := parser.Parse()
 
 	for i, d := range ds {

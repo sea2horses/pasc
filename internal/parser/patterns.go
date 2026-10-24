@@ -1,4 +1,4 @@
-package neoparser
+package parser
 
 import (
 	"pascc/internal/ast"

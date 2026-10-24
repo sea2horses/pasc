@@ -1,4 +1,4 @@
-package neoparser
+package parser
 
 type MatchKind uint8
 
