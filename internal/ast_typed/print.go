@@ -2,8 +2,8 @@ package tast
 
 import (
 	"fmt"
-	"pseint-compiled/internal/models"
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/models"
+	"pascc/internal/semantic"
 	"strings"
 )
 
@@ -481,7 +481,7 @@ func (p *treePrinter) printNumberLiteral(
 
 	p.line(
 		depth,
-		"NumberLiteral int=%d frac=%d type=%s span=%s",
+		"NumberLiteral int=%s frac=%s type=%s span=%s",
 		expression.Int,
 		expression.Frac,
 		formatType(expression.Type()),

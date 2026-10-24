@@ -1,7 +1,7 @@
 package semantic_test
 
 import (
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/semantic"
 	"testing"
 )
 

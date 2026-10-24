@@ -2,48 +2,78 @@ package parser
 
 import (
 	"fmt"
-	"pseint-compiled/internal/lexer"
+	"pascc/internal/lexer"
 )
 
-type ParserError string
-
-func (pe ParserError) Error() string {
-	return string(pe)
+// ParseError records an absolute token position at the point of failure.
+// The position must survive cursor rollback and recovery; len(Tokens) denotes EOF.
+type ParseError interface {
+	Error() string
+	TokenPosition() uint32
 }
+type LiteralErrors string
+
+const ItemAfterSeparator LiteralErrors = "expected item after separator"
+
+func (e LiteralErrors) Error() string { return string(e) }
+
+type Expectation interface {
+	Expected() string
+	Error() string
+}
+type LiteralExpectations string
 
 const (
-	ErrOutOfBounds         = ParserError("index is out of bounds")
-	ErrUnexpectedEOF       = ParserError("unexpected EOF (end of file)")
-	ErrUnrecognizedKeyword = ParserError("unrecognized keyword")
-	ErrNotImplemented      = ParserError("not implemented")
-	ErrExpectedOperand     = ParserError("expected operand")
-	ErrUnexpectedNode      = ParserError("unexpected node in expression")
-	ErrInvalidExpression   = ParserError("invalid expression")
-	ErrExpectedType        = ParserError("expected type")
-	ErrInvalidStatement    = ParserError("statement contains errors")
+	ExpectedContinuation LiteralExpectations = "expected continuation"
+	ExpectedExpression   LiteralExpectations = "expected expression"
+	ExpectedNewline      LiteralExpectations = "expected newline"
+	ExpectedType         LiteralExpectations = "expected type"
+	ExpectedStatement    LiteralExpectations = "expected statement"
 )
 
-type ErrExpectedToken struct {
-	Got      lexer.TokenType
-	Expected lexer.TokenType
+func (e LiteralExpectations) Expected() string { return string(e) }
+func (e LiteralExpectations) Error() string    { return e.Expected() }
+
+type ExpectedToken struct{ Kind lexer.TokenType }
+
+func (e ExpectedToken) Expected() string { return fmt.Sprintf("expected token '%s'", e.Kind) }
+func (e ExpectedToken) Error() string    { return e.Expected() }
+
+type ExpectedKeyword struct{ Keyword lexer.Keyword }
+
+func (e ExpectedKeyword) Expected() string { return fmt.Sprintf("expected keyword '%s'", e.Keyword) }
+func (e ExpectedKeyword) Error() string    { return e.Expected() }
+
+// SyntaxError keeps an absolute token position even when the cursor is rolled back.
+type SyntaxError struct {
+	Position uint32
+	Expected string
+	Found    *lexer.Token
 }
 
-func (er ErrExpectedToken) Error() string {
-	return fmt.Sprintf("expected token type: %s, got: %s", er.Expected, er.Got)
-}
+func (e *SyntaxError) TokenPosition() uint32 { return e.Position }
 
-type ErrExpectedKeyword struct {
-	Expected lexer.Keyword
+func (e *SyntaxError) Error() string {
+	if e.Found == nil {
+		return fmt.Sprintf("%s at end of input", e.Expected)
+	}
+	return fmt.Sprintf("%s, found %q", e.Expected, e.Found.Value)
 }
-
-func (er ErrExpectedKeyword) Error() string {
-	return fmt.Sprintf("expected keyword: %s", er.Expected)
+func failureAt(ctx *Context, pos uint32, expected string) *SyntaxError {
+	var found *lexer.Token
+	if pos < uint32(len(ctx.Tokens)) {
+		found = &ctx.Tokens[pos]
+	}
+	return &SyntaxError{Position: pos, Expected: expected, Found: found}
 }
-
-type ErrUnterminatedDirective struct {
-	Name string
-}
-
-func (ud ErrUnterminatedDirective) Error() string {
-	return fmt.Sprintf("unterminated directive: %s", ud.Name)
+func Expected[T any](p Pattern[T], expectation Expectation) Pattern[T] {
+	return PatternFunc[T](func(ctx *Context) Match[T] {
+		start := ctx.Pos
+		result := p.Match(ctx)
+		if result.Kind != NoMatch {
+			return result
+		}
+		pos := max(ctx.Pos, result.End)
+		return Match[T]{Kind: Failed, Start: start, End: pos, Err: failureAt(ctx, pos, expectation.Expected())}
+	})
 }

@@ -1,4 +1,4 @@
-module pseint-compiled
+module pascc
 
 go 1.25.0
 

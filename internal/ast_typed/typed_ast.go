@@ -2,10 +2,9 @@ package tast
 
 import (
 	"fmt"
-	"pseint-compiled/internal/ast"
-	"pseint-compiled/internal/models"
-	"pseint-compiled/internal/operators"
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/ast"
+	"pascc/internal/models"
+	"pascc/internal/semantic"
 )
 
 type Node interface {
@@ -107,7 +106,7 @@ func (v VariableExpr) IsMutable() bool {
 
 type Operator struct {
 	ast.NodeInfo
-	Op operators.OperatorType
+	Op semantic.OperatorType
 }
 
 type UnaryOperation struct {

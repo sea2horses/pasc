@@ -2,8 +2,7 @@ package analyzer
 
 import (
 	"fmt"
-	"pseint-compiled/internal/operators"
-	"pseint-compiled/internal/semantic"
+	"pascc/internal/semantic"
 )
 
 type ErrIncorrectType struct {
@@ -16,7 +15,7 @@ func (e ErrIncorrectType) Error() string {
 }
 
 type ErrUnOperationNotAllowed struct {
-	Operation operators.OperatorType
+	Operation semantic.OperatorType
 	Type      semantic.Type
 }
 
@@ -25,7 +24,7 @@ func (e ErrUnOperationNotAllowed) Error() string {
 }
 
 type ErrBiOperationNotAllowed struct {
-	Operation operators.OperatorType
+	Operation semantic.OperatorType
 	LHS       semantic.Type
 	RHS       semantic.Type
 }

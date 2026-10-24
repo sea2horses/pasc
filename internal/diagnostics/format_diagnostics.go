@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"pseint-compiled/internal/models"
+	"pascc/internal/models"
 	"strconv"
 	"strings"
 	"unicode/utf8"

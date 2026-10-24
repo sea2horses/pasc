@@ -1,9 +1,9 @@
 package analyzer
 
 import (
-	"pseint-compiled/internal/ast"
-	tast "pseint-compiled/internal/ast_typed"
-	"pseint-compiled/internal/diagnostics"
+	"pascc/internal/ast"
+	tast "pascc/internal/ast_typed"
+	"pascc/internal/diagnostics"
 )
 
 /* TODO: Global Scope Totality, PSEINT doesn't have scopes */

@@ -10,6 +10,9 @@ const (
 	ALGORITMO Keyword = iota
 	FINALGORITMO
 
+	// Que
+	QUE
+
 	// i/o
 	ESCRIBIR
 	LEER
@@ -107,4 +110,5 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"esperar":       ESPERAR,
 	"segundos":      SEGUNDOS,
 	"milisegundos":  MILISEGUNDOS,
+	"que":           QUE,
 }

@@ -1,6 +1,6 @@
 package lexer
 
-import "pseint-compiled/internal/models"
+import "pascc/internal/models"
 
 //go:generate stringer -type=TokenType
 type TokenType int8

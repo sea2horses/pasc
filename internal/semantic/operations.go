@@ -1,7 +1,5 @@
 package semantic
 
-import "pseint-compiled/internal/operators"
-
 type ConversionKind uint8
 
 const (
@@ -17,7 +15,7 @@ type ImplicitCast struct {
 }
 
 type BinaryOperationRule struct {
-	Operator        operators.OperatorType
+	Operator        OperatorType
 	Left            Type
 	Right           Type
 	Result          Type
@@ -26,7 +24,7 @@ type BinaryOperationRule struct {
 }
 
 type UnaryOperationRule struct {
-	Operator   operators.OperatorType
+	Operator   OperatorType
 	Operand    Type
 	Result     Type
 	Conversion ConversionKind
@@ -39,80 +37,80 @@ var AllowedCasts = []ImplicitCast{
 
 var BinaryOperationTable = []BinaryOperationRule{
 	// Addition and string concatenation.
-	{operators.ADD, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
-	{operators.ADD, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
-	{operators.ADD, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
-	{operators.ADD, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
-	{operators.ADD, StringType{}, StringType{}, StringType{}, ConversionNone, ConversionNone},
+	{ADD, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
+	{ADD, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
+	{ADD, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
+	{ADD, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
+	{ADD, StringType{}, StringType{}, StringType{}, ConversionNone, ConversionNone},
 
 	// Arithmetic.
-	{operators.SUBTRACT, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
-	{operators.SUBTRACT, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
-	{operators.SUBTRACT, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
-	{operators.SUBTRACT, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
+	{SUBTRACT, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
+	{SUBTRACT, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
+	{SUBTRACT, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
+	{SUBTRACT, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
 
-	{operators.MULTIPLY, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
-	{operators.MULTIPLY, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
-	{operators.MULTIPLY, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
-	{operators.MULTIPLY, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
+	{MULTIPLY, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
+	{MULTIPLY, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
+	{MULTIPLY, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
+	{MULTIPLY, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
 
 	// Division and exponentiation always produce a real value.
-	{operators.DIVIDE, IntegerType{}, IntegerType{}, RealType{}, ConversionIntegerToReal, ConversionIntegerToReal},
-	{operators.DIVIDE, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
-	{operators.DIVIDE, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
-	{operators.DIVIDE, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
+	{DIVIDE, IntegerType{}, IntegerType{}, RealType{}, ConversionIntegerToReal, ConversionIntegerToReal},
+	{DIVIDE, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
+	{DIVIDE, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
+	{DIVIDE, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
 
 	// Power will be shelved since it needs a function
-	// {operators.POWER, IntegerType{}, IntegerType{}, RealType{}, ConversionIntegerToReal, ConversionIntegerToReal},
-	// {operators.POWER, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
-	// {operators.POWER, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
-	// {operators.POWER, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
+	// {POWER, IntegerType{}, IntegerType{}, RealType{}, ConversionIntegerToReal, ConversionIntegerToReal},
+	// {POWER, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
+	// {POWER, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
+	// {POWER, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
 
 	// MOD is strict and integer-only.
-	{operators.MODULO, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
-	{operators.MODULO, IntegerType{}, RealType{}, IntegerType{}, ConversionNone, ConversionRealToIntegerExact},
-	{operators.MODULO, RealType{}, IntegerType{}, RealType{}, ConversionRealToIntegerExact, ConversionNone},
-	{operators.MODULO, RealType{}, RealType{}, IntegerType{}, ConversionRealToIntegerExact, ConversionRealToIntegerExact},
+	{MODULO, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
+	{MODULO, IntegerType{}, RealType{}, IntegerType{}, ConversionNone, ConversionRealToIntegerExact},
+	{MODULO, RealType{}, IntegerType{}, RealType{}, ConversionRealToIntegerExact, ConversionNone},
+	{MODULO, RealType{}, RealType{}, IntegerType{}, ConversionRealToIntegerExact, ConversionRealToIntegerExact},
 
 	// Numeric ordering.
-	{operators.GREATER, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.GREATER, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{operators.GREATER, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{operators.GREATER, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.GREATER_EQ, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.GREATER_EQ, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{operators.GREATER_EQ, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{operators.GREATER_EQ, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.LESSER, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.LESSER, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{operators.LESSER, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{operators.LESSER, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.LESSER_EQ, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.LESSER_EQ, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{operators.LESSER_EQ, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{operators.LESSER_EQ, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{GREATER, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{GREATER, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
+	{GREATER, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
+	{GREATER, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{GREATER_EQ, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{GREATER_EQ, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
+	{GREATER_EQ, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
+	{GREATER_EQ, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{LESSER, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{LESSER, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
+	{LESSER, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
+	{LESSER, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{LESSER_EQ, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{LESSER_EQ, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
+	{LESSER_EQ, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
+	{LESSER_EQ, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
 
 	// Equality is intentionally unavailable for strings.
-	{operators.EQUALS, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.EQUALS, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{operators.EQUALS, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{operators.EQUALS, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.EQUALS, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.NOT_EQUALS, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.NOT_EQUALS, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{operators.NOT_EQUALS, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{operators.NOT_EQUALS, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.NOT_EQUALS, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{EQUALS, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{EQUALS, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
+	{EQUALS, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
+	{EQUALS, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{EQUALS, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{NOT_EQUALS, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{NOT_EQUALS, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
+	{NOT_EQUALS, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
+	{NOT_EQUALS, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{NOT_EQUALS, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
 
-	// Logical operators.
-	{operators.AND, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{operators.OR, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
+	// Logical
+	{AND, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{OR, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
 }
 
 var UnaryOperationTable = []UnaryOperationRule{
-	{operators.SUBTRACT, IntegerType{}, IntegerType{}, ConversionNone},
-	{operators.SUBTRACT, RealType{}, RealType{}, ConversionNone},
-	{operators.NOT, BooleanType{}, BooleanType{}, ConversionNone},
+	{SUBTRACT, IntegerType{}, IntegerType{}, ConversionNone},
+	{SUBTRACT, RealType{}, RealType{}, ConversionNone},
+	{NOT, BooleanType{}, BooleanType{}, ConversionNone},
 }
 
 func CanCast(from Type, to Type) *ConversionKind {
@@ -133,7 +131,7 @@ func SearchConversion(with Type, c ConversionKind) *ImplicitCast {
 	return nil
 }
 
-func ResolveBinaryOperation(op operators.OperatorType, left, right Type) (BinaryOperationRule, bool) {
+func ResolveBinaryOperation(op OperatorType, left, right Type) (BinaryOperationRule, bool) {
 	for _, rule := range BinaryOperationTable {
 		if rule.Operator == op && EqualTypes(rule.Left, left) && EqualTypes(rule.Right, right) {
 			return rule, true
@@ -143,7 +141,7 @@ func ResolveBinaryOperation(op operators.OperatorType, left, right Type) (Binary
 	return BinaryOperationRule{}, false
 }
 
-func ResolveUnaryOperation(op operators.OperatorType, operand Type) (UnaryOperationRule, bool) {
+func ResolveUnaryOperation(op OperatorType, operand Type) (UnaryOperationRule, bool) {
 	for _, rule := range UnaryOperationTable {
 		if rule.Operator == op && EqualTypes(rule.Operand, operand) {
 			return rule, true

@@ -2,7 +2,7 @@ package diagnostics
 
 import (
 	"fmt"
-	"pseint-compiled/internal/models"
+	"pascc/internal/models"
 )
 
 type DiagnosticInfo struct {

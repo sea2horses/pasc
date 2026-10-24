@@ -1,6 +1,6 @@
 package analyzer
 
-import "pseint-compiled/internal/semantic"
+import "pascc/internal/semantic"
 
 func (a *Analyzer) declare_builtins() {
 

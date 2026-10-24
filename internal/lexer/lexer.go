@@ -1,8 +1,8 @@
 package lexer
 
 import (
-	"pseint-compiled/internal/diagnostics"
-	"pseint-compiled/internal/models"
+	"pascc/internal/diagnostics"
+	"pascc/internal/models"
 	"unicode"
 )
 
