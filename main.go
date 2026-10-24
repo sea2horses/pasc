@@ -14,7 +14,7 @@ import (
 	"pseint-compiled/internal/diagnostics"
 	"pseint-compiled/internal/generator"
 	"pseint-compiled/internal/lexer"
-	"pseint-compiled/internal/parser"
+	"pseint-compiled/internal/neoparser"
 	"runtime"
 )
 
@@ -104,7 +104,7 @@ func run() error {
 	}
 
 	diagnostics.Dbg("AST Parsing...")
-	parser := parser.Parser{Tokens: tokens}
+	parser := neoparser.Parser{Tokens: tokens}
 	ast_tree, ds := parser.Parse()
 
 	for i, d := range ds {
