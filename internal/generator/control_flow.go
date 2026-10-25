@@ -27,20 +27,18 @@ func (g *Generator) genCase(c *tast.Case) *jen.Statement {
 
 func (g *Generator) genSwitch(s *tast.Switch) *jen.Statement {
 	cases := utils.Map(s.Cases, func(c *tast.Case) jen.Code { return g.genCase(c) })
-	_switch := jen.Switch(g.generate(s.Base)).Add(cases...)
-
 	if len(s.Default) != 0 {
-		_switch.Add(
-			jen.Default().Block(g.genStatementBlock(s.Default)...),
-		)
+		cases = append(cases, jen.Default().Block(g.genStatementBlock(s.Default)...))
 	}
+
+	_switch := jen.Switch(g.generate(s.Base)).Block(cases...)
 
 	return _switch
 }
 
 func (g *Generator) genFor(f *tast.For) *jen.Statement {
 	var _range *jen.Statement
-	if f.Step != nil {
+	if f.Step == nil {
 		_range = IterSteplessFunc.Call(g.generate(f.Start), g.generate(f.Until))
 	} else {
 		_range = IterFunc.Call(g.generate(f.Start), g.generate(f.Until), g.generate(f.Step))

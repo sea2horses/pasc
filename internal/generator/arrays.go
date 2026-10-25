@@ -18,7 +18,7 @@ func (g *Generator) genDimension(d *tast.Dimension) *jen.Statement {
 }
 
 func (g *Generator) genIndex(i *tast.Index) *jen.Statement {
-	return jen.Op("*").Add(IndexTensor).Call(
-		utils.Map(i.Indexes, func(i tast.TypedExpr) jen.Code { return jen.Int().Parens(g.generate(i)) })...,
-	)
+	args := []jen.Code{g.generate(i.Target)}
+	args = append(args, utils.Map(i.Indexes, func(i tast.TypedExpr) jen.Code { return jen.Int().Parens(g.generate(i)) })...)
+	return jen.Op("*").Add(IndexTensor).Call(args...)
 }

@@ -32,5 +32,5 @@ func (g *Generator) genCast(c *tast.Cast) *jen.Statement {
 	if !ok {
 		panic("ConversionKind does not have a mapped representation")
 	}
-	return code
+	return code.Call(g.generate(c.Expr))
 }
