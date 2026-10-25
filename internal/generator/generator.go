@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"bytes"
 	"fmt"
 	tast "pascc/internal/ast_typed"
 
@@ -15,6 +16,19 @@ func NewGenerator() *Generator {
 	return &Generator{
 		file: jen.NewFile("main"),
 	}
+}
+
+func (g *Generator) Gen(tree tast.Node) ([]byte, error) {
+	g.generate(tree)
+
+	buf := &bytes.Buffer{}
+	err := g.file.Render(buf)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 func (g *Generator) generate(tree tast.Node) *jen.Statement {
