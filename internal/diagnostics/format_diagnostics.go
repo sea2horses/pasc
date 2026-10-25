@@ -176,7 +176,7 @@ func PrintDiagnostics(ds []Diagnostic, filename string) {
 func PrintSummary(d DiagnosticInfo) {
 	if d.ErrorCount > 0 {
 		color.Set(ERROR.Color())
-		fmt.Printf("%s error")
+		fmt.Printf("%d error", d.ErrorCount)
 		if d.ErrorCount != 1 {
 			fmt.Printf("s")
 		}
@@ -189,7 +189,7 @@ func PrintSummary(d DiagnosticInfo) {
 
 	if d.WarningCount > 0 {
 		color.Set(WARNING.Color())
-		fmt.Printf("%s warning")
+		fmt.Printf("%d warning", d.WarningCount)
 		if d.ErrorCount != 1 {
 			fmt.Printf("s")
 		}
@@ -202,7 +202,7 @@ func PrintSummary(d DiagnosticInfo) {
 
 	if d.InfoCount > 0 {
 		color.Set(INFO.Color())
-		fmt.Printf("%s info message")
+		fmt.Printf("%d info message", d.InfoCount)
 		if d.ErrorCount != 1 {
 			fmt.Printf("s")
 		}
