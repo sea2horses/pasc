@@ -5,7 +5,8 @@ import "github.com/dave/jennifer/jen"
 var (
 	PowerFunc *jen.Statement = jen.Qual("math", "Pow")
 	SinFunc   *jen.Statement = jen.Qual("math", "Sin")
-	CosFunc   *jen.Statement = jen.Qual("math", "Sin")
+	CosFunc   *jen.Statement = jen.Qual("math", "Cos")
+	TruncFunc *jen.Statement = jen.Qual("math", "Trunc")
 
 	/* I/O */
 	WriteFunc           *jen.Statement = jen.Id("Write")
