@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	_ "embed"
 	"pascc/internal/diagnostics"
 	"pascc/internal/runtime"
 	"pascc/internal/toolchain"
@@ -15,7 +14,6 @@ func init() {
 	rootCmd.AddCommand(compileCmd)
 
 	compileCmd.Flags().BoolVar(&Debug, "debug", false, "Prints debug information about the compiling process")
-	compileCmd.Flags().BoolVar(&Run, "run", false, "Runs the program after its been compiled")
 	compileCmd.Flags().StringVarP(&OutputDir, "output", "o", defaultDir, "Specifies the directory to build the executable onto")
 }
 
@@ -29,7 +27,6 @@ var compileCmd = &cobra.Command{
 
 var (
 	Debug     bool
-	Run       bool
 	OutputDir string
 )
 
@@ -43,7 +40,6 @@ func compile(cmd *cobra.Command, args []string) error {
 		&toolchain.ToolchainConfig{
 			Filename:  filename,
 			OutputDir: OutputDir,
-			Run:       Run,
 			Runtime:   runtime.EmbeddedRuntime,
 		},
 	)
