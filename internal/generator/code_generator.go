@@ -27,7 +27,15 @@ const (
 	ClearFn = "ClearScreen"
 )
 
-type Generator struct{}
+type Generator struct {
+	file *jen.File
+}
+
+func NewGenerator() *Generator {
+	return &Generator{
+		file: jen.NewFile("main"),
+	}
+}
 
 func (g *Generator) generate(tree tast.Node) *jen.Statement {
 	return nil
@@ -243,8 +251,8 @@ func (cg *CodeGenerator) write_node(node tast.Node) {
 		//
 		// 		cg.padding--
 		// 		cg.write("\n}")
-	case *tast.ClearScreen:
-		cg.write("%s()", ClearFn)
+	// case *tast.ClearScreen:
+	// 	cg.write("%s()", ClearFn)
 	case *tast.MainFunction:
 		cg.write("/* Original Pseint Name: %s */\n", n.Name)
 		cg.write("func main() {\n\tdefer writer.Flush()")

@@ -25,3 +25,7 @@ func (g *Generator) genWrite(w *tast.Write) *jen.Statement {
 func (g *Generator) genRead(w *tast.Read) *jen.Statement {
 	return ReadFunc.Call(jen.Op("&").Add(g.generate(w.Into)))
 }
+
+func (g *Generator) genClearScreen(cs *tast.ClearScreen) *jen.Statement {
+	return ClearScreenFunc.Call()
+}
