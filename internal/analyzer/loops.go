@@ -25,6 +25,23 @@ func (a *Analyzer) analyze_while(while *ast.While) *tast.While {
 	}
 }
 
+func (a *Analyzer) analyze_dowhile(dw *ast.DoWhile) *tast.DoWhile {
+	/* Analyze the condition */
+	typed_condition := a.analyze_expression(dw.Condition)
+	stmts := a.analyze_statement_block(dw.Stmts)
+	/* Assert the condition type to be boolean */
+	ok := a.assert_type(semantic.BooleanType{}, typed_condition)
+	if !ok {
+		return nil
+	}
+
+	return &tast.DoWhile{
+		NodeInfo:  dw.NodeInfo,
+		Condition: typed_condition,
+		Stmts:     stmts,
+	}
+}
+
 /* For ONLY works with floats and numeric values!! */
 func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 	_ = a.analyze_statement(f.Start)

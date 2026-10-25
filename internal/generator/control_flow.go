@@ -21,6 +21,13 @@ func (g *Generator) genWhile(w *tast.While) *jen.Statement {
 	return jen.For(g.generate(w.Condition)).Block(g.genStatementBlock(w.Stmts)...)
 }
 
+func (g *Generator) genDoWhile(dw *tast.DoWhile) *jen.Statement {
+	stmts := g.genStatementBlock(dw.Stmts)
+	_break := jen.If(g.generate(dw.Condition)).Block(jen.Break())
+	stmts = append(stmts, _break)
+	return jen.For().Block(stmts...)
+}
+
 func (g *Generator) genCase(c *tast.Case) *jen.Statement {
 	return jen.Case(g.generate(c.Value)).Block(g.genStatementBlock(c.Stmts)...)
 }

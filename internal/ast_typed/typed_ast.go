@@ -205,6 +205,12 @@ type While struct {
 	Stmts     []Stmt
 }
 
+type DoWhile struct {
+	ast.NodeInfo
+	Condition TypedExpr
+	Stmts     []Stmt
+}
+
 /* PSEINT Restriction: not any lvalue can be used for a for, only a variable one */
 type For struct {
 	ast.NodeInfo

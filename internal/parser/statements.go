@@ -16,6 +16,7 @@ func Statement() Pattern[ast.Stmt] {
 		Read(),
 		IfStmt(),
 		While(),
+		DoWhile(),
 		For(),
 		Switch(),
 		Dimension(),
@@ -40,6 +41,7 @@ func StatementBlock() Pattern[[]ast.Stmt] {
 var blockBoundaries = []lexer.Keyword{
 	lexer.FINALGORITMO, lexer.SINO, lexer.FINSI, lexer.FINMIENTRAS,
 	lexer.FINPARA, lexer.FINSEGUN, lexer.DE,
+	lexer.HASTA,
 }
 
 func atBlockBoundary(ctx *Context, cases bool) bool {

@@ -32,6 +32,22 @@ func TestParseExpressionStatements(t *testing.T) {
 	}
 }
 
+func TestParseRepetirLoop(t *testing.T) {
+	ctx := parseContext(t, "algoritmo demo\nx = 10\nRepetir\n escribir x\n x = x - 1\nHasta Que x <= 0\nFinAlgoritmo\n")
+	p := Parser{Tokens: ctx.Tokens}
+	node, ds := p.Parse()
+	if len(ds) != 0 {
+		t.Fatalf("unexpected diagnostics: %v", ds)
+	}
+	main, ok := node.(*ast.MainFunction)
+	if !ok || len(main.Stmts) != 2 {
+		t.Fatalf("unexpected AST: %#v", node)
+	}
+	if _, ok := main.Stmts[1].(*ast.DoWhile); !ok {
+		t.Fatalf("Repetir loop became %T", main.Stmts[1])
+	}
+}
+
 func TestParseDiagnostics(t *testing.T) {
 	for _, tc := range []struct {
 		source, message string

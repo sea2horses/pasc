@@ -51,8 +51,10 @@ func (a *Analyzer) analyze_statement(stmt ast.Stmt) []tast.Stmt {
 		return []tast.Stmt{a.analyze_for(s)}
 	case *ast.TimeOut:
 		return []tast.Stmt{a.analyze_timeout(s)}
+	case *ast.DoWhile:
+		return []tast.Stmt{a.analyze_dowhile(s)}
 	}
 
-	a.Report(stmt.NodeSpan(), "extraneous statement")
+	a.Report(stmt.NodeSpan(), "analyzer does not implement this statement")
 	return nil
 }

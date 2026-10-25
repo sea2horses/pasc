@@ -268,6 +268,25 @@ func (w While) String() string {
 	return builder.String()
 }
 
+type DoWhile struct {
+	NodeInfo
+	Condition Expr
+	Stmts     []Stmt
+}
+
+func (w DoWhile) String() string {
+	var builder strings.Builder
+
+	builder.WriteString(fmt.Sprintf("DoWhile '%s' {\n", w.Condition))
+	for _, stmt := range w.Stmts {
+		builder.WriteString(stmt.String())
+		builder.WriteRune('\n')
+	}
+	builder.WriteString("}")
+
+	return builder.String()
+}
+
 type For struct {
 	NodeInfo
 	Start *Assignment

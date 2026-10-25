@@ -78,6 +78,8 @@ func (g *Generator) generate(tree tast.Node) *jen.Statement {
 		return g.genDimension(node)
 	case *tast.Index:
 		return g.genIndex(node)
+	case *tast.DoWhile:
+		return g.genDoWhile(node)
 	default:
 		panic(fmt.Sprintf("unsupported typed AST node %T", tree))
 	}

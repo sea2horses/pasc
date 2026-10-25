@@ -55,6 +55,8 @@ const (
 	PASO
 	FINPARA
 
+	REPETIR
+
 	SIN
 	SALTAR
 
@@ -102,6 +104,7 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"redimensionar": REDIMENSIONAR,
 	"para":          PARA,
 	"finpara":       FINPARA,
+	"repetir":       REPETIR,
 	"hasta":         HASTA,
 	"con":           CON,
 	"paso":          PASO,

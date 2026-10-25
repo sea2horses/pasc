@@ -235,3 +235,32 @@ func switchCases() Pattern[[]*ast.Case] {
 		return Match[[]*ast.Case]{Kind: Matched, Value: cases, Start: start, End: ctx.Pos}
 	})
 }
+
+func DoWhile() Pattern[ast.Stmt] {
+	return Map(
+		After(
+			Kw(lexer.REPETIR),
+			Seq2(
+				StatementBlock(),
+				Locate(
+					Right(
+						Seq2(
+							Expected(Kw(lexer.HASTA), ExpectedKeyword{Keyword: lexer.HASTA}),
+							Expected(Kw(lexer.QUE), ExpectedKeyword{Keyword: lexer.QUE}),
+						),
+						Expression(),
+					),
+				),
+			),
+		),
+		func(p Pair[[]ast.Stmt, Located[ast.Expr]]) ast.Stmt {
+			return &ast.DoWhile{
+				NodeInfo: ast.NodeInfo{
+					Span: p.Second.Span,
+				},
+				Stmts:     p.First,
+				Condition: p.Second.Value,
+			}
+		},
+	)
+}
