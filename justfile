@@ -1,8 +1,7 @@
 main_file := 'main.go'
 
-exec_name := if os_family() == "windows" { 'pasc.exe' } else { 'pasc' }
-build_folder := 'build'
-target := f'{{build_folder}}/{{exec_name}}'
+exec_name := if os_family() == "windows" { 'pascc.exe' } else { 'pascc' }
+target := f'{{exec_name}}'
 
 build:
 	go build -o {{target}} {{main_file}}
@@ -14,5 +13,4 @@ test:
 	go test ./...
 
 run file: build
-	{{target}} -file {{file}}
-	
+	{{target}} run {{file}}
