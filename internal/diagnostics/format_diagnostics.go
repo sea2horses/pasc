@@ -152,14 +152,7 @@ func PrintFileDiagnostic(
 	}
 
 	// Set color
-	switch diagnostic.Level {
-	case ERROR:
-		color.Set(color.FgRed)
-	case WARNING:
-		color.Set(color.FgYellow)
-	case INFO:
-		color.Set(color.FgHiBlue)
-	}
+	color.Set(diagnostic.Level.Color())
 	defer color.Unset()
 
 	_, err = io.WriteString(os.Stderr, f)
@@ -168,6 +161,55 @@ func PrintFileDiagnostic(
 	}
 
 	return nil
+}
+
+func PrintDiagnostics(ds []Diagnostic, filename string) {
+	for i, d := range ds {
+		err := PrintFileDiagnostic(filename, d)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "<err #%d could not be shown (%s)>", i+1, err.Error())
+		}
+	}
+	PrintSummary(Summary(ds))
+}
+
+func PrintSummary(d DiagnosticInfo) {
+	if d.ErrorCount > 0 {
+		color.Set(ERROR.Color())
+		fmt.Printf("%s error")
+		if d.ErrorCount != 1 {
+			fmt.Printf("s")
+		}
+
+		if d.WarningCount > 0 || d.InfoCount > 0 {
+			color.Unset()
+			fmt.Print(" | ")
+		}
+	}
+
+	if d.WarningCount > 0 {
+		color.Set(WARNING.Color())
+		fmt.Printf("%s warning")
+		if d.ErrorCount != 1 {
+			fmt.Printf("s")
+		}
+
+		if d.InfoCount > 0 {
+			color.Unset()
+			fmt.Print(" | ")
+		}
+	}
+
+	if d.InfoCount > 0 {
+		color.Set(INFO.Color())
+		fmt.Printf("%s info message")
+		if d.ErrorCount != 1 {
+			fmt.Printf("s")
+		}
+	}
+
+	color.Unset()
+	fmt.Println()
 }
 
 func validateSpan(lines []string, span models.Span) error {
