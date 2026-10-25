@@ -209,7 +209,9 @@ func PrintSummary(d DiagnosticInfo) {
 	}
 
 	color.Unset()
-	fmt.Println()
+	if d.ErrorCount > 0 || d.WarningCount > 0 || d.InfoCount > 0 {
+		fmt.Println()
+	}
 }
 
 func validateSpan(lines []string, span models.Span) error {
