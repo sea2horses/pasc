@@ -12,28 +12,28 @@
 
 </div>
 
-`pasc` es un compilador y analizador que busca implementar el lenguaje de PSeInt. Es una herramienta tanto de ejecución como de análisis de código, que toma un archivo `.psc` y lo traduce a un binario nativo mediante el compilador de Go. Gracias a esto, `pasc` deja ejecutar un programa escrito en PSeInt sin necesidad de descargar el programa del todo, y además, ofrece una significativa mejora de rendimiento.
+`pascc` es un compilador y analizador experimental para el lenguaje de PSeInt. Analiza un archivo `.psc`, genera código Go y utiliza la herramienta de Go para crear un ejecutable nativo. La interfaz de línea de comandos está organizada con Cobra y ofrece dos comandos: `run` para compilar y ejecutar temporalmente, y `build` para conservar el ejecutable.
 
 > [!IMPORTANT]
-> El proyecto sigue en etapa de desarrollo. Ya puede ejecutar programas útiles, pero todavía no implementa todo el lenguaje de PSeInt ni debe considerarse compatible al 100 %.
+> El proyecto sigue en desarrollo. Ya puede ejecutar programas útiles, pero todavía no implementa todo el lenguaje de PSeInt ni debe considerarse compatible al 100 %.
 
 ## Ventajas
 
 <div align="center">
 
-- **Compilación real:** El pseudocódigo se transforma en Go y después en un ejecutable que puede ser ejecutado en otras computadoras de manera nativa.
+- **Compilación nativa:** El pseudocódigo se transforma en Go y después en un ejecutable nativo.
 ![Compilation](assets/compilation.png)
-- **Errores fáciles de ubicar:** Sistema moderno de diagnósticos, muestra el archivo, la línea, la columna, el fragmento afectado y un resumen de errores y advertencias.
+- **Errores fáciles de ubicar:** Los diagnósticos muestran el archivo, la línea, la columna, el fragmento afectado y un resumen de errores y advertencias.
 ![Diagnostic2](assets/diagnostic-2.png)
 - **Análisis a tiempo de compilación:** Valida operaciones y asignaciones antes de generar el programa, con soporte para conversiones numéricas seguras.
 ![Diagnostic1](assets/diagnostic-1.png)
 ![Diagnostic3](assets/diagnostic-3.png)
-- **Sintaxis familiar:** Implementa la flexibilidad del lenguaje de PSeInt.
-- **Rápidez:** Al compilarse de manera nativa, `pasc` ofrece una mejora de rendimiento significativa contra PSeInt.<br>
+- **Sintaxis familiar:** Implementa la sintaxis de PSeInt.
+- **Rápidez:** El código generado se compila a un ejecutable nativo.<br>
 ![DonutDemo](assets/donut-demo.gif)
 
-(Esto es una dona corriendo a tiempo real en codigo de pseint compilado por `pasc`, deberías probar la [demo](demos/donut.psc), puntos extra si la pruebas en PSeInt vs `pasc`)
-- **Extensible y modular:** Posee una arquitectura mucho más moderna que permite facilmente extender las capacidades del compilador.
+La dona animada es un programa de PSeInt compilado con `pascc`: [ver demo](demos/donut.psc).
+- **Arquitectura modular:** El analizador, el generador, el runtime y los comandos están organizados en paquetes separados.
 
 </div>
 
@@ -56,11 +56,9 @@ Actualmente se soportan:
 
 - [Go 1.25 o posterior](https://go.dev/dl/).
 - Git, únicamente si vas a clonar el repositorio.
-- (Opcional pero recomendado) [Just] para correr los comandos
+- [Just](https://just.systems/) es opcional y facilita algunos comandos de desarrollo.
 
-El compilador invoca a Go internamente para construir el programa generado, por lo que `go` debe estar disponible en el `PATH` incluso después de compilar esta herramienta. (Mejora que se debe hacer)
-
-**No se necesita Go para ejecutar el programa ya una vez compilado**
+Para compilar programas `.psc`, `pascc` ejecuta `go build`, así que Go debe estar disponible en el `PATH`. Los ejecutables creados con `build` se ejecutan sin necesitar Go.
 
 ## Instalación
 
@@ -69,35 +67,65 @@ Clona el repositorio y compila la herramienta:
 ```bash
 git clone https://github.com/sea2horses/pasc.git
 cd pasc
-go build
+go build -o pascc .
 ```
 
-También puedes usarla directamente desde el código fuente con `go run .`.
+En Windows, el ejecutable se llamará `pascc.exe`. También puedes instalarlo en el directorio de binarios de Go:
 
-Para instalar la herramienta puedes usar `go install` en la carpeta del repo, y de esa manera obtendras acceso al comando `pascc`.
+```bash
+go install .
+```
+
+Si ese directorio está en tu `PATH`, podrás invocar `pascc` desde cualquier ubicación. Para usarlo sin compilar la herramienta primero, ejecuta los comandos con `go run .`.
 
 ## Uso
 
-Ejecuta el compilador indicando un archivo `.psc` con `-file`:
+### Ejecutar un programa
+
+`run` compila el archivo en un directorio temporal, ejecuta el resultado y elimina los archivos temporales al terminar:
 
 ```bash
-./pascc -file demos/hello_world.psc
+./pascc run demos/hello_world.psc
 ```
 
-(En el caso de windows, usar `pascc.exe`)
-
-O, sin construir primero el compilador:
+O desde el código fuente:
 
 ```bash
-go run . -file demos/hello_world.psc
+go run . run demos/hello_world.psc
 ```
 
-Por el momento, cada ejecución realiza todo el proceso:
+### Construir un ejecutable
 
-1. Lee y valida el pseudocódigo.
-2. Genera `build/out.go`.
-3. Compila el ejecutable `build/out` (`build/out.exe` en Windows).
-4. Ejecuta el binario automáticamente.
+`build` conserva el ejecutable y el código Go generado en `build/` por defecto. El nombre del ejecutable se toma del archivo `.psc`:
+
+```bash
+./pascc build demos/hello_world.psc
+```
+
+El resultado queda en `build/hello_world` (`build/hello_world.exe` en Windows), junto con `build/hello_world.go`. Puedes elegir otro directorio con `-o` o `--output`:
+
+```bash
+./pascc build -o dist demos/hello_world.psc
+```
+
+En los ejemplos anteriores, reemplaza `./pascc` por `pascc.exe` en Windows, o usa `go run .` para ejecutar desde el código fuente.
+
+### Depuración
+
+Tanto `build` como `run` aceptan `--debug` para mostrar información de las etapas del compilador, incluidos tokens, AST, árbol tipado y código Go generado:
+
+```bash
+./pascc run --debug demos/operations.psc
+./pascc build --debug demos/operations.psc
+```
+
+Consulta la ayuda integrada para ver opciones y comandos:
+
+```bash
+pascc --help
+pascc run --help
+pascc build --help
+```
 
 ### Ejemplo
 
@@ -118,55 +146,50 @@ Algoritmo MayoriaDeEdad
 FinAlgoritmo
 ```
 
-Compílalo y ejecútalo:
+Ejecútalo directamente o crea un binario:
 
 ```bash
-pascc -file mayoria_edad.psc
-```
-
-### Información de depuración
-
-Usa `-debug` para ver las etapas internas, como los tokens, el AST, el árbol tipado y el código Go generado:
-
-```bash
-pascc -debug -file demos/operations.psc
+pascc run mayoria_edad.psc
+pascc build mayoria_edad.psc
 ```
 
 ## Estado del proyecto
 
-PSeInt es un lenguaje extremadamente raro, con bastantes cosas "interesantes". Por lo que aun faltan muchos comportamientos por replicar!
+PSeInt tiene muchos comportamientos particulares que todavía faltan por replicar. Actualmente faltan, entre otras cosas:
 
-Actualmente falta:
-
-- Redimensionar
+- Redimensionar.
 - Subprocesos, funciones y retorno de valores.
-- Sintaxis Flexible
-- Aliases como `Proceso` o `:=`
-- El ciclo `Para Cada`
-- El operador de potencia `^`
-- Funciones como `Subcadena`
-- Modo no-scope (porque PSeInt por alguna razón no tiene scopes??)
-- Perfiles
-- Arreglos en índice 1
-- Repetir
+- Sintaxis flexible.
+- Aliases como `Proceso` o `:=`.
+- El ciclo `Para Cada` y `Repetir`.
+- El operador de potencia `^`.
+- Funciones como `Subcadena`.
+- Modo no-scope.
+- Perfiles.
+- Arreglos con índice inicial 1.
 
 ## Probar los ejemplos
 
 El directorio `demos` contiene programas para probar entrada/salida, operaciones, condicionales, ciclos y `Segun`. Por ejemplo:
 
 ```bash
-go run . -file demos/operations.psc
-go run . -file demos/ages.psc
-go run . -file demos/switch.psc
+pascc run demos/operations.psc
+pascc run demos/ages.psc
+pascc run demos/switch.psc
 ```
 
-Para comprobar que todos los paquetes compilan:
+Con Just también puedes compilar la herramienta y ejecutar un ejemplo:
+
+```bash
+just build
+just run demos/hello_world.psc
+```
+
+Para comprobar que los paquetes compilan:
 
 ```bash
 go test ./...
 ```
-
-Actualmente no hay casos de prueba automatizados; este comando funciona como comprobación de compilación hasta que se incorpore la suite de pruebas.
 
 ## Contribuciones
 

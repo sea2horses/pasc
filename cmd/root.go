@@ -6,10 +6,12 @@ const version = "Indev (0.1.0)"
 
 var (
 	rootCmd = &cobra.Command{
-		Use:     "pascc",
-		Short:   "Compiler & analyzer tool for the PSeInt language",
-		Long:    "Pasc is a tool for both analyzing PSeInt code and compiling it to native executables bootstrapping from the go language.",
-		Version: version,
+		Use:           "pascc",
+		Short:         "Compiler & analyzer tool for the PSeInt language",
+		Long:          "Pasc analyzes PSeInt programs and compiles them into native executables using the Go toolchain.",
+		Version:       version,
+		SilenceErrors: true,
+		SilenceUsage:  true,
 	}
 )
 

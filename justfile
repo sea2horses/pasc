@@ -14,5 +14,5 @@ test:
 	go test ./...
 
 run file: build
-	{{target}} -file {{file}}
+	{{target}} run {{file}}
 	

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"pascc/internal/diagnostics"
 	"pascc/internal/runtime"
 	"pascc/internal/toolchain"
 
@@ -9,6 +10,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(runCmd)
+	runCmd.Flags().BoolVar(&Debug, "debug", false, "Prints debug information about the compiling process")
 }
 
 var runCmd = &cobra.Command{
@@ -21,6 +23,7 @@ var runCmd = &cobra.Command{
 
 func run(cmd *cobra.Command, args []string) error {
 	filename := args[0]
+	diagnostics.Debug = Debug
 
 	return toolchain.RunToolchain(
 		&toolchain.ToolchainConfig{
