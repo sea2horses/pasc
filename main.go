@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"pascc/cmd"
 	"pascc/internal/analyzer"
 	"pascc/internal/ast"
 	tast "pascc/internal/ast_typed"
@@ -24,10 +25,8 @@ var (
 )
 
 const (
-	PROGRAM_NAME = "Pseint Compiler"
-	VERSION      = "Indev"
-	OUTPUT       = "build"
-	CG_FILENAME  = "out.go"
+	OUTPUT      = "build"
+	CG_FILENAME = "out.go"
 )
 
 //go:embed runtime.go
@@ -44,12 +43,14 @@ const (
 )
 
 func main() {
-	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
-	diagnostics.Dbg("Program exited successfuly")
+	/* Execute cobra's root command */
+	cmd.Execute()
+	//	if err := run(); err != nil {
+	//		fmt.Fprintln(os.Stderr, err)
+	//		os.Exit(1)
+	//	}
+	//
+	// diagnostics.Dbg("Program exited successfuly")
 }
 
 func run() error {
@@ -57,8 +58,6 @@ func run() error {
 	flag.StringVar(&filename, "file", "", "File to compile (*.psc)")
 
 	flag.Parse()
-
-	diagnostics.Dbg(PROGRAM_NAME, VERSION)
 
 	diagnostics.Dbg("Getting file source code...")
 	if filename == "" {
