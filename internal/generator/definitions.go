@@ -17,7 +17,10 @@ var (
 	IntToRealFunc   *jen.Statement = jen.Id("IntegerToReal")
 
 	/* Tensors (Arrays) */
-	MakeTensorFunc   *jen.Statement = jen.Id("NewTensor")
+	MakeTensorFunc *jen.Statement = jen.Id("NewTensor")
+	IndexTensor    *jen.Statement = jen.Id("IndexTensor")
+
+	/* For Loops */
 	IterFunc         *jen.Statement = jen.Id("MakeIter")
 	IterSteplessFunc *jen.Statement = jen.Id("MakeIterStepless")
 

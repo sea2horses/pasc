@@ -201,17 +201,17 @@ func (cg *CodeGenerator) write_node(node tast.Node) {
 	// 		cg.write(")")
 	// 	}
 	// 	cg.write(")")
-	case *tast.Index:
-		cg.write("*IndexTensor(")
-		cg.write_node(n.Target)
-
-		for _, index := range n.Indexes {
-			cg.write(", int(")
-			cg.write_node(index)
-			cg.write(")")
-		}
-
-		cg.write(")")
+	// 	case *tast.Index:
+	// 		cg.write("*IndexTensor(")
+	// 		cg.write_node(n.Target)
+	//
+	// 		for _, index := range n.Indexes {
+	// 			cg.write(", int(")
+	// 			cg.write_node(index)
+	// 			cg.write(")")
+	// 		}
+	//
+	// 		cg.write(")")
 	case *tast.Call:
 		cg.generateCall(n)
 		// 	case *tast.For:

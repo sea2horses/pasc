@@ -16,3 +16,9 @@ func (g *Generator) genDimension(d *tast.Dimension) *jen.Statement {
 		utils.Map(d.Dimensions, func(i tast.TypedExpr) jen.Code { return jen.Int().Parens(g.generate(i)) })...,
 	)
 }
+
+func (g *Generator) genIndex(i *tast.Index) *jen.Statement {
+	return jen.Op("*").Add(IndexTensor).Call(
+		utils.Map(i.Indexes, func(i tast.TypedExpr) jen.Code { return jen.Int().Parens(g.generate(i)) })...,
+	)
+}
