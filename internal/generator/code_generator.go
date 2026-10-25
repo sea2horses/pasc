@@ -25,19 +25,6 @@ var timeMap map[semantic.TimeUnit]string = map[semantic.TimeUnit]string{
 	semantic.SEGUNDOS:     "time.Second",
 }
 
-// ALL conversion kinds must be mapped to a runtime function
-var conversionMap map[semantic.ConversionKind]string = map[semantic.ConversionKind]string{
-	semantic.ConversionIntegerToReal:      "IntegerToReal",
-	semantic.ConversionRealToIntegerExact: "ToIntegerExact",
-}
-
-var typeMap map[semantic.Type]string = map[semantic.Type]string{
-	semantic.IntegerType{}: "int64",
-	semantic.StringType{}:  "string",
-	semantic.BooleanType{}: "bool",
-	semantic.RealType{}:    "float64",
-}
-
 const (
 	WriteFn = "Write"
 	ReadFn  = "Read"

@@ -12,7 +12,8 @@ func (g *Generator) genNumberLiteral(nl *tast.NumberLiteral) *jen.Statement {
 		num, _ := strconv.ParseFloat(nl.Int+"."+nl.Frac, 64)
 		return jen.Lit(num)
 	} else {
-		num, _ := strconv.ParseInt(nl.Int, 10, 64)
+		/* Until I don't do constexpr evaluation, this has to be float too */
+		num, _ := strconv.ParseFloat(nl.Int, 64)
 		return jen.Lit(num)
 	}
 }
