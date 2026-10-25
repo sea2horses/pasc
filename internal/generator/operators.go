@@ -13,7 +13,7 @@ func operatorStrategy(op semantic.OperatorType) GenerationStrategy {
 	/* Power is CURRENTLY the only operator that needs a different strategy */
 	case semantic.POWER:
 		return func(a, b *jen.Statement) *jen.Statement {
-			return PowerFunc.Call(a, b)
+			return PowerFunc().Call(a, b)
 		}
 
 	default:

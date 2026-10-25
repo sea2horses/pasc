@@ -8,7 +8,7 @@ import (
 	"github.com/dave/jennifer/jen"
 )
 
-var builtinMap map[semantic.BuiltinKind]*jen.Statement = map[semantic.BuiltinKind]*jen.Statement{
+var builtinMap map[semantic.BuiltinKind]func() *jen.Statement = map[semantic.BuiltinKind]func() *jen.Statement{
 	semantic.BuiltinSin:   SinFunc,
 	semantic.BuiltinCos:   CosFunc,
 	semantic.BuiltinTrunc: TruncFunc,
@@ -19,7 +19,7 @@ func (g *Generator) genBuiltinCall(bi *semantic.BuiltinInfo, args []tast.TypedEx
 	if !ok {
 		panic("BuiltinKind does not have a mapped representation")
 	}
-	return f.Call(
+	return f().Call(
 		utils.Map(args, func(expr tast.TypedExpr) jen.Code { return g.generate(expr) })...,
 	)
 }

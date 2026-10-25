@@ -14,7 +14,7 @@ var typeMap map[semantic.Type]*jen.Statement = map[semantic.Type]*jen.Statement{
 	semantic.RealType{}:    jen.Id("float64"),
 }
 
-var conversionMap map[semantic.ConversionKind]*jen.Statement = map[semantic.ConversionKind]*jen.Statement{
+var conversionMap map[semantic.ConversionKind]func() *jen.Statement = map[semantic.ConversionKind]func() *jen.Statement{
 	semantic.ConversionIntegerToReal:      IntToRealFunc,
 	semantic.ConversionRealToIntegerExact: ToIntegerExFunc,
 }
@@ -32,5 +32,5 @@ func (g *Generator) genCast(c *tast.Cast) *jen.Statement {
 	if !ok {
 		panic("ConversionKind does not have a mapped representation")
 	}
-	return code.Call(g.generate(c.Expr))
+	return code().Call(g.generate(c.Expr))
 }

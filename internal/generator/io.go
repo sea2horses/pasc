@@ -8,10 +8,10 @@ import (
 )
 
 func (g *Generator) genWrite(w *tast.Write) *jen.Statement {
-	f := WriteFunc
+	f := WriteFunc()
 
 	if !w.Newline {
-		f = WriteContinuousFunc
+		f = WriteContinuousFunc()
 	}
 
 	return f.Call(
@@ -23,9 +23,9 @@ func (g *Generator) genWrite(w *tast.Write) *jen.Statement {
 }
 
 func (g *Generator) genRead(w *tast.Read) *jen.Statement {
-	return ReadFunc.Call(jen.Op("&").Add(g.generate(w.Into)))
+	return ReadFunc().Call(jen.Op("&").Add(g.generate(w.Into)))
 }
 
 func (g *Generator) genClearScreen(cs *tast.ClearScreen) *jen.Statement {
-	return ClearScreenFunc.Call()
+	return ClearScreenFunc().Call()
 }

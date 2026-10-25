@@ -2,30 +2,20 @@ package generator
 
 import "github.com/dave/jennifer/jen"
 
-var (
-	PowerFunc *jen.Statement = jen.Qual("math", "Pow")
-	SinFunc   *jen.Statement = jen.Qual("math", "Sin")
-	CosFunc   *jen.Statement = jen.Qual("math", "Cos")
-	TruncFunc *jen.Statement = jen.Qual("math", "Trunc")
-
-	/* I/O */
-	WriteFunc           *jen.Statement = jen.Id("Write")
-	WriteContinuousFunc *jen.Statement = jen.Id("WriteContinuous")
-	ReadFunc            *jen.Statement = jen.Id("Read")
-
-	/* Conversions */
-	ToIntegerExFunc *jen.Statement = jen.Id("ToIntegerExact")
-	IntToRealFunc   *jen.Statement = jen.Id("IntegerToReal")
-
-	/* Tensors (Arrays) */
-	MakeTensorFunc *jen.Statement = jen.Id("NewTensor")
-	IndexTensor    *jen.Statement = jen.Id("IndexTensor")
-
-	/* For Loops */
-	IterFunc         *jen.Statement = jen.Id("MakeIter")
-	IterSteplessFunc *jen.Statement = jen.Id("MakeIterStepless")
-
-	/* Utils */
-	ClearScreenFunc *jen.Statement = jen.Id("ClearScreen")
-	TimeoutFunc     *jen.Statement = jen.Id("Timeout")
-)
+// Jennifer statements are mutable. Keep constructors here instead of shared
+// statements so each generated call owns its syntax tree.
+func PowerFunc() *jen.Statement           { return jen.Qual("math", "Pow") }
+func SinFunc() *jen.Statement             { return jen.Qual("math", "Sin") }
+func CosFunc() *jen.Statement             { return jen.Qual("math", "Cos") }
+func TruncFunc() *jen.Statement           { return jen.Qual("math", "Trunc") }
+func WriteFunc() *jen.Statement           { return jen.Id("Write") }
+func WriteContinuousFunc() *jen.Statement { return jen.Id("WriteContinuous") }
+func ReadFunc() *jen.Statement            { return jen.Id("Read") }
+func ToIntegerExFunc() *jen.Statement     { return jen.Id("ToIntegerExact") }
+func IntToRealFunc() *jen.Statement       { return jen.Id("IntegerToReal") }
+func MakeTensorFunc() *jen.Statement      { return jen.Id("NewTensor") }
+func IndexTensor() *jen.Statement         { return jen.Id("IndexTensor") }
+func IterFunc() *jen.Statement            { return jen.Id("MakeIter") }
+func IterSteplessFunc() *jen.Statement    { return jen.Id("MakeIterStepless") }
+func ClearScreenFunc() *jen.Statement     { return jen.Id("ClearScreen") }
+func TimeoutFunc() *jen.Statement         { return jen.Id("Timeout") }

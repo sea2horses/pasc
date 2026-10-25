@@ -21,7 +21,7 @@ func (g *Generator) genTimeUnit(t semantic.TimeUnit) *jen.Statement {
 }
 
 func (g *Generator) genTimeout(to *tast.TimeOut) *jen.Statement {
-	return TimeoutFunc.Call(
+	return TimeoutFunc().Call(
 		g.generate(to.Amount).Op("*").Add(g.genTimeUnit(to.Unit)),
 	)
 }
