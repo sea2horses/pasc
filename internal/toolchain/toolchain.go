@@ -203,7 +203,7 @@ func build(codegen []byte, output_dir string, target string, _runtime []byte) (s
 		return "", err
 	}
 
-	cmd := exec.Command("go", "build", "-o", out_path, code_path)
+	cmd := exec.Command("go", "build", "-o", out_path, code_path, runtime_path)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
