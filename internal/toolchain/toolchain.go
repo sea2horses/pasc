@@ -89,10 +89,13 @@ func RunToolchain(config *ToolchainConfig) (err error) {
 	}
 
 	diagnostics.Dbg("generating go code... (6/7)")
-	codegen := generate(t_tree, config.Runtime)
+	codegen, err := generate(t_tree)
+	if err != nil {
+		return err
+	}
 
 	diagnostics.Dbg("building... (7/7)")
-	path, err := build(codegen, output_dir, exec_name)
+	path, err := build(codegen, output_dir, exec_name, config.Runtime)
 	if err != nil {
 		return err
 	}
@@ -162,18 +165,22 @@ func analyze(tree ast.Node, filename string) (tast.Node, error) {
 	return t_tree, diagnostics.SummaryAsError(ds)
 }
 
-func generate(tree tast.Node, runtime []byte) []byte {
-	codegen := generator.CodeGenerator{}
+func generate(tree tast.Node) ([]byte, error) {
+	codegen := generator.NewGenerator()
 
-	code_bytes := codegen.Generate(tree)
-	var data []byte = append(runtime, code_bytes...)
+	data, err := codegen.Gen(tree)
+	if err != nil {
+		return nil, err
+	}
 
-	return data
+	return data, nil
 }
 
-func build(codegen []byte, output_dir string, target string) (string, error) {
+func build(codegen []byte, output_dir string, target string, _runtime []byte) (string, error) {
 	/* code_path is the generated .go */
 	code_path := filepath.Join(output_dir, target+".go")
+	runtime_path := filepath.Join(output_dir, "runtime.go")
+
 	executable_name := target
 
 	/* Add windows executable name */
@@ -186,12 +193,17 @@ func build(codegen []byte, output_dir string, target string) (string, error) {
 		return "", err
 	}
 
-	err := os.WriteFile(code_path, codegen, 0644)
+	err := os.WriteFile(runtime_path, _runtime, 0644)
 	if err != nil {
 		return "", err
 	}
 
-	cmd := exec.Command("go", "build", "-o", out_path, code_path)
+	err = os.WriteFile(code_path, codegen, 0644)
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command("go", "build", "-o", out_path, code_path, runtime_path)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
