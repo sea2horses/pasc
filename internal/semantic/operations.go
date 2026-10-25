@@ -61,10 +61,10 @@ var BinaryOperationTable = []BinaryOperationRule{
 	{DIVIDE, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
 
 	// Power will be shelved since it needs a function
-	// {POWER, IntegerType{}, IntegerType{}, RealType{}, ConversionIntegerToReal, ConversionIntegerToReal},
-	// {POWER, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
-	// {POWER, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
-	// {POWER, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
+	{POWER, IntegerType{}, IntegerType{}, RealType{}, ConversionIntegerToReal, ConversionIntegerToReal},
+	{POWER, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
+	{POWER, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
+	{POWER, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
 
 	// MOD is strict and integer-only.
 	{MODULO, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
