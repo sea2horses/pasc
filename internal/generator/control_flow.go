@@ -37,3 +37,20 @@ func (g *Generator) genSwitch(s *tast.Switch) *jen.Statement {
 
 	return _switch
 }
+
+func (g *Generator) genFor(f *tast.For) *jen.Statement {
+	var _range *jen.Statement
+	if f.Step != nil {
+		_range = IterSteplessFunc.Call(g.generate(f.Start), g.generate(f.Until))
+	} else {
+		_range = IterFunc.Call(g.generate(f.Start), g.generate(f.Until), g.generate(f.Step))
+	}
+
+	_for := jen.For(
+		g.generate(f.Var).Op(":=").Add(_range),
+	).Block(
+		g.genStatementBlock(f.Stmts)...,
+	)
+
+	return jen.Block(_for)
+}
