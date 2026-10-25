@@ -5,7 +5,6 @@ import (
 	"fmt"
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/semantic"
-	"pascc/internal/utils"
 	"strings"
 
 	"github.com/dave/jennifer/jen"
@@ -117,20 +116,20 @@ func (cg *CodeGenerator) write_node(node tast.Node) {
 	// 	cg.write(" ")
 	// 	cg.write_node(n.RHS)
 	// 	cg.write(")")
-	case *tast.Declaration:
-		typerep, _ := typeMap[n.Type]
-		vars := strings.Join(utils.Map(n.Symbols, func(s *semantic.Symbol) string {
-			return s.Name
-		}), ", ")
-		cg.write("var %s %s", vars, typerep)
-	case *tast.Assignment:
-		cg.write_node(n.Target)
-		if n.Declarative {
-			cg.write(" := ")
-		} else {
-			cg.write(" = ")
-		}
-		cg.write_node(n.Value)
+	// case *tast.Declaration:
+	// 	typerep, _ := typeMap[n.Type]
+	// 	vars := strings.Join(utils.Map(n.Symbols, func(s *semantic.Symbol) string {
+	// 		return s.Name
+	// 	}), ", ")
+	// 	cg.write("var %s %s", vars, typerep)
+	// case *tast.Assignment:
+	// 	cg.write_node(n.Target)
+	// 	if n.Declarative {
+	// 		cg.write(" := ")
+	// 	} else {
+	// 		cg.write(" = ")
+	// 	}
+	// 	cg.write_node(n.Value)
 	case *tast.Write:
 		write := RUNTIME_WRITE_FUNCTION
 		if !n.Newline {
