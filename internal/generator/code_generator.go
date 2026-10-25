@@ -81,42 +81,42 @@ func (cg *CodeGenerator) Generate(ast tast.Node) []byte {
 /* TODO: Valdiation pass, don't generate code for statements with uninferred types */
 func (cg *CodeGenerator) write_node(node tast.Node) {
 	switch n := node.(type) {
-	case *tast.StringLiteral:
-		cg.write("\"%s\"", n.Value)
-	case *tast.NumberLiteral:
-		if n.Frac != "" {
-			cg.write("%s.%s", n.Int, n.Frac)
-		} else {
-			cg.write("%s.0", n.Int)
-		}
-	case *tast.BooleanLiteral:
-		if n.Value {
-			cg.write("true")
-		} else {
-			cg.write("false")
-		}
-	case *tast.VariableExpr:
-		cg.write("%s", n.Symbol.Name)
-	case *tast.Cast:
-		cg.write("%s(", conversionMap[*n.ConversionKind])
-		cg.write_node(n.Expr)
-		cg.write(")")
-	case *tast.Operator:
-		cg.write("%s", n.Op.String())
-	case *tast.UnaryOperation:
-		cg.write("(")
-		cg.write_node(n.Op)
-		cg.write(" ")
-		cg.write_node(n.Expr)
-		cg.write(")")
-	case *tast.BinaryOperation:
-		cg.write("(")
-		cg.write_node(n.LHS)
-		cg.write(" ")
-		cg.write_node(n.Op)
-		cg.write(" ")
-		cg.write_node(n.RHS)
-		cg.write(")")
+	// case *tast.StringLiteral:
+	// 	cg.write("\"%s\"", n.Value)
+	// case *tast.NumberLiteral:
+	// 	if n.Frac != "" {
+	// 		cg.write("%s.%s", n.Int, n.Frac)
+	// 	} else {
+	// 		cg.write("%s.0", n.Int)
+	// 	}
+	// case *tast.BooleanLiteral:
+	// 	if n.Value {
+	// 		cg.write("true")
+	// 	} else {
+	// 		cg.write("false")
+	// 	}
+	// case *tast.VariableExpr:
+	// 	cg.write("%s", n.Symbol.Name)
+	// case *tast.Cast:
+	// 	cg.write("%s(", conversionMap[*n.ConversionKind])
+	// 	cg.write_node(n.Expr)
+	// 	cg.write(")")
+	// case *tast.Operator:
+	// 	cg.write("%s", n.Op.String())
+	// case *tast.UnaryOperation:
+	// 	cg.write("(")
+	// 	cg.write_node(n.Op)
+	// 	cg.write(" ")
+	// 	cg.write_node(n.Expr)
+	// 	cg.write(")")
+	// case *tast.BinaryOperation:
+	// 	cg.write("(")
+	// 	cg.write_node(n.LHS)
+	// 	cg.write(" ")
+	// 	cg.write_node(n.Op)
+	// 	cg.write(" ")
+	// 	cg.write_node(n.RHS)
+	// 	cg.write(")")
 	case *tast.Declaration:
 		typerep, _ := typeMap[n.Type]
 		vars := strings.Join(utils.Map(n.Symbols, func(s *semantic.Symbol) string {
