@@ -16,6 +16,11 @@ var (
 	ToIntegerExFunc *jen.Statement = jen.Id("ToIntegerExact")
 	IntToRealFunc   *jen.Statement = jen.Id("IntegerToReal")
 
+	/* Tensors (Arrays) */
+	MakeTensorFunc         *jen.Statement = jen.Id("NewTensor")
+	IterTensorFunc         *jen.Statement = jen.Id("MakeIter")
+	IterTensorSteplessFunc *jen.Statement = jen.Id("MakeIterStepless")
+
 	/* Utils */
 	ClearScreen *jen.Statement = jen.Id("ClearScreen")
 	Timeout     *jen.Statement = jen.Id("Timeout")

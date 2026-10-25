@@ -44,6 +44,8 @@ const (
 	ClearFn = "ClearScreen"
 )
 
+type Generator struct{}
+
 type CodeGenerator struct {
 	buffer  bytes.Buffer
 	padding uint8
