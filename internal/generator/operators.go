@@ -6,19 +6,19 @@ import (
 	"github.com/dave/jennifer/jen"
 )
 
-type GenerationStrategy func(a, b *jen.Statement) jen.Code
+type GenerationStrategy func(a, b *jen.Statement) *jen.Statement
 
 func operatorStrategy(op semantic.OperatorType) GenerationStrategy {
 	switch op {
 	/* Power is CURRENTLY the only operator that needs a different strategy */
 	case semantic.POWER:
-		return func(a, b *jen.Statement) jen.Code {
+		return func(a, b *jen.Statement) *jen.Statement {
 			return PowerFunc.Call(a, b)
 		}
 
 	default:
 		/* By default, all operators are just expr 'op' expr */
-		return func(a, b *jen.Statement) jen.Code {
+		return func(a, b *jen.Statement) *jen.Statement {
 			return a.Op(op.String()).Add(b)
 		}
 	}

@@ -7,6 +7,8 @@ import (
 	"pascc/internal/semantic"
 	"pascc/internal/utils"
 	"strings"
+
+	"github.com/dave/jennifer/jen"
 )
 
 const (
@@ -32,6 +34,10 @@ const (
 )
 
 type Generator struct{}
+
+func (g *Generator) generate(tree tast.Node) *jen.Statement {
+	return nil
+}
 
 type CodeGenerator struct {
 	buffer  bytes.Buffer
