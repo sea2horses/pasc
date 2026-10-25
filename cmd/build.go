@@ -11,15 +11,15 @@ import (
 const defaultDir = "build"
 
 func init() {
-	rootCmd.AddCommand(compileCmd)
+	rootCmd.AddCommand(buildCmd)
 
-	compileCmd.Flags().BoolVar(&Debug, "debug", false, "Prints debug information about the compiling process")
-	compileCmd.Flags().StringVarP(&OutputDir, "output", "o", defaultDir, "Specifies the directory to build the executable onto")
+	buildCmd.Flags().BoolVar(&Debug, "debug", false, "Prints debug information about the compiling process")
+	buildCmd.Flags().StringVarP(&OutputDir, "output", "o", defaultDir, "Specifies the directory to build the executable onto")
 }
 
-var compileCmd = &cobra.Command{
-	Use:   "compile [file: *.psc]",
-	Short: "Compiles a .psc file into a native executable",
+var buildCmd = &cobra.Command{
+	Use:   "build [file: *.psc]",
+	Short: "Builds a .psc file into a native executable",
 	Long:  "The compiler analyzes the program's code for compile-time errors and then uses Go's toolchain to convert it into a native executable",
 	Args:  cobra.ExactArgs(1),
 	RunE:  compile,
