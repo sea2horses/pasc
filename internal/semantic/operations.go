@@ -60,7 +60,6 @@ var BinaryOperationTable = []BinaryOperationRule{
 	{DIVIDE, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
 	{DIVIDE, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
 
-	// Power will be shelved since it needs a function
 	{POWER, IntegerType{}, IntegerType{}, RealType{}, ConversionIntegerToReal, ConversionIntegerToReal},
 	{POWER, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
 	{POWER, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},

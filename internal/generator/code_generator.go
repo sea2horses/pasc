@@ -130,23 +130,23 @@ func (cg *CodeGenerator) write_node(node tast.Node) {
 	// 		cg.write(" = ")
 	// 	}
 	// 	cg.write_node(n.Value)
-	case *tast.Write:
-		write := RUNTIME_WRITE_FUNCTION
-		if !n.Newline {
-			write = RUNTIME_WRITE_CONTINUOUS_FUNCTION
-		}
-		cg.write("%s(", write)
-		for i, exp := range n.Content {
-			if i != 0 {
-				cg.write(", ")
-			}
-			cg.write_node(exp)
-		}
-		cg.write(")")
-	case *tast.Read:
-		cg.write("%s(&", ReadFn)
-		cg.write_node(n.Into)
-		cg.write(")")
+	// case *tast.Write:
+	// 	write := RUNTIME_WRITE_FUNCTION
+	// 	if !n.Newline {
+	// 		write = RUNTIME_WRITE_CONTINUOUS_FUNCTION
+	// 	}
+	// 	cg.write("%s(", write)
+	// 	for i, exp := range n.Content {
+	// 		if i != 0 {
+	// 			cg.write(", ")
+	// 		}
+	// 		cg.write_node(exp)
+	// 	}
+	// 	cg.write(")")
+	// case *tast.Read:
+	// 	cg.write("%s(&", ReadFn)
+	// 	cg.write_node(n.Into)
+	// 	cg.write(")")
 	case *tast.If:
 		cg.write("if ")
 		cg.write_node(n.Condition)
