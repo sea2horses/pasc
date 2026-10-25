@@ -180,27 +180,27 @@ func (cg *CodeGenerator) write_node(node tast.Node) {
 	// 		cg.write("}\n")
 	// 	}
 	// 	cg.write("}\n")
-	case *tast.TimeOut:
-		cg.write("timeout(")
-		cg.write_node(n.Amount)
-		cg.write(" * ")
-		cg.write("%s", timeMap[n.Unit])
-		cg.write(")")
-	case *tast.Dimension:
-		arrayType := n.Symbol.Type.(semantic.ArrayType)
-		elemType := semantic.Resolve(arrayType.Elem)
-		typerep, _ := typeMap[elemType]
-		cg.write("%s := NewTensor[%s]", n.Symbol.Name, typerep)
-		cg.write("(")
-		for i, dim := range n.Dimensions {
-			if i > 0 {
-				cg.write(", ")
-			}
-			cg.write("int(")
-			cg.write_node(dim)
-			cg.write(")")
-		}
-		cg.write(")")
+	// case *tast.TimeOut:
+	// 	cg.write("timeout(")
+	// 	cg.write_node(n.Amount)
+	// 	cg.write(" * ")
+	// 	cg.write("%s", timeMap[n.Unit])
+	// 	cg.write(")")
+	// case *tast.Dimension:
+	// 	arrayType := n.Symbol.Type.(semantic.ArrayType)
+	// 	elemType := semantic.Resolve(arrayType.Elem)
+	// 	typerep, _ := typeMap[elemType]
+	// 	cg.write("%s := NewTensor[%s]", n.Symbol.Name, typerep)
+	// 	cg.write("(")
+	// 	for i, dim := range n.Dimensions {
+	// 		if i > 0 {
+	// 			cg.write(", ")
+	// 		}
+	// 		cg.write("int(")
+	// 		cg.write_node(dim)
+	// 		cg.write(")")
+	// 	}
+	// 	cg.write(")")
 	case *tast.Index:
 		cg.write("*IndexTensor(")
 		cg.write_node(n.Target)
@@ -214,35 +214,35 @@ func (cg *CodeGenerator) write_node(node tast.Node) {
 		cg.write(")")
 	case *tast.Call:
 		cg.generateCall(n)
-	case *tast.For:
-		/* Open new scope */
-		cg.padding++
-		cg.write("{\n")
-		cg.write("for ")
-		cg.write_node(n.Var)
-		cg.write(" := range ")
-
-		if n.Step == nil {
-			cg.write("%s(", FOR_ITER_STEPLESS)
-			cg.write_node(n.Start)
-			cg.write(", ")
-			cg.write_node(n.Until)
-			cg.write(")")
-		} else {
-			cg.write("%s(", FOR_ITER)
-			cg.write_node(n.Start)
-			cg.write(",")
-			cg.write_node(n.Until)
-			cg.write(",")
-			cg.write_node(n.Step)
-			cg.write(")")
-		}
-		cg.write(" {")
-		cg.write_statement_block(n.Stmts)
-		cg.write("}")
-
-		cg.padding--
-		cg.write("\n}")
+		// 	case *tast.For:
+		// 		/* Open new scope */
+		// 		cg.padding++
+		// 		cg.write("{\n")
+		// 		cg.write("for ")
+		// 		cg.write_node(n.Var)
+		// 		cg.write(" := range ")
+		//
+		// 		if n.Step == nil {
+		// 			cg.write("%s(", FOR_ITER_STEPLESS)
+		// 			cg.write_node(n.Start)
+		// 			cg.write(", ")
+		// 			cg.write_node(n.Until)
+		// 			cg.write(")")
+		// 		} else {
+		// 			cg.write("%s(", FOR_ITER)
+		// 			cg.write_node(n.Start)
+		// 			cg.write(",")
+		// 			cg.write_node(n.Until)
+		// 			cg.write(",")
+		// 			cg.write_node(n.Step)
+		// 			cg.write(")")
+		// 		}
+		// 		cg.write(" {")
+		// 		cg.write_statement_block(n.Stmts)
+		// 		cg.write("}")
+		//
+		// 		cg.padding--
+		// 		cg.write("\n}")
 	case *tast.ClearScreen:
 		cg.write("%s()", ClearFn)
 	case *tast.MainFunction:
