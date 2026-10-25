@@ -17,7 +17,15 @@ import (
 	"strings"
 )
 
-const tmp_dir = ".pasctmp"
+func tempDir() (string, error) {
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+
+	path := filepath.Join(cache, "pasc", ".pasctmp")
+	return path, nil
+}
 
 type ToolchainConfig struct {
 	Filename  string
@@ -32,10 +40,14 @@ type ToolchainConfig struct {
 func RunToolchain(config *ToolchainConfig) (err error) {
 	output_dir := config.OutputDir
 	if config.TempBuild {
+		output_dir, err = tempDir()
+		if err != nil {
+			return err
+		}
+
 		defer func() {
 			err = errors.Join(err, clean_temp_directory())
 		}()
-		output_dir = tmp_dir
 	}
 
 	diagnostics.Dbg("validating filename... (1/7)")
@@ -227,5 +239,6 @@ func run(path string) error {
 }
 
 func clean_temp_directory() error {
-	return os.RemoveAll(tmp_dir)
+	path, _ := tempDir()
+	return os.RemoveAll(path)
 }
