@@ -22,6 +22,6 @@ var (
 	IterTensorSteplessFunc *jen.Statement = jen.Id("MakeIterStepless")
 
 	/* Utils */
-	ClearScreen *jen.Statement = jen.Id("ClearScreen")
-	Timeout     *jen.Statement = jen.Id("Timeout")
+	ClearScreenFunc *jen.Statement = jen.Id("ClearScreen")
+	TimeoutFunc     *jen.Statement = jen.Id("Timeout")
 )

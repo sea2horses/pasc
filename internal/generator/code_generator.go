@@ -21,11 +21,6 @@ const (
 	FOR_ITER_STEPLESS = "MakeIterStepless"
 )
 
-var timeMap map[semantic.TimeUnit]string = map[semantic.TimeUnit]string{
-	semantic.MILISEGUNDOS: "time.Millisecond",
-	semantic.SEGUNDOS:     "time.Second",
-}
-
 const (
 	WriteFn = "Write"
 	ReadFn  = "Read"
@@ -147,44 +142,44 @@ func (cg *CodeGenerator) write_node(node tast.Node) {
 	// 	cg.write("%s(&", ReadFn)
 	// 	cg.write_node(n.Into)
 	// 	cg.write(")")
-	case *tast.If:
-		cg.write("if ")
-		cg.write_node(n.Condition)
-		cg.write(" {")
-		cg.write_statement_block(n.Stmts)
-		cg.write("}")
-		if n.Else != nil {
-			cg.write(" else {")
-			cg.write_statement_block(n.Else.Stmts)
-			cg.write("}")
-		}
-	case *tast.While:
-		cg.write("for ")
-		cg.write("(")
-		cg.write_node(n.Condition)
-		cg.write(")")
-		cg.write("{")
-		cg.write_statement_block(n.Stmts)
-		cg.write("}")
-	case *tast.Case:
-		cg.write("case ")
-		cg.write_node(n.Value)
-		cg.write(": {\n")
-		cg.write_statement_block(n.Stmts)
-		cg.write("}\n")
-	case *tast.Switch:
-		cg.write("switch ")
-		cg.write_node(n.Base)
-		cg.write(" {\n")
-		for _, c := range n.Cases {
-			cg.write_node(c)
-		}
-		if n.Default != nil {
-			cg.write("default: {\n")
-			cg.write_statement_block(n.Default)
-			cg.write("}\n")
-		}
-		cg.write("}\n")
+	// case *tast.If:
+	// 	cg.write("if ")
+	// 	cg.write_node(n.Condition)
+	// 	cg.write(" {")
+	// 	cg.write_statement_block(n.Stmts)
+	// 	cg.write("}")
+	// 	if n.Else != nil {
+	// 		cg.write(" else {")
+	// 		cg.write_statement_block(n.Else.Stmts)
+	// 		cg.write("}")
+	// 	}
+	// case *tast.While:
+	// 	cg.write("for ")
+	// 	cg.write("(")
+	// 	cg.write_node(n.Condition)
+	// 	cg.write(")")
+	// 	cg.write("{")
+	// 	cg.write_statement_block(n.Stmts)
+	// 	cg.write("}")
+	// case *tast.Case:
+	// 	cg.write("case ")
+	// 	cg.write_node(n.Value)
+	// 	cg.write(": {\n")
+	// 	cg.write_statement_block(n.Stmts)
+	// 	cg.write("}\n")
+	// case *tast.Switch:
+	// 	cg.write("switch ")
+	// 	cg.write_node(n.Base)
+	// 	cg.write(" {\n")
+	// 	for _, c := range n.Cases {
+	// 		cg.write_node(c)
+	// 	}
+	// 	if n.Default != nil {
+	// 		cg.write("default: {\n")
+	// 		cg.write_statement_block(n.Default)
+	// 		cg.write("}\n")
+	// 	}
+	// 	cg.write("}\n")
 	case *tast.TimeOut:
 		cg.write("timeout(")
 		cg.write_node(n.Amount)
