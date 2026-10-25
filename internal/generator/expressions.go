@@ -6,10 +6,6 @@ import (
 	"github.com/dave/jennifer/jen"
 )
 
-func (g *Generator) genVariable(v *tast.VariableExpr) *jen.Statement {
-	return jen.Id(v.Symbol.Name)
-}
-
 func (g *Generator) genUnExpr(ue *tast.UnaryOperation) *jen.Statement {
 	return jen.Parens(jen.Op(ue.Op.Op.String()).Add(g.generate(ue.Expr)))
 }
