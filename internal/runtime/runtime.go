@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"iter"
 	"math"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -147,6 +148,73 @@ func ToIntegerExact(value float64) int32 {
 
 func IntegerToReal(value int32) float64 {
 	return float64(value)
+}
+
+/* PSeInt built-ins */
+const PI = math.Pi
+
+func Sqrt(value float64) float64 { return math.Sqrt(value) }
+func Abs(value float64) float64  { return math.Abs(value) }
+func Ln(value float64) float64   { return math.Log(value) }
+func Exp(value float64) float64  { return math.Exp(value) }
+func Sin(value float64) float64  { return math.Sin(value) }
+func Cos(value float64) float64  { return math.Cos(value) }
+func Tan(value float64) float64  { return math.Tan(value) }
+func ASin(value float64) float64 { return math.Asin(value) }
+func ACos(value float64) float64 { return math.Acos(value) }
+func ATan(value float64) float64 { return math.Atan(value) }
+func Trunc(value float64) int32  { return ToIntegerExact(math.Trunc(value)) }
+func Round(value float64) int32  { return ToIntegerExact(math.Round(value)) }
+
+func Azar(limit int32) int32 {
+	if limit <= 0 {
+		RuntimeError("Azar requiere un límite mayor que cero")
+	}
+	return int32(rand.Int31n(limit))
+}
+
+func Aleatorio(minimum, maximum int32) int32 {
+	if maximum < minimum {
+		RuntimeError("Aleatorio requiere que el límite inferior no supere al superior")
+	}
+	span := int64(maximum) - int64(minimum) + 1
+	return int32(int64(minimum) + rand.Int63n(span))
+}
+
+func Longitud(value string) int32    { return int32(len([]rune(value))) }
+func Mayusculas(value string) string { return strings.ToUpper(value) }
+func Minusculas(value string) string { return strings.ToLower(value) }
+
+func Subcadena(value string, start, end int32) string {
+	runes := []rune(value)
+	start -= array_bias
+	end -= array_bias
+	if start < 0 || end < start || end >= int32(len(runes)) {
+		RuntimeError("Subcadena: posición fuera de los límites de la cadena")
+	}
+	return string(runes[start : end+1])
+}
+
+func Concatenar(first, second string) string { return first + second }
+
+func ConvertirANumero(value string) float64 {
+	number, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
+	if err != nil {
+		RuntimeError(ErrIncorrectType)
+	}
+	return number
+}
+
+func ConvertirATexto(value float64) string { return strconv.FormatFloat(value, 'f', -1, 64) }
+
+func HoraActual() int32 {
+	now := time.Now()
+	return int32(now.Hour()*10000 + now.Minute()*100 + now.Second())
+}
+
+func FechaActual() int32 {
+	now := time.Now()
+	return int32(now.Year()*10000 + int(now.Month())*100 + now.Day())
 }
 
 /* Arrays */

@@ -9,9 +9,29 @@ import (
 )
 
 var builtinMap map[semantic.BuiltinKind]func() *jen.Statement = map[semantic.BuiltinKind]func() *jen.Statement{
-	semantic.BuiltinSin:   SinFunc,
-	semantic.BuiltinCos:   CosFunc,
-	semantic.BuiltinTrunc: TruncFunc,
+	semantic.BuiltinSqrt:        func() *jen.Statement { return jen.Id("Sqrt") },
+	semantic.BuiltinSin:         SinFunc,
+	semantic.BuiltinCos:         CosFunc,
+	semantic.BuiltinTrunc:       func() *jen.Statement { return jen.Id("Trunc") },
+	semantic.BuiltinAbs:         func() *jen.Statement { return jen.Id("Abs") },
+	semantic.BuiltinLn:          func() *jen.Statement { return jen.Id("Ln") },
+	semantic.BuiltinExp:         func() *jen.Statement { return jen.Id("Exp") },
+	semantic.BuiltinTan:         func() *jen.Statement { return jen.Id("Tan") },
+	semantic.BuiltinASin:        func() *jen.Statement { return jen.Id("ASin") },
+	semantic.BuiltinACos:        func() *jen.Statement { return jen.Id("ACos") },
+	semantic.BuiltinATan:        func() *jen.Statement { return jen.Id("ATan") },
+	semantic.BuiltinRound:       func() *jen.Statement { return jen.Id("Round") },
+	semantic.BuiltinRandom:      func() *jen.Statement { return jen.Id("Azar") },
+	semantic.BuiltinRandomRange: func() *jen.Statement { return jen.Id("Aleatorio") },
+	semantic.BuiltinLength:      func() *jen.Statement { return jen.Id("Longitud") },
+	semantic.BuiltinUpper:       func() *jen.Statement { return jen.Id("Mayusculas") },
+	semantic.BuiltinLower:       func() *jen.Statement { return jen.Id("Minusculas") },
+	semantic.BuiltinSubstring:   func() *jen.Statement { return jen.Id("Subcadena") },
+	semantic.BuiltinConcat:      func() *jen.Statement { return jen.Id("Concatenar") },
+	semantic.BuiltinToNumber:    func() *jen.Statement { return jen.Id("ConvertirANumero") },
+	semantic.BuiltinToText:      func() *jen.Statement { return jen.Id("ConvertirATexto") },
+	semantic.BuiltinCurrentTime: func() *jen.Statement { return jen.Id("HoraActual") },
+	semantic.BuiltinCurrentDate: func() *jen.Statement { return jen.Id("FechaActual") },
 }
 
 func (g *Generator) genBuiltinCall(bi *semantic.BuiltinInfo, args []tast.TypedExpr) *jen.Statement {
