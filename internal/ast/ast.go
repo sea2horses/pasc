@@ -169,6 +169,17 @@ type Dimension struct {
 	Dimensions []Expr
 }
 
+// DimensionGroup declares one or more arrays in a single Dimensionar statement.
+type DimensionGroup struct {
+	NodeInfo
+	Declarations []*Dimension
+}
+
+func (d DimensionGroup) String() string {
+	parts := utils.Map(d.Declarations, func(decl *Dimension) string { return decl.String() })
+	return strings.Join(parts, ", ")
+}
+
 func (d Dimension) String() string {
 	var builder strings.Builder
 

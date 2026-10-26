@@ -47,6 +47,14 @@ func (a *Analyzer) analyze_statement(stmt ast.Stmt) []tast.Stmt {
 		return []tast.Stmt{a.analyze_switch(s)}
 	case *ast.Dimension:
 		return []tast.Stmt{a.analyze_dimension(s)}
+	case *ast.DimensionGroup:
+		statements := make([]tast.Stmt, 0, len(s.Declarations))
+		for _, declaration := range s.Declarations {
+			if typed := a.analyze_dimension(declaration); typed != nil {
+				statements = append(statements, typed)
+			}
+		}
+		return statements
 	case *ast.For:
 		return []tast.Stmt{a.analyze_for(s)}
 	case *ast.TimeOut:

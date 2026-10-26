@@ -220,35 +220,45 @@ func Dimension() Pattern[ast.Stmt] {
 				Kw(lexer.DIMENSIONAR),
 				Kw(lexer.DIMENSION),
 			),
-			Seq2(
-				Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
-				OneOf(
-					Between(
-						Tok(lexer.L_BRACKET),
-						SepBy1(
-							Expected(Expression(), ExpectedExpression),
-							Tok(lexer.COMMA),
-						),
-						Tok(lexer.R_BRACKET),
-					),
-					Between(
-						Tok(lexer.L_PARENTHESES),
-						SepBy1(
-							Expected(Expression(), ExpectedExpression),
-							Tok(lexer.COMMA),
-						),
-						Tok(lexer.R_PARENTHESES),
-					),
-				),
-			),
+			SepBy1(DimensionDeclaration(), Tok(lexer.COMMA)),
 		),
-		func(p Pair[string, []ast.Expr], span models.Span) ast.Stmt {
-			return &ast.Dimension{
+		func(declarations []*ast.Dimension, span models.Span) ast.Stmt {
+			return &ast.DimensionGroup{
 				NodeInfo: ast.NodeInfo{
 					Span: span,
 				},
+				Declarations: declarations,
+			}
+		},
+	)
+}
+
+func DimensionDeclaration() Pattern[*ast.Dimension] {
+	return MapWithLocation(
+		Seq2(
+			Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
+			Many1(OneOf(
+				Between(
+					Tok(lexer.L_BRACKET),
+					SepBy1(Expected(Expression(), ExpectedExpression), Tok(lexer.COMMA)),
+					Tok(lexer.R_BRACKET),
+				),
+				Between(
+					Tok(lexer.L_PARENTHESES),
+					SepBy1(Expected(Expression(), ExpectedExpression), Tok(lexer.COMMA)),
+					Tok(lexer.R_PARENTHESES),
+				),
+			)),
+		),
+		func(p Pair[string, [][]ast.Expr], span models.Span) *ast.Dimension {
+			dimensions := make([]ast.Expr, 0)
+			for _, group := range p.Second {
+				dimensions = append(dimensions, group...)
+			}
+			return &ast.Dimension{
+				NodeInfo:   ast.NodeInfo{Span: span},
 				Name:       p.First,
-				Dimensions: p.Second,
+				Dimensions: dimensions,
 			}
 		},
 	)
