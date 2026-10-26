@@ -2,7 +2,7 @@
 #!/usr/bin/env bash
 
 pascc="pascc"
-build_args=(build --temp)
+build_args=(build --temp --fast)
 
 mapfile -d '' -t files < <(find . -type f -name "*.psc" -print0)
 

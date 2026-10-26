@@ -30,15 +30,18 @@ func tempDir() (string, error) {
 }
 
 type ToolchainConfig struct {
-	Filename   string
-	OutputDir  string
-	Name       string /* Name of the end executable, if not present, it will be infered from the filename */
-	Cleanup    bool   /* Whether to remove the generated .go code */
-	Run        bool   /* Whether to run the program after building */
-	TempBuild  bool   /* This makes the build temporary, overrides the OutputDir and then cleans everything up */
-	Runtime    []byte
-	RuntimeMod []byte
-	Vendor     fs.FS
+	Filename       string
+	OutputDir      string
+	Name           string /* Name of the end executable, if not present, it will be infered from the filename */
+	Cleanup        bool   /* Whether to remove the generated .go code */
+	Run            bool   /* Whether to run the program after building */
+	TempBuild      bool   /* This makes the build temporary, overrides the OutputDir and then cleans everything up */
+	Runtime        []byte
+	ExtRuntime     []byte
+	ExtFastRuntime []byte
+	RuntimeMod     []byte
+	Vendor         fs.FS
+	Fast           bool
 }
 
 func RunToolchain(config *ToolchainConfig) (err error) {
@@ -99,7 +102,17 @@ func RunToolchain(config *ToolchainConfig) (err error) {
 	}
 
 	diagnostics.Dbg("building... (7/7)")
-	path, err := build(codegen, output_dir, exec_name, config.Runtime, config.RuntimeMod, config.Vendor)
+	path, err := build(
+		codegen,
+		output_dir,
+		exec_name,
+		config.Runtime,
+		config.ExtRuntime,
+		config.ExtFastRuntime,
+		config.RuntimeMod,
+		config.Vendor,
+		config.Fast,
+	)
 	if err != nil {
 		return err
 	}
@@ -180,7 +193,7 @@ func generate(tree tast.Node) ([]byte, error) {
 	return data, nil
 }
 
-func build(codegen []byte, output_dir string, target string, _runtime, runtimeMod []byte, vendor fs.FS) (string, error) {
+func build(codegen []byte, output_dir string, target string, _runtime, extRuntime, extFastRuntime, runtimeMod []byte, vendor fs.FS, fast bool) (string, error) {
 	var err error
 	output_dir, err = filepath.Abs(output_dir)
 	if err != nil {
@@ -190,6 +203,7 @@ func build(codegen []byte, output_dir string, target string, _runtime, runtimeMo
 	/* code_path is the generated .go */
 	code_path := filepath.Join(output_dir, target+".go")
 	runtime_path := filepath.Join(output_dir, "runtime.go")
+	ext_path := filepath.Join(output_dir, "ext.go")
 
 	executable_name := target
 
@@ -212,8 +226,17 @@ func build(codegen []byte, output_dir string, target string, _runtime, runtimeMo
 	if err != nil {
 		return "", err
 	}
+	if fast {
+		extRuntime = extFastRuntime
+	}
+	if len(extRuntime) == 0 {
+		return "", errors.New("embedded runtime extension is missing")
+	}
+	if err := os.WriteFile(ext_path, extRuntime, 0644); err != nil {
+		return "", err
+	}
 
-	if len(runtimeMod) == 0 || vendor == nil {
+	if !fast && (len(runtimeMod) == 0 || vendor == nil) {
 		return "", errors.New("runtime Go module or embedded vendor tree is missing")
 	}
 
@@ -223,9 +246,6 @@ func build(codegen []byte, output_dir string, target string, _runtime, runtimeMo
 	}
 	defer os.RemoveAll(module_dir)
 
-	if err := os.WriteFile(filepath.Join(module_dir, "go.mod"), runtimeMod, 0644); err != nil {
-		return "", err
-	}
 	if err := os.WriteFile(filepath.Join(module_dir, "main.go"), codegen, 0644); err != nil {
 		return "", err
 	}
@@ -235,11 +255,24 @@ func build(codegen []byte, output_dir string, target string, _runtime, runtimeMo
 	if err := os.WriteFile(filepath.Join(module_dir, "runtime.go"), runtimeSource, 0644); err != nil {
 		return "", err
 	}
-	if err := copyEmbeddedVendor(vendor, module_dir); err != nil {
+	extSource := bytes.TrimPrefix(extRuntime, []byte("//go:build ignore\n\n"))
+	if err := os.WriteFile(filepath.Join(module_dir, "ext.go"), extSource, 0644); err != nil {
 		return "", err
 	}
 
-	cmd := exec.Command("go", "build", "-buildvcs=false", "-mod=vendor", "-o", out_path, ".")
+	args := []string{"build", "-buildvcs=false", "-o", out_path}
+	if fast {
+		args = append(args, "main.go", "runtime.go", "ext.go")
+	} else {
+		if err := os.WriteFile(filepath.Join(module_dir, "go.mod"), runtimeMod, 0644); err != nil {
+			return "", err
+		}
+		if err := copyEmbeddedVendor(vendor, module_dir); err != nil {
+			return "", err
+		}
+		args = append(args, "-mod=vendor", ".")
+	}
+	cmd := exec.Command("go", args...)
 	cmd.Dir = module_dir
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout

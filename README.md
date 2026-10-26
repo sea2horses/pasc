@@ -108,6 +108,12 @@ El resultado queda en `build/hello_world` (`build/hello_world.exe` en Windows), 
 ./pascc build -o dist demos/hello_world.psc
 ```
 
+También puedes usar `--fast` para compilar sin las dependencias de terminal. En ese modo, `Esperar Tecla` muestra un mensaje y espera a que el usuario presione Enter:
+
+```bash
+./pascc build --fast demos/hello_world.psc
+```
+
 En los ejemplos anteriores, reemplaza `./pascc` por `pascc.exe` en Windows, o usa `go run .` para ejecutar desde el código fuente.
 
 ### Depuración
