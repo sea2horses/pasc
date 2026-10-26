@@ -34,7 +34,7 @@ func (a *Analyzer) analyze_write(write *ast.Write) *tast.Write {
 			continue
 		}
 		/* Check that the type is supported */
-		if !slices.Contains(allowed_write_types, semantic.Resolve(typed.Type())) {
+		if !slices.Contains(allowed_write_types, semantic.Resolve(typed.Type())) && !isUnresolvedInference(typed.Type()) {
 			a.Report(typed.NodeSpan(), "%s", ErrUnsupportedType{Type: typed.Type()}.Error())
 			ok = false
 			continue
@@ -56,6 +56,23 @@ func (a *Analyzer) analyze_read(read *ast.Read) []*tast.Read {
 	ok := true
 
 	for _, exp := range read.Into {
+		declared := false
+		if variable, ok := exp.(*ast.Variable); ok {
+			if _, exists := a.scope.Lookup(variable.Name); !exists {
+				infer := a.type_table.MakeInference().(*semantic.InferType)
+				symbol := &semantic.Symbol{
+					Name:     variable.Name,
+					Kind:     semantic.SymbolVariable,
+					Type:     infer,
+					Declared: variable.NodeSpan(),
+					Mutable:  true,
+				}
+				a.scope.Declare(symbol)
+				a.readInferences = append(a.readInferences, infer)
+				declared = true
+			}
+		}
+
 		/* Check each expression */
 		typed := a.analyze_expression(exp)
 
@@ -80,7 +97,7 @@ func (a *Analyzer) analyze_read(read *ast.Read) []*tast.Read {
 		}
 
 		/* All checks pass, add it */
-		reads = append(reads, &tast.Read{NodeInfo: read.NodeInfo, Into: lvalue})
+		reads = append(reads, &tast.Read{NodeInfo: read.NodeInfo, Into: lvalue, Declare: declared})
 	}
 
 	if !ok {

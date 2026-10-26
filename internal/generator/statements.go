@@ -11,6 +11,12 @@ import (
 func (g *Generator) genStatementBlock(stmts []tast.Stmt) []jen.Code {
 	var code []jen.Code
 	for _, stmt := range stmts {
+		if read, ok := stmt.(*tast.Read); ok && read.Declare {
+			variable := read.Into.(*tast.VariableExpr)
+			code = append(code, jen.Var().Id(variable.Symbol.Name).Add(g.genType(semantic.Resolve(variable.Type()))))
+			code = append(code, g.generate(stmt))
+			continue
+		}
 		declaration, ok := stmt.(*tast.Declaration)
 		if !ok {
 			code = append(code, g.generate(stmt))

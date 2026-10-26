@@ -265,7 +265,8 @@ type Dimension struct {
 /* Although multiple semantically, in the TAST reads are treated as individual */
 type Read struct {
 	ast.NodeInfo
-	Into LValue
+	Into    LValue
+	Declare bool
 }
 
 type If struct {

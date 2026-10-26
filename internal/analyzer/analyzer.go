@@ -8,8 +8,9 @@ import (
 )
 
 type Analyzer struct {
-	scope      *semantic.Scope
-	type_table *semantic.TypeTable
+	scope          *semantic.Scope
+	type_table     *semantic.TypeTable
+	readInferences []*semantic.InferType
 	diagnostics.DiagnosticEmitter
 }
 
@@ -21,6 +22,7 @@ func New() *Analyzer {
 func (a *Analyzer) Analyze(program *ast.MainFunction) (*tast.MainFunction, []diagnostics.Diagnostic) {
 	a.scope = semantic.NewScope(nil)
 	a.type_table = semantic.NewTypeTable()
+	a.readInferences = nil
 	a.DiagnosticEmitter = diagnostics.NewDiagnosticEmitter()
 
 	a.scope.Declare(
@@ -37,6 +39,11 @@ func (a *Analyzer) Analyze(program *ast.MainFunction) (*tast.MainFunction, []dia
 	a.declare_builtins()
 
 	statements := a.analyze_statement_block(program.Stmts)
+	for _, infer := range a.readInferences {
+		if infer.Resolved == nil {
+			infer.Resolved = semantic.String_T{}
+		}
+	}
 
 	return &tast.MainFunction{
 		NodeInfo: program.NodeInfo,

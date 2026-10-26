@@ -68,8 +68,13 @@ func coerce_to(expr tast.TypedExpr, target semantic.Type) (tast.TypedExpr, bool)
 		// Numeric literals carry an inference variable until context selects a
 		// concrete type. Resolve that variable directly, without a Cast node.
 		if infer, ok := target.(*semantic.InferType); ok && infer.Resolved == nil {
-			/* infer float by default */
-			number.ResolvedType = semantic.Real_T{}
+			// Match the normal untyped-number default: integer spelling becomes
+			// integer, while a decimal spelling becomes real.
+			if number.Frac == "" {
+				number.ResolvedType = semantic.Integer_T{}
+			} else {
+				number.ResolvedType = semantic.Real_T{}
+			}
 			infer.Resolved = number.ResolvedType
 			return expr, true
 		}
@@ -126,4 +131,9 @@ func defaultUntypedNumber(expr tast.TypedExpr) tast.TypedExpr {
 	}
 	_, _ = coerce_to(number, target)
 	return number
+}
+
+func isUnresolvedInference(t semantic.Type) bool {
+	infer, ok := semantic.Resolve(t).(*semantic.InferType)
+	return ok && infer.Resolved == nil
 }

@@ -78,6 +78,19 @@ func conversionFor(source, target Type) *ImplicitCast {
 	return CanCast(source, target)
 }
 
+func bindInferenceToKnown(target, source Type) Type {
+	target = Resolve(target)
+	source = Resolve(source)
+	infer, ok := target.(*InferType)
+	if !ok || infer.Resolved != nil {
+		return target
+	}
+	if IsInteger(source) || IsReal(source) || IsString(source) || IsBoolean(source) {
+		infer.Resolved = source
+	}
+	return Resolve(target)
+}
+
 func numericOperands(left, right Type, forceReal bool) (Type, Type, Type, *ImplicitCast, *ImplicitCast, bool) {
 	leftType, leftKnown := operationType(left)
 	rightType, rightKnown := operationType(right)
@@ -107,6 +120,8 @@ func ResolveBinaryOperation(op OperatorType, left, right Type) (BinaryOperationR
 
 	switch op {
 	case ADD:
+		left = bindInferenceToKnown(left, right)
+		right = bindInferenceToKnown(right, left)
 		if EqualTypes(Resolve(left), String_T{}) && EqualTypes(Resolve(right), String_T{}) {
 			return BinaryOperationRule{Operator: op, Left: String_T{}, Right: String_T{}, Result: String_T{}}, true
 		}
@@ -151,6 +166,10 @@ func ResolveBinaryOperation(op OperatorType, left, right Type) (BinaryOperationR
 		}
 
 	case GREATER, GREATER_EQ, LESSER, LESSER_EQ, EQUALS, NOT_EQUALS:
+		if op == EQUALS || op == NOT_EQUALS {
+			left = bindInferenceToKnown(left, right)
+			right = bindInferenceToKnown(right, left)
+		}
 		if (op == EQUALS || op == NOT_EQUALS) && EqualTypes(Resolve(left), Bool_T{}) && EqualTypes(Resolve(right), Bool_T{}) {
 			return BinaryOperationRule{Operator: op, Left: Bool_T{}, Right: Bool_T{}, Result: Bool_T{}}, true
 		}
