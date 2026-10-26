@@ -179,7 +179,7 @@ func Declaration() Pattern[ast.Stmt] {
 func Assignment() Pattern[ast.Stmt] {
 	return MapWithLocation(
 		Seq2(
-			Expression(),
+			Operand(),
 			Right(
 				OneOf(
 					AsAny(Tok(lexer.EQUALS)),

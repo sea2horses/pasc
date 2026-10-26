@@ -99,9 +99,12 @@ func BinaryOperator() Pattern[*ast.Operator] {
 					semantic.LESSER,
 				),
 				If(
-					Seq2(
-						Tok(lexer.EQUALS),
-						Tok(lexer.EQUALS),
+					OneOf(
+						AsAny(Seq2(
+							Tok(lexer.EQUALS),
+							Tok(lexer.EQUALS),
+						)),
+						AsAny(Tok(lexer.EQUALS)),
 					),
 					semantic.EQUALS,
 				),

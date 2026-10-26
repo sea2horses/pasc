@@ -9,7 +9,10 @@ import (
 func Write() Pattern[ast.Stmt] {
 	return MapWithLocation(
 		After(
-			Kw(lexer.ESCRIBIR),
+			OneOf(
+				Kw(lexer.ESCRIBIR),
+				Kw(lexer.IMPRIMIR),
+			),
 			Seq2(
 				Optional(
 					AsAny(

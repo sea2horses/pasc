@@ -18,6 +18,7 @@ const (
 
 	// i/o
 	ESCRIBIR
+	IMPRIMIR
 	LEER
 
 	// Operators
@@ -83,6 +84,7 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"proceso":       PROCESO,
 	"finproceso":    FINPROCESO,
 	"escribir":      ESCRIBIR,
+	"imprimir":      IMPRIMIR,
 	"leer":          LEER,
 	"mientras":      MIENTRAS,
 	"hacer":         HACER,
