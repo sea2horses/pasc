@@ -216,16 +216,29 @@ func Assignment() Pattern[ast.Stmt] {
 func Dimension() Pattern[ast.Stmt] {
 	return MapWithLocation(
 		After(
-			Kw(lexer.DIMENSIONAR),
+			OneOf(
+				Kw(lexer.DIMENSIONAR),
+				Kw(lexer.DIMENSION),
+			),
 			Seq2(
 				Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
-				Between(
-					Expected(Tok(lexer.L_BRACKET), ExpectedToken{Kind: lexer.L_BRACKET}),
-					SepBy1(
-						Expected(Expression(), ExpectedExpression),
-						Tok(lexer.COMMA),
+				OneOf(
+					Between(
+						Tok(lexer.L_BRACKET),
+						SepBy1(
+							Expected(Expression(), ExpectedExpression),
+							Tok(lexer.COMMA),
+						),
+						Tok(lexer.R_BRACKET),
 					),
-					Expected(Tok(lexer.R_BRACKET), ExpectedToken{Kind: lexer.R_BRACKET}),
+					Between(
+						Tok(lexer.L_PARENTHESES),
+						SepBy1(
+							Expected(Expression(), ExpectedExpression),
+							Tok(lexer.COMMA),
+						),
+						Tok(lexer.R_PARENTHESES),
+					),
 				),
 			),
 		),

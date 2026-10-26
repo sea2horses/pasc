@@ -47,6 +47,7 @@ const (
 
 	// Arreglos
 	DIMENSIONAR
+	DIMENSION
 	REDIMENSIONAR
 
 	MIENTRAS
@@ -108,6 +109,7 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"otro":          OTRO,
 	"modo":          MODO,
 	"dimensionar":   DIMENSIONAR,
+	"dimension":     DIMENSION,
 	"redimensionar": REDIMENSIONAR,
 	"para":          PARA,
 	"finpara":       FINPARA,
