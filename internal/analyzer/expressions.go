@@ -45,6 +45,36 @@ func (a *Analyzer) analyze_expression(expr ast.Expr) tast.TypedExpr {
 }
 
 func (a *Analyzer) analyze_postfix(postfix *ast.Postfix) tast.TypedExpr {
+	// The previous syntax allowed multidimensional indexing as a chain
+	// (matrix[0][1]). Once postfix syntax is unified, those nodes are nested;
+	// collapse a chain rooted at an array into one rank-wide indexing operation.
+	chain := []*ast.Postfix{postfix}
+	base := postfix.Target
+	for {
+		inner, ok := base.(*ast.Postfix)
+		if !ok {
+			break
+		}
+		chain = append(chain, inner)
+		base = inner.Target
+	}
+
+	if len(chain) > 1 {
+		baseExpr := a.analyze_expression(base)
+		if baseExpr != nil && semantic.IsArray(baseExpr.Type()) {
+			arguments := make([]ast.Expr, 0)
+			for i := len(chain) - 1; i >= 0; i-- {
+				arguments = append(arguments, chain[i].Arguments...)
+			}
+			combined := &ast.Postfix{
+				NodeInfo:  postfix.NodeInfo,
+				Target:    base,
+				Arguments: arguments,
+			}
+			return a.analyze_indexing(combined, baseExpr)
+		}
+	}
+
 	target := a.analyze_expression(postfix.Target)
 	if target == nil || semantic.IsInvalid(target.Type()) {
 		return tast.ErrorExpr{NodeInfo: postfix.NodeInfo}
