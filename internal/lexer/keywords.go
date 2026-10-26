@@ -72,6 +72,9 @@ const (
 	ESPERAR
 	SEGUNDOS
 	MILISEGUNDOS
+
+	Y
+	O
 )
 
 func MapToKeyword(str []rune) (Keyword, bool) {
@@ -123,4 +126,6 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"segundos":      SEGUNDOS,
 	"milisegundos":  MILISEGUNDOS,
 	"que":           QUE,
+	"y":             Y,
+	"o":             O,
 }

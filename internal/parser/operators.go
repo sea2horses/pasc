@@ -119,6 +119,9 @@ func BinaryOperator() Pattern[*ast.Operator] {
 						AsAny(
 							Tok(lexer.AMPERSAND),
 						),
+						AsAny(
+							Kw(lexer.Y),
+						),
 					),
 					semantic.AND,
 				),
@@ -132,6 +135,9 @@ func BinaryOperator() Pattern[*ast.Operator] {
 						),
 						AsAny(
 							Tok(lexer.PIPE),
+						),
+						AsAny(
+							Kw(lexer.O),
 						),
 					),
 					semantic.OR,
