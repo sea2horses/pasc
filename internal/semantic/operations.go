@@ -121,28 +121,66 @@ func CanCast(from Type, to Type) *ConversionKind {
 	return nil
 }
 
-// func SearchConversion(with Type, c ConversionKind) *ImplicitCast {
-// 	for _, cast := range allowedCasts {
-// 		if EqualTypes(cast.From, with) && cast.ConversionKind == c {
-// 			return &cast
-// 		}
-// 	}
-// 	return nil
-// }
-
-func ResolveBinaryOperation(op OperatorType, left, right Type) (BinaryOperationRule, bool) {
-	for _, rule := range binaryOperationTable {
-		if rule.Operator == op && EqualTypes(rule.Left, left) && EqualTypes(rule.Right, right) {
-			return rule, true
+func SearchConversion(with Type, c ConversionKind) *ImplicitCast {
+	for _, cast := range allowedCasts {
+		if EqualTypes(cast.From, Resolve(with)) && cast.ConversionKind == c {
+			result := cast
+			return &result
 		}
 	}
+	return nil
+}
 
-	return BinaryOperationRule{}, false
+func unresolved(t Type) bool {
+	infer, ok := t.(*InferType)
+	return ok && infer.Resolved == nil
+}
+
+func operationMatchCost(actual, expected Type) (int, bool) {
+	actual = Resolve(actual)
+	expected = Resolve(expected)
+	if unresolved(actual) || EqualTypes(actual, expected) {
+		return 0, true
+	}
+	if EqualTypes(actual, UntypedNumber_T{}) && (IsInteger(expected) || IsReal(expected)) {
+		return 0, true
+	}
+	if CanCast(actual, expected) != nil {
+		return 1, true
+	}
+	return 0, false
+}
+
+func ResolveBinaryOperation(op OperatorType, left, right Type) (BinaryOperationRule, bool) {
+	bestCost := int(^uint(0) >> 1)
+	var best BinaryOperationRule
+	found := false
+	for _, rule := range binaryOperationTable {
+		if rule.Operator != op {
+			continue
+		}
+		leftCost, leftOK := operationMatchCost(left, rule.Left)
+		rightCost, rightOK := operationMatchCost(right, rule.Right)
+		cost := leftCost + rightCost
+		if rule.LeftConversion != ConversionNone {
+			cost++
+		}
+		if rule.RightConversion != ConversionNone {
+			cost++
+		}
+		if leftOK && rightOK && cost < bestCost {
+			best, bestCost, found = rule, cost, true
+		}
+	}
+	return best, found
 }
 
 func ResolveUnaryOperation(op OperatorType, operand Type) (UnaryOperationRule, bool) {
 	for _, rule := range UnaryOperationTable {
-		if rule.Operator == op && EqualTypes(rule.Operand, operand) {
+		if rule.Operator == op {
+			if _, ok := operationMatchCost(operand, rule.Operand); !ok {
+				continue
+			}
 			return rule, true
 		}
 	}

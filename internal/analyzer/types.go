@@ -39,6 +39,11 @@ func (a *Analyzer) assert_nonvoid(exprs ...tast.TypedExpr) bool {
 func unify(target semantic.Type, source semantic.Type) bool {
 	target = semantic.Resolve(target)
 	source = semantic.Resolve(source)
+	if targetInfer, ok := target.(*semantic.InferType); ok {
+		if sourceInfer, sourceOK := source.(*semantic.InferType); sourceOK && targetInfer == sourceInfer {
+			return true
+		}
+	}
 
 	// Target is unknown: learn from source.
 	if infer, ok := target.(*semantic.InferType); ok && infer.Resolved == nil {

@@ -12,9 +12,10 @@ func (a *Analyzer) analyze_expression(expr ast.Expr) tast.TypedExpr {
 	switch node := expr.(type) {
 	case *ast.NumberLiteral:
 		return &tast.NumberLiteral{
-			NodeInfo: node.NodeInfo,
-			Int:      node.Int,
-			Frac:     node.Frac,
+			NodeInfo:     node.NodeInfo,
+			Int:          node.Int,
+			Frac:         node.Frac,
+			ResolvedType: a.type_table.MakeInference(),
 		}
 	case *ast.StringLiteral:
 		return &tast.StringLiteral{
@@ -63,6 +64,11 @@ func (a *Analyzer) analyze_binary_operation(bo *ast.BinaryOperation) tast.TypedE
 		/* Check if we can perform the operation */
 		rule, ok := semantic.ResolveBinaryOperation(bo.Op.Type, LHS.Type(), RHS.Type())
 		if ok {
+			// Resolve literal/inference types from the selected operator signature
+			// before inserting conversions for already-typed operands.
+			if !unify(rule.Left, LHS.Type()) || !unify(rule.Right, RHS.Type()) {
+				return tast.ErrorExpr{NodeInfo: bo.NodeInfo}
+			}
 			/* Check if we need to do a cast in LHS and RHS */
 			if rule.LeftConversion != semantic.ConversionNone {
 				LHS = applyConversion(LHS, rule.LeftConversion)
@@ -105,6 +111,9 @@ func (a *Analyzer) analyze_unary_operation(uo *ast.UnaryOperation) tast.TypedExp
 		/* Check if we can perform the operation */
 		rule, ok := semantic.ResolveUnaryOperation(uo.Op.Type, typed_expr.Type())
 		if ok {
+			if !unify(rule.Operand, typed_expr.Type()) {
+				return tast.ErrorExpr{NodeInfo: uo.NodeInfo}
+			}
 			/* Check if we got to do a cast */
 			if rule.Conversion != semantic.ConversionNone {
 				typed_expr = applyConversion(typed_expr, rule.Conversion)

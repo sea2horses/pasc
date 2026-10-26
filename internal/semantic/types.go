@@ -71,7 +71,7 @@ func IsNumeric(t Type) bool {
 		return false
 	}
 
-	return prim.Kind() == INTEGER || prim.Kind() == REAL
+	return prim.Kind() == UNTYPED_NUMBER || prim.Kind() == INTEGER || prim.Kind() == REAL
 }
 
 func IsInteger(t Type) bool {

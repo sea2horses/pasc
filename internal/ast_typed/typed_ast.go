@@ -64,10 +64,11 @@ type NumberLiteral struct {
 
 func (*NumberLiteral) exprNode() {}
 
-/* ALL number literals are real by default */
-/* TODO: Add warning to round any operation when assigning to an integer variable */
 func (nl *NumberLiteral) Type() semantic.Type {
-	return semantic.Real_T{}
+	if nl.ResolvedType == nil {
+		return semantic.UntypedNumber_T{}
+	}
+	return semantic.Resolve(nl.ResolvedType)
 }
 
 type BooleanLiteral struct {

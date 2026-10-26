@@ -2,12 +2,16 @@ package generator
 
 import (
 	tast "pascc/internal/ast_typed"
+	"pascc/internal/semantic"
 	"strconv"
 
 	"github.com/dave/jennifer/jen"
 )
 
 func (g *Generator) genNumberLiteral(nl *tast.NumberLiteral) *jen.Statement {
+	if semantic.IsInteger(semantic.Resolve(nl.Type())) && nl.Frac == "" {
+		return jen.Lit(nl.Int)
+	}
 	if nl.Frac != "" {
 		num, _ := strconv.ParseFloat(nl.Int+"."+nl.Frac, 64)
 		return jen.Lit(num)

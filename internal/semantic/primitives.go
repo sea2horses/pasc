@@ -28,6 +28,10 @@ func (un UntypedNumber_T) String() string {
 	return "untyped_number"
 }
 
+func (un UntypedNumber_T) Signature() TypeSignature {
+	return TypeSignature{BaseType: un.String()}
+}
+
 type Integer_T struct{}
 
 func (i Integer_T) Kind() PrimKind {
