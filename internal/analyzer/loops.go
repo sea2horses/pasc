@@ -98,7 +98,7 @@ func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 		Kind:     semantic.SymbolVariable,
 		Type:     targetType,
 		Declared: variable.NodeSpan(),
-		Mutable:  false,
+		Mutable:  true,
 	}
 	a.scope.Declare(symbol)
 	typedVariable := &tast.VariableExpr{NodeInfo: variable.NodeInfo, Symbol: symbol}
