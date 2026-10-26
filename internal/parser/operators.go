@@ -63,6 +63,20 @@ func BinaryOperator() Pattern[*ast.Operator] {
 					semantic.MODULO,
 				),
 				If(
+					OneOf(
+						Seq2(
+							/* also done as <> */
+							Tok(lexer.L_ANGLE),
+							Tok(lexer.R_ANGLE),
+						),
+						Seq2(
+							Tok(lexer.EX_MARK),
+							Tok(lexer.EQUALS),
+						),
+					),
+					semantic.NOT_EQUALS,
+				),
+				If(
 					Seq2(
 						Tok(lexer.R_ANGLE),
 						Tok(lexer.EQUALS),
@@ -90,13 +104,6 @@ func BinaryOperator() Pattern[*ast.Operator] {
 						Tok(lexer.EQUALS),
 					),
 					semantic.EQUALS,
-				),
-				If(
-					Seq2(
-						Tok(lexer.EX_MARK),
-						Tok(lexer.EQUALS),
-					),
-					semantic.NOT_EQUALS,
 				),
 				If(
 					OneOf(
