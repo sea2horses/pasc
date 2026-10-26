@@ -7,11 +7,16 @@ import (
 	"github.com/dave/jennifer/jen"
 )
 
-var typeMap map[semantic.Type]*jen.Statement = map[semantic.Type]*jen.Statement{
-	semantic.Integer_T{}: jen.Id("int32"),
-	semantic.String_T{}:  jen.Id("string"),
-	semantic.Bool_T{}:    jen.Id("bool"),
-	semantic.Real_T{}:    jen.Id("float64"),
+func IntegerType() *jen.Statement { return jen.Id("int32") }
+func StringType() *jen.Statement  { return jen.Id("string") }
+func BoolType() *jen.Statement    { return jen.Id("bool") }
+func RealType() *jen.Statement    { return jen.Id("float64") }
+
+var typeMap map[semantic.Type]func() *jen.Statement = map[semantic.Type]func() *jen.Statement{
+	semantic.Integer_T{}: IntegerType,
+	semantic.String_T{}:  StringType,
+	semantic.Bool_T{}:    BoolType,
+	semantic.Real_T{}:    RealType,
 }
 
 var conversionMap map[semantic.ConversionKind]func() *jen.Statement = map[semantic.ConversionKind]func() *jen.Statement{
@@ -24,7 +29,7 @@ func (g *Generator) genType(t semantic.Type) *jen.Statement {
 	if !ok {
 		panic("Type " + t.Signature().String() + " does not have a mapped representation")
 	}
-	return code
+	return code()
 }
 
 func (g *Generator) genCast(c *tast.Cast) *jen.Statement {

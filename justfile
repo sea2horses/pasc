@@ -11,6 +11,7 @@ generate:
 
 test:
 	go test ./...
+	./coverage.sh
 
 run file: build
 	{{target}} run {{file}}

@@ -14,6 +14,7 @@ func init() {
 	rootCmd.AddCommand(buildCmd)
 
 	buildCmd.Flags().BoolVar(&Debug, "debug", false, "Prints debug information about the compiling process")
+	buildCmd.Flags().BoolVar(&Temp, "temp", false, "Builds the program temporarily and then discards the result (useful for testing)")
 	buildCmd.Flags().StringVarP(&OutputDir, "output", "o", defaultDir, "Specifies the directory to build the executable onto")
 }
 
@@ -27,6 +28,7 @@ var buildCmd = &cobra.Command{
 
 var (
 	Debug     bool
+	Temp      bool
 	OutputDir string
 )
 
@@ -40,6 +42,7 @@ func compile(cmd *cobra.Command, args []string) error {
 		&toolchain.ToolchainConfig{
 			Filename:  filename,
 			OutputDir: OutputDir,
+			TempBuild: Temp,
 			Runtime:   runtime.EmbeddedRuntime,
 		},
 	)
