@@ -40,10 +40,12 @@ func compile(cmd *cobra.Command, args []string) error {
 
 	return toolchain.RunToolchain(
 		&toolchain.ToolchainConfig{
-			Filename:  filename,
-			OutputDir: OutputDir,
-			TempBuild: Temp,
-			Runtime:   runtime.EmbeddedRuntime,
+			Filename:   filename,
+			OutputDir:  OutputDir,
+			TempBuild:  Temp,
+			Runtime:    runtime.EmbeddedRuntime,
+			RuntimeMod: runtime.EmbeddedRuntimeMod,
+			Vendor:     runtime.EmbeddedVendor,
 		},
 	)
 }

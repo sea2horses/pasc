@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/term"
 )
 
 /* Errors */
@@ -20,6 +22,9 @@ const (
 	ErrNegativeDimension = "Un arreglo no puede tener dimensiones negativas o iguales a 0"
 	ErrWrongIndexCount   = "No se proveyeron suficientes indices"
 	ErrIndexOutOfBounds  = "El indice esta fuera de rango"
+	ErrCouldNotReadKey   = "No se pudo leer una tecla"
+	ErrTermError         = "No se pudo preparar la terminal para leer una tecla"
+	ErrRestoreTermError  = "No se pudo restaurar la terminal"
 )
 
 func RuntimeError(msg string) {
@@ -36,6 +41,30 @@ type Value interface {
 
 func Timeout(duration time.Duration) {
 	time.Sleep(duration)
+}
+
+func WaitKey() {
+	fd := int(os.Stdin.Fd())
+	if !term.IsTerminal(fd) {
+		if _, _, err := reader.ReadRune(); err != nil {
+			RuntimeError(ErrCouldNotReadKey)
+		}
+		return
+	}
+
+	state, err := term.MakeRaw(fd)
+	if err != nil {
+		RuntimeError(ErrTermError)
+	}
+	defer func() {
+		if err := term.Restore(fd, state); err != nil {
+			RuntimeError(ErrRestoreTermError)
+		}
+	}()
+
+	if _, _, err := reader.ReadRune(); err != nil {
+		RuntimeError(ErrCouldNotReadKey)
+	}
 }
 
 func writeval(value any) {

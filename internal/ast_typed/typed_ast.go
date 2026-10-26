@@ -233,6 +233,10 @@ type TimeOut struct {
 	Unit   semantic.TimeUnit
 }
 
+type WaitKey struct {
+	ast.NodeInfo
+}
+
 type Case struct {
 	ast.NodeInfo
 	Value TypedExpr

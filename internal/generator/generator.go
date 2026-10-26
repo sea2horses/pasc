@@ -43,6 +43,8 @@ func (g *Generator) generate(tree tast.Node) *jen.Statement {
 		return g.genCast(node)
 	case *tast.TimeOut:
 		return g.genTimeout(node)
+	case *tast.WaitKey:
+		return g.genWaitKey(node)
 	case *tast.MainFunction:
 		g.genMainFunction(node)
 		return nil

@@ -217,6 +217,12 @@ type TimeOut struct {
 	Unit   semantic.TimeUnit
 }
 
+type WaitKey struct {
+	NodeInfo
+}
+
+func (WaitKey) String() string { return "Esperar Tecla" }
+
 func (to TimeOut) String() string {
 	return fmt.Sprintf("Wait %s %s", to.Amount, to.Unit)
 }

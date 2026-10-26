@@ -1,7 +1,9 @@
 package toolchain
 
 import (
+	"bytes"
 	"errors"
+	"io/fs"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -28,13 +30,15 @@ func tempDir() (string, error) {
 }
 
 type ToolchainConfig struct {
-	Filename  string
-	OutputDir string
-	Name      string /* Name of the end executable, if not present, it will be infered from the filename */
-	Cleanup   bool   /* Whether to remove the generated .go code */
-	Run       bool   /* Whether to run the program after building */
-	TempBuild bool   /* This makes the build temporary, overrides the OutputDir and then cleans everything up */
-	Runtime   []byte
+	Filename   string
+	OutputDir  string
+	Name       string /* Name of the end executable, if not present, it will be infered from the filename */
+	Cleanup    bool   /* Whether to remove the generated .go code */
+	Run        bool   /* Whether to run the program after building */
+	TempBuild  bool   /* This makes the build temporary, overrides the OutputDir and then cleans everything up */
+	Runtime    []byte
+	RuntimeMod []byte
+	Vendor     fs.FS
 }
 
 func RunToolchain(config *ToolchainConfig) (err error) {
@@ -95,7 +99,7 @@ func RunToolchain(config *ToolchainConfig) (err error) {
 	}
 
 	diagnostics.Dbg("building... (7/7)")
-	path, err := build(codegen, output_dir, exec_name, config.Runtime)
+	path, err := build(codegen, output_dir, exec_name, config.Runtime, config.RuntimeMod, config.Vendor)
 	if err != nil {
 		return err
 	}
@@ -176,7 +180,13 @@ func generate(tree tast.Node) ([]byte, error) {
 	return data, nil
 }
 
-func build(codegen []byte, output_dir string, target string, _runtime []byte) (string, error) {
+func build(codegen []byte, output_dir string, target string, _runtime, runtimeMod []byte, vendor fs.FS) (string, error) {
+	var err error
+	output_dir, err = filepath.Abs(output_dir)
+	if err != nil {
+		return "", err
+	}
+
 	/* code_path is the generated .go */
 	code_path := filepath.Join(output_dir, target+".go")
 	runtime_path := filepath.Join(output_dir, "runtime.go")
@@ -193,7 +203,7 @@ func build(codegen []byte, output_dir string, target string, _runtime []byte) (s
 		return "", err
 	}
 
-	err := os.WriteFile(runtime_path, _runtime, 0644)
+	err = os.WriteFile(runtime_path, _runtime, 0644)
 	if err != nil {
 		return "", err
 	}
@@ -203,7 +213,34 @@ func build(codegen []byte, output_dir string, target string, _runtime []byte) (s
 		return "", err
 	}
 
-	cmd := exec.Command("go", "build", "-o", out_path, code_path, runtime_path)
+	if len(runtimeMod) == 0 || vendor == nil {
+		return "", errors.New("runtime Go module or embedded vendor tree is missing")
+	}
+
+	module_dir, err := os.MkdirTemp("", "pascc-generated-*")
+	if err != nil {
+		return "", err
+	}
+	defer os.RemoveAll(module_dir)
+
+	if err := os.WriteFile(filepath.Join(module_dir, "go.mod"), runtimeMod, 0644); err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(filepath.Join(module_dir, "main.go"), codegen, 0644); err != nil {
+		return "", err
+	}
+	// runtime.go is excluded from pascc's own build with a build tag; remove
+	// that tag from the staged copy so it is compiled into generated programs.
+	runtimeSource := bytes.TrimPrefix(_runtime, []byte("//go:build ignore\n\n"))
+	if err := os.WriteFile(filepath.Join(module_dir, "runtime.go"), runtimeSource, 0644); err != nil {
+		return "", err
+	}
+	if err := copyEmbeddedVendor(vendor, module_dir); err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command("go", "build", "-buildvcs=false", "-mod=vendor", "-o", out_path, ".")
+	cmd.Dir = module_dir
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
@@ -214,6 +251,35 @@ func build(codegen []byte, output_dir string, target string, _runtime []byte) (s
 	}
 
 	return out_path, nil
+}
+
+func copyEmbeddedVendor(vendor fs.FS, moduleDir string) error {
+	const sourceRoot = "vendor_clean"
+	if _, err := fs.Stat(vendor, sourceRoot+"/modules.txt"); err != nil {
+		return errors.New("embedded runtime vendor tree is missing vendor/modules.txt")
+	}
+
+	return fs.WalkDir(vendor, sourceRoot, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		rel := strings.TrimPrefix(path, sourceRoot+"/")
+		if path == sourceRoot {
+			rel = "."
+		}
+		dest := filepath.Join(moduleDir, "vendor", filepath.FromSlash(rel))
+		if entry.IsDir() {
+			return os.MkdirAll(dest, 0755)
+		}
+		data, err := fs.ReadFile(vendor, path)
+		if err != nil {
+			return err
+		}
+		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+			return err
+		}
+		return os.WriteFile(dest, data, 0644)
+	})
 }
 
 func run(path string) error {

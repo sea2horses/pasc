@@ -27,10 +27,12 @@ func run(cmd *cobra.Command, args []string) error {
 
 	return toolchain.RunToolchain(
 		&toolchain.ToolchainConfig{
-			Filename:  filename,
-			TempBuild: true,
-			Run:       true,
-			Runtime:   runtime.EmbeddedRuntime,
+			Filename:   filename,
+			TempBuild:  true,
+			Run:        true,
+			Runtime:    runtime.EmbeddedRuntime,
+			RuntimeMod: runtime.EmbeddedRuntimeMod,
+			Vendor:     runtime.EmbeddedVendor,
 		},
 	)
 }

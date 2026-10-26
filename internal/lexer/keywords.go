@@ -75,6 +75,7 @@ const (
 	PANTALLA
 
 	ESPERAR
+	TECLA
 	SEGUNDOS
 	MILISEGUNDOS
 
@@ -129,6 +130,7 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"sin":           SIN,
 	"saltar":        SALTAR,
 	"esperar":       ESPERAR,
+	"tecla":         TECLA,
 	"segundos":      SEGUNDOS,
 	"milisegundos":  MILISEGUNDOS,
 	"que":           QUE,

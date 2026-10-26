@@ -29,3 +29,7 @@ func (g *Generator) genRead(w *tast.Read) *jen.Statement {
 func (g *Generator) genClearScreen(cs *tast.ClearScreen) *jen.Statement {
 	return ClearScreenFunc().Call()
 }
+
+func (g *Generator) genWaitKey(w *tast.WaitKey) *jen.Statement {
+	return jen.Id("WaitKey").Call()
+}

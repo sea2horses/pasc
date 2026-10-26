@@ -20,6 +20,7 @@ func Statement() Pattern[ast.Stmt] {
 		For(),
 		Switch(),
 		Dimension(),
+		WaitKey(),
 		Timeout(),
 		ClearScreen(),
 	)
@@ -289,6 +290,15 @@ func Timeout() Pattern[ast.Stmt] {
 				Amount: p.First,
 				Unit:   p.Second,
 			}
+		},
+	)
+}
+
+func WaitKey() Pattern[ast.Stmt] {
+	return MapWithLocation(
+		Seq2(Kw(lexer.ESPERAR), Kw(lexer.TECLA)),
+		func(_ Pair[lexer.Keyword, lexer.Keyword], span models.Span) ast.Stmt {
+			return &ast.WaitKey{NodeInfo: ast.NodeInfo{Span: span}}
 		},
 	)
 }

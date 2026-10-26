@@ -59,6 +59,8 @@ func (a *Analyzer) analyze_statement(stmt ast.Stmt) []tast.Stmt {
 		return []tast.Stmt{a.analyze_for(s)}
 	case *ast.TimeOut:
 		return []tast.Stmt{a.analyze_timeout(s)}
+	case *ast.WaitKey:
+		return []tast.Stmt{&tast.WaitKey{NodeInfo: s.NodeInfo}}
 	case *ast.DoWhile:
 		return []tast.Stmt{a.analyze_dowhile(s)}
 	}
