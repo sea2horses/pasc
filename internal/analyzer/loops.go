@@ -44,12 +44,10 @@ func (a *Analyzer) analyze_dowhile(dw *ast.DoWhile) *tast.DoWhile {
 
 /* For ONLY works with floats and numeric values!! */
 func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
-	_ = a.analyze_statement(f.Start)
-
-	exp := a.analyze_expression(f.Start.Target)
-	variable, ok := exp.(*tast.VariableExpr)
+	variable, ok := f.Start.Target.(*ast.Variable)
 	if !ok {
 		a.Report(f.Start.NodeSpan(), "expected variable")
+		return nil
 	}
 
 	start := a.analyze_expression(f.Start.Content)
@@ -57,13 +55,24 @@ func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 
 	targetType := semantic.Real_T{}
 
+	valid := true
 	start, ok = coerce_to(start, targetType)
-	if !ok {
-		a.Report(start.NodeSpan(), "%s", ErrIncorrectType{Expected: targetType, Got: start.Type()})
+	if !ok || start == nil {
+		got := semantic.Type(semantic.Invalid_T{})
+		if start != nil {
+			got = start.Type()
+		}
+		a.Report(f.Start.Content.NodeSpan(), "%s", ErrIncorrectType{Expected: targetType, Got: got})
+		valid = false
 	}
 	end, ok = coerce_to(end, targetType)
-	if !ok {
-		a.Report(end.NodeSpan(), "%s", ErrIncorrectType{Expected: targetType, Got: end.Type()})
+	if !ok || end == nil {
+		got := semantic.Type(semantic.Invalid_T{})
+		if end != nil {
+			got = end.Type()
+		}
+		a.Report(f.Until.NodeSpan(), "%s", ErrIncorrectType{Expected: targetType, Got: got})
+		valid = false
 	}
 
 	var step tast.TypedExpr
@@ -71,18 +80,39 @@ func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 	if f.Step != nil {
 		step = a.analyze_expression(f.Step)
 		step, ok = coerce_to(step, targetType)
-		if !ok {
-			a.Report(end.NodeSpan(), "%s", ErrIncorrectType{Expected: targetType, Got: step.Type()})
+		if !ok || step == nil {
+			got := semantic.Type(semantic.Invalid_T{})
+			if step != nil {
+				got = step.Type()
+			}
+			a.Report(f.Step.NodeSpan(), "%s", ErrIncorrectType{Expected: targetType, Got: got})
+			valid = false
 		}
 	}
 
-	/* ALL must coerce to float */
+	// The generated iterator yields float64, so the loop variable must have a
+	// real type even when it shadows an outer integer variable.
+	a.new_scope()
+	symbol := &semantic.Symbol{
+		Name:     variable.Name,
+		Kind:     semantic.SymbolVariable,
+		Type:     targetType,
+		Declared: variable.NodeSpan(),
+		Mutable:  false,
+	}
+	a.scope.Declare(symbol)
+	typedVariable := &tast.VariableExpr{NodeInfo: variable.NodeInfo, Symbol: symbol}
+	stmts := a.analyze_statement_block(f.Stmts)
+	a.destroy_scope()
+	if !valid {
+		return nil
+	}
 
 	return &tast.For{
-		Var:   variable,
+		Var:   typedVariable,
 		Start: start,
 		Until: end,
 		Step:  step,
-		Stmts: a.analyze_statement_block(f.Stmts),
+		Stmts: stmts,
 	}
 }
