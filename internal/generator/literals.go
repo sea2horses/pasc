@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -11,17 +12,36 @@ import (
 )
 
 func (g *Generator) genNumberLiteral(nl *tast.NumberLiteral) *jen.Statement {
-	if semantic.IsInteger(semantic.Resolve(nl.Type())) && strings.Trim(nl.Frac, "0") == "" {
-		return jen.Lit(nl.Int)
+	switch semantic.Resolve(nl.Type()).(type) {
+	case semantic.Integer_T:
+		if strings.Trim(nl.Frac, "0") != "" {
+			panic("non-integral number literal resolved as integer")
+		}
+		return jen.Id("int64").Call(jen.Lit(nl.Int))
+
+	case semantic.Real_T:
+		return genRealLiteral(nl)
+
+	case semantic.UntypedNumber_T:
+		// Untyped literals should normally be settled by the analyzer. Keep
+		// code generation deterministic if an unconstrained one reaches here.
+		if nl.Frac == "" {
+			return jen.Id("int64").Call(jen.Lit(nl.Int))
+		}
+		return genRealLiteral(nl)
+
+	default:
+		panic(fmt.Sprintf("number literal has non-numeric type %s", nl.Type()))
 	}
+}
+
+func genRealLiteral(nl *tast.NumberLiteral) *jen.Statement {
+	text := nl.Int
 	if nl.Frac != "" {
-		num, _ := strconv.ParseFloat(nl.Int+"."+nl.Frac, 64)
-		return jen.Lit(num)
-	} else {
-		/* Until I don't do constexpr evaluation, this has to be float too */
-		num, _ := strconv.ParseFloat(nl.Int, 64)
-		return jen.Lit(num)
+		text += "." + nl.Frac
 	}
+	num, _ := strconv.ParseFloat(text, 64)
+	return jen.Id("float64").Call(jen.Lit(num))
 }
 
 func (g *Generator) genStringLiteral(sl *tast.StringLiteral) *jen.Statement {
