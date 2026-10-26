@@ -3,8 +3,7 @@ package semantic
 type ConversionKind uint8
 
 const (
-	ConversionNone ConversionKind = iota
-	ConversionIntegerToReal
+	ConversionIntegerToReal ConversionKind = iota
 	ConversionRealToIntegerExact
 )
 
@@ -19,15 +18,15 @@ type BinaryOperationRule struct {
 	Left            Type
 	Right           Type
 	Result          Type
-	LeftConversion  ConversionKind
-	RightConversion ConversionKind
+	LeftConversion  *ImplicitCast
+	RightConversion *ImplicitCast
 }
 
 type UnaryOperationRule struct {
 	Operator   OperatorType
 	Operand    Type
 	Result     Type
-	Conversion ConversionKind
+	Conversion *ImplicitCast
 }
 
 var allowedCasts = []ImplicitCast{
@@ -35,23 +34,12 @@ var allowedCasts = []ImplicitCast{
 	{From: Real_T{}, To: Integer_T{}, ConversionKind: ConversionRealToIntegerExact},
 }
 
-func CanCast(from Type, to Type) *ConversionKind {
+func CanCast(from Type, to Type) *ImplicitCast {
 	from, to = Resolve(from), Resolve(to)
 	for _, cast := range allowedCasts {
 		if EqualTypes(cast.From, from) && EqualTypes(cast.To, to) {
-			kind := cast.ConversionKind
-			return &kind
-		}
-	}
-	return nil
-}
-
-func SearchConversion(with Type, kind ConversionKind) *ImplicitCast {
-	with = Resolve(with)
-	for _, cast := range allowedCasts {
-		if EqualTypes(cast.From, with) && cast.ConversionKind == kind {
-			result := cast
-			return &result
+			plan := cast
+			return &plan
 		}
 	}
 	return nil
@@ -83,21 +71,18 @@ func unresolvedInference(t Type) bool {
 	return ok && infer.Resolved == nil
 }
 
-func conversionFor(source, target Type) ConversionKind {
+func conversionFor(source, target Type) *ImplicitCast {
 	if EqualTypes(source, target) {
-		return ConversionNone
+		return nil
 	}
-	if kind := CanCast(source, target); kind != nil {
-		return *kind
-	}
-	return ConversionNone
+	return CanCast(source, target)
 }
 
-func numericOperands(left, right Type, forceReal bool) (Type, Type, Type, ConversionKind, ConversionKind, bool) {
+func numericOperands(left, right Type, forceReal bool) (Type, Type, Type, *ImplicitCast, *ImplicitCast, bool) {
 	leftType, leftKnown := operationType(left)
 	rightType, rightKnown := operationType(right)
 	if (!leftKnown && !isUnknownNumeric(left)) || (!rightKnown && !isUnknownNumeric(right)) {
-		return nil, nil, nil, ConversionNone, ConversionNone, false
+		return nil, nil, nil, nil, nil, false
 	}
 
 	// An unresolved number follows its known peer. With no peer, ordinary
@@ -156,11 +141,11 @@ func ResolveBinaryOperation(op OperatorType, left, right Type) (BinaryOperationR
 		case IsInteger(l) && IsInteger(r):
 			return BinaryOperationRule{Operator: op, Left: l, Right: r, Result: Integer_T{}}, true
 		case IsInteger(l) && IsReal(r):
-			return BinaryOperationRule{Operator: op, Left: l, Right: r, Result: Integer_T{}, RightConversion: ConversionRealToIntegerExact}, true
+			return BinaryOperationRule{Operator: op, Left: l, Right: r, Result: Integer_T{}, RightConversion: CanCast(r, Integer_T{})}, true
 		case IsReal(l) && IsInteger(r):
-			return BinaryOperationRule{Operator: op, Left: l, Right: r, Result: Real_T{}, LeftConversion: ConversionRealToIntegerExact}, true
+			return BinaryOperationRule{Operator: op, Left: l, Right: r, Result: Real_T{}, LeftConversion: CanCast(l, Integer_T{})}, true
 		case IsReal(l) && IsReal(r):
-			return BinaryOperationRule{Operator: op, Left: l, Right: r, Result: Integer_T{}, LeftConversion: ConversionRealToIntegerExact, RightConversion: ConversionRealToIntegerExact}, true
+			return BinaryOperationRule{Operator: op, Left: l, Right: r, Result: Integer_T{}, LeftConversion: CanCast(l, Integer_T{}), RightConversion: CanCast(r, Integer_T{})}, true
 		default:
 			return rule, false
 		}

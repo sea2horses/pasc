@@ -70,11 +70,17 @@ func (a *Analyzer) analyze_binary_operation(bo *ast.BinaryOperation) tast.TypedE
 				return tast.ErrorExpr{NodeInfo: bo.NodeInfo}
 			}
 			/* Check if we need to do a cast in LHS and RHS */
-			if rule.LeftConversion != semantic.ConversionNone {
-				LHS = applyConversion(LHS, rule.LeftConversion)
+			if rule.LeftConversion != nil {
+				LHS, ok = applyConversion(LHS, rule.LeftConversion)
+				if !ok {
+					return tast.ErrorExpr{NodeInfo: bo.NodeInfo}
+				}
 			}
-			if rule.RightConversion != semantic.ConversionNone {
-				RHS = applyConversion(RHS, rule.RightConversion)
+			if rule.RightConversion != nil {
+				RHS, ok = applyConversion(RHS, rule.RightConversion)
+				if !ok {
+					return tast.ErrorExpr{NodeInfo: bo.NodeInfo}
+				}
 			}
 			resolved_type = rule.Result
 		} else {
@@ -115,8 +121,11 @@ func (a *Analyzer) analyze_unary_operation(uo *ast.UnaryOperation) tast.TypedExp
 				return tast.ErrorExpr{NodeInfo: uo.NodeInfo}
 			}
 			/* Check if we got to do a cast */
-			if rule.Conversion != semantic.ConversionNone {
-				typed_expr = applyConversion(typed_expr, rule.Conversion)
+			if rule.Conversion != nil {
+				typed_expr, ok = applyConversion(typed_expr, rule.Conversion)
+				if !ok {
+					return tast.ErrorExpr{NodeInfo: uo.NodeInfo}
+				}
 			}
 			/* First attach the resolved type */
 			resolved_type = rule.Result
