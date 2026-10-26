@@ -30,12 +30,12 @@ type UnaryOperationRule struct {
 	Conversion ConversionKind
 }
 
-var AllowedCasts = []ImplicitCast{
+var allowedCasts = []ImplicitCast{
 	{From: IntegerType{}, To: RealType{}, ConversionKind: ConversionIntegerToReal},
 	{From: RealType{}, To: IntegerType{}, ConversionKind: ConversionRealToIntegerExact},
 }
 
-var BinaryOperationTable = []BinaryOperationRule{
+var binaryOperationTable = []BinaryOperationRule{
 	// Addition and string concatenation.
 	{ADD, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
 	{ADD, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
@@ -113,7 +113,7 @@ var UnaryOperationTable = []UnaryOperationRule{
 }
 
 func CanCast(from Type, to Type) *ConversionKind {
-	for _, cast := range AllowedCasts {
+	for _, cast := range allowedCasts {
 		if EqualTypes(cast.From, from) && EqualTypes(cast.To, to) {
 			return &cast.ConversionKind
 		}
@@ -122,7 +122,7 @@ func CanCast(from Type, to Type) *ConversionKind {
 }
 
 func SearchConversion(with Type, c ConversionKind) *ImplicitCast {
-	for _, cast := range AllowedCasts {
+	for _, cast := range allowedCasts {
 		if EqualTypes(cast.From, with) && cast.ConversionKind == c {
 			return &cast
 		}
@@ -131,7 +131,7 @@ func SearchConversion(with Type, c ConversionKind) *ImplicitCast {
 }
 
 func ResolveBinaryOperation(op OperatorType, left, right Type) (BinaryOperationRule, bool) {
-	for _, rule := range BinaryOperationTable {
+	for _, rule := range binaryOperationTable {
 		if rule.Operator == op && EqualTypes(rule.Left, left) && EqualTypes(rule.Right, right) {
 			return rule, true
 		}
