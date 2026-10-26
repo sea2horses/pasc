@@ -194,9 +194,9 @@ func Assignment() Pattern[ast.Stmt] {
 					AsAny(Tok(lexer.EQUALS)),
 					AsAny(
 						Seq2(
-							/* -> */
+							/* <- */
+							Tok(lexer.L_ANGLE),
 							Tok(lexer.MINUS),
-							Tok(lexer.R_ANGLE),
 						),
 					),
 					AsAny(

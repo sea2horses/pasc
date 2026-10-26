@@ -138,15 +138,19 @@ func (l *Lexer) tokenize_identifier() (Token, error) {
 /* Parse string literal */
 func (l *Lexer) tokenize_string_literal() (Token, error) {
 	init_position := l.position
+	delimiter, err := l.getch()
+	if err != nil || (delimiter != '"' && delimiter != '\'') {
+		return NULL_TOKEN, ErrExpectedString
+	}
 
-	/* Skip first " */
+	/* Skip opening quote */
 	l.advance()
 
 	/* Run until reaching the end of the file or putting a stop */
 	for {
 		ch, err := l.getch()
 
-		if err != nil || ch == '"' {
+		if err != nil || ch == delimiter {
 			break
 		}
 
@@ -174,11 +178,11 @@ func (l *Lexer) tokenize_string_literal() (Token, error) {
 		return NULL_TOKEN, ErrUnterminatedString
 	}
 
-	/* Skip last '"' */
+	/* Skip closing quote */
 	l.advance()
 
-	/* Check that both ends of our string are good */
-	if init_ch != '"' {
+	/* Check that the opening and closing quotes match. */
+	if init_ch != delimiter {
 		l.Report(
 			models.Span{Start: init_position, End: init_position},
 			"%s",
@@ -188,7 +192,7 @@ func (l *Lexer) tokenize_string_literal() (Token, error) {
 		return NULL_TOKEN, ErrExpectedString
 	}
 
-	if end_ch != '"' {
+	if end_ch != delimiter {
 		l.Report(
 			models.Span{Start: init_position, End: init_position},
 			"%s",
@@ -347,7 +351,7 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 			}
 		} else if unicode.IsSpace(ch) && ch != '\n' {
 			l.skip_whitespace()
-		} else if ch == '"' {
+		} else if ch == '"' || ch == '\'' {
 			token, err := l.tokenize_string_literal()
 			if err == nil {
 				tokens = append(tokens, token)

@@ -65,6 +65,6 @@ func (a *Analyzer) analyze_statement(stmt ast.Stmt) []tast.Stmt {
 		return []tast.Stmt{a.analyze_dowhile(s)}
 	}
 
-	a.Report(stmt.NodeSpan(), "analyzer does not implement this statement")
+	a.Report(stmt.NodeSpan(), "analyzer does not implement this statement: %+v", stmt)
 	return nil
 }
