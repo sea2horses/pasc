@@ -71,6 +71,7 @@ const (
 
 	// Extra
 	BORRAR
+	LIMPIAR
 	PANTALLA
 
 	ESPERAR
@@ -109,6 +110,7 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"logico":        LOGICO,
 	"real":          REAL,
 	"borrar":        BORRAR,
+	"limpiar":       LIMPIAR,
 	"pantalla":      PANTALLA,
 	"segun":         SEGUN,
 	"finsegun":      FINSEGUN,

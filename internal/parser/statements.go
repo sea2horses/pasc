@@ -296,8 +296,11 @@ func Timeout() Pattern[ast.Stmt] {
 func ClearScreen() Pattern[ast.Stmt] {
 	return Map(
 		Locate(
-			AsAny(Seq2(
-				Kw(lexer.BORRAR),
+			AsAny(After(
+				OneOf(
+					Kw(lexer.BORRAR),
+					Kw(lexer.LIMPIAR),
+				),
 				Expected(Kw(lexer.PANTALLA), ExpectedKeyword{Keyword: lexer.PANTALLA}),
 			)),
 		),
