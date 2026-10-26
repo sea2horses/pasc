@@ -151,7 +151,7 @@ func Switch() Pattern[ast.Stmt] {
 					),
 				),
 				Right(
-					Expected(Newline(), ExpectedNewline),
+					BlockHeaderNewline(),
 					Right(Many(Newline()), switchCases()),
 				),
 				Optional(

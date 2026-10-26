@@ -78,10 +78,18 @@ func skipNewlines(ctx *Context) {
 	}
 }
 
+func BlockHeaderNewline() Pattern[lexer.Token] {
+	return PatternFunc[lexer.Token](func(ctx *Context) Match[lexer.Token] {
+		skipSemicolons(ctx)
+		return Expected(Newline(), ExpectedNewline).Match(ctx)
+	})
+}
+
 func statementBlock(cases bool) Pattern[[]ast.Stmt] {
 	return PatternFunc[[]ast.Stmt](func(ctx *Context) Match[[]ast.Stmt] {
 		start := ctx.Pos
 		// Headers and statements must end on their own line.
+		skipSemicolons(ctx)
 		if !ctx.EOF() && !Newline().Match(ctx).OK() {
 			ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, ExpectedNewline.Expected()))
 		}
