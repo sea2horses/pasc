@@ -1,6 +1,8 @@
 package analyzer
 
 import (
+	"strings"
+
 	"pascc/internal/ast"
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/semantic"
@@ -62,6 +64,28 @@ func unify(target semantic.Type, source semantic.Type) bool {
 
 func coerce_to(expr tast.TypedExpr, target semantic.Type) (tast.TypedExpr, bool) {
 	target = semantic.Resolve(target)
+	if number, ok := expr.(*tast.NumberLiteral); ok {
+		// Numeric literals carry an inference variable until context selects a
+		// concrete type. Resolve that variable directly, without a Cast node.
+		if infer, ok := target.(*semantic.InferType); ok && infer.Resolved == nil {
+			number.ResolvedType = infer
+			return expr, true
+		}
+		if !semantic.IsNumeric(target) {
+			return nil, false
+		}
+		if semantic.IsInteger(target) && strings.Trim(number.Frac, "0") != "" {
+			return nil, false
+		}
+		if infer, ok := number.ResolvedType.(*semantic.InferType); ok && infer.Resolved == nil {
+			infer.Resolved = target
+			return expr, true
+		}
+		if number.ResolvedType == nil || semantic.EqualTypes(number.Type(), semantic.UntypedNumber_T{}) {
+			number.ResolvedType = target
+			return expr, true
+		}
+	}
 	source := semantic.Resolve(expr.Type())
 
 	/* Unify in case */
@@ -77,4 +101,27 @@ func coerce_to(expr tast.TypedExpr, target semantic.Type) (tast.TypedExpr, bool)
 	}
 
 	return nil, false
+}
+
+func expressionTypeForOperation(expr tast.TypedExpr) semantic.Type {
+	if number, ok := expr.(*tast.NumberLiteral); ok && number.Frac != "" {
+		return semantic.Real_T{}
+	}
+	return expr.Type()
+}
+
+// defaultUntypedNumber settles a literal when no surrounding expression can
+// provide a type. Whole-number spelling defaults to integer; decimal spelling
+// defaults to real.
+func defaultUntypedNumber(expr tast.TypedExpr) tast.TypedExpr {
+	number, ok := expr.(*tast.NumberLiteral)
+	if !ok || !semantic.EqualTypes(number.Type(), semantic.UntypedNumber_T{}) {
+		return expr
+	}
+	target := semantic.Type(semantic.Integer_T{})
+	if number.Frac != "" {
+		target = semantic.Real_T{}
+	}
+	_, _ = coerce_to(number, target)
+	return number
 }

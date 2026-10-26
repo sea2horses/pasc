@@ -21,7 +21,7 @@ func (a *Analyzer) analyze_write(write *ast.Write) *tast.Write {
 	ok := true
 
 	for _, exp := range write.Print {
-		typed := a.analyze_expression(exp)
+		typed := defaultUntypedNumber(a.analyze_expression(exp))
 
 		if semantic.IsInvalid(typed.Type()) {
 			ok = false

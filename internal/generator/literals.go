@@ -1,15 +1,17 @@
 package generator
 
 import (
+	"strconv"
+	"strings"
+
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/semantic"
-	"strconv"
 
 	"github.com/dave/jennifer/jen"
 )
 
 func (g *Generator) genNumberLiteral(nl *tast.NumberLiteral) *jen.Statement {
-	if semantic.IsInteger(semantic.Resolve(nl.Type())) && nl.Frac == "" {
+	if semantic.IsInteger(semantic.Resolve(nl.Type())) && strings.Trim(nl.Frac, "0") == "" {
 		return jen.Lit(nl.Int)
 	}
 	if nl.Frac != "" {

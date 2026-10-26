@@ -62,11 +62,16 @@ func (a *Analyzer) analyze_binary_operation(bo *ast.BinaryOperation) tast.TypedE
 
 	if !semantic.IsInvalid(LHS.Type()) && !semantic.IsInvalid(RHS.Type()) {
 		/* Check if we can perform the operation */
-		rule, ok := semantic.ResolveBinaryOperation(bo.Op.Type, LHS.Type(), RHS.Type())
+		rule, ok := semantic.ResolveBinaryOperation(bo.Op.Type, expressionTypeForOperation(LHS), expressionTypeForOperation(RHS))
 		if ok {
-			// Resolve literal/inference types from the selected operator signature
-			// before inserting conversions for already-typed operands.
-			if !unify(rule.Left, LHS.Type()) || !unify(rule.Right, RHS.Type()) {
+			// Apply operand constraints first. Untyped literals resolve directly;
+			// already typed operands may then need an explicit conversion.
+			LHS, ok = coerce_to(LHS, rule.Left)
+			if !ok {
+				return tast.ErrorExpr{NodeInfo: bo.NodeInfo}
+			}
+			RHS, ok = coerce_to(RHS, rule.Right)
+			if !ok {
 				return tast.ErrorExpr{NodeInfo: bo.NodeInfo}
 			}
 			/* Check if we need to do a cast in LHS and RHS */
@@ -115,9 +120,10 @@ func (a *Analyzer) analyze_unary_operation(uo *ast.UnaryOperation) tast.TypedExp
 
 	if !semantic.IsInvalid(typed_expr.Type()) {
 		/* Check if we can perform the operation */
-		rule, ok := semantic.ResolveUnaryOperation(uo.Op.Type, typed_expr.Type())
+		rule, ok := semantic.ResolveUnaryOperation(uo.Op.Type, expressionTypeForOperation(typed_expr))
 		if ok {
-			if !unify(rule.Operand, typed_expr.Type()) {
+			typed_expr, ok = coerce_to(typed_expr, rule.Operand)
+			if !ok {
 				return tast.ErrorExpr{NodeInfo: uo.NodeInfo}
 			}
 			/* Check if we got to do a cast */

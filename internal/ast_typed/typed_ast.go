@@ -68,7 +68,11 @@ func (nl *NumberLiteral) Type() semantic.Type {
 	if nl.ResolvedType == nil {
 		return semantic.UntypedNumber_T{}
 	}
-	return semantic.Resolve(nl.ResolvedType)
+	resolved := semantic.Resolve(nl.ResolvedType)
+	if _, ok := resolved.(*semantic.InferType); ok {
+		return semantic.UntypedNumber_T{}
+	}
+	return resolved
 }
 
 type BooleanLiteral struct {

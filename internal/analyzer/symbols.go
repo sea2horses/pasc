@@ -100,6 +100,7 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 		diagnostics.Dbg("Direct variable assignment detected")
 		if _, exists := a.scope.Lookup(variable.Name); !exists {
 			diagnostics.Dbg("Making implicit declaration")
+			typed_expr = defaultUntypedNumber(typed_expr)
 			/* Implicit declaration */
 			a.scope.Declare(
 				&semantic.Symbol{
@@ -129,23 +130,13 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 		return nil
 	}
 
-	/* Try coercing */
-	_, ok = coerce_to(typed_expr, target.Type())
+	/* Coerce to the lvalue type, allowing contextual literal typing. */
+	originalType := typed_expr.Type()
+	typed_expr, ok = coerce_to(typed_expr, target.Type())
 	if !ok {
-		a.Report(ass.NodeSpan(), "%s", ErrIncorrectType{Expected: target.Type(), Got: typed_expr.Type()}.Error())
+		a.Report(ass.NodeSpan(), "%s", ErrIncorrectType{Expected: target.Type(), Got: originalType}.Error())
 		a.Info(lvalue.AssignmentOrigin().Span, "%s", lvalue.AssignmentOrigin().Message)
 		return nil
-	}
-
-	/* Check coherence between target type and content type */
-	if !semantic.EqualTypes(typed_expr.Type(), target.Type()) {
-		var og_type semantic.Type = typed_expr.Type()
-		typed_expr, ok = tryConvert(typed_expr, target.Type())
-		if !ok {
-			a.Report(ass.NodeSpan(), "%s", ErrIncorrectType{Expected: target.Type(), Got: og_type}.Error())
-			a.Info(lvalue.AssignmentOrigin().Span, "%s", lvalue.AssignmentOrigin().Message)
-			return nil
-		}
 	}
 
 	return &tast.Assignment{
