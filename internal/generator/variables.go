@@ -21,13 +21,19 @@ func (g *Generator) genDeclaration(d *tast.Declaration) *jen.Statement {
 }
 
 func (g *Generator) genAssignment(a *tast.Assignment) *jen.Statement {
+	code := g.generate(a.Target)
 	var op *jen.Statement
+	value := g.generate(a.Value)
 
 	if a.Declarative {
 		op = jen.Op(":=")
+		/* explicit typign for numeric types */
+		if semantic.IsNumeric(a.Value.Type()) {
+			value = g.genType(a.Value.Type()).Call(value)
+		}
 	} else {
 		op = jen.Op("=")
 	}
 
-	return g.generate(a.Target).Add(op, g.generate(a.Value))
+	return code.Add(op, value)
 }
