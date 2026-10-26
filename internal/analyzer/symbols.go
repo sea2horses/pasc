@@ -14,9 +14,22 @@ func (a *Analyzer) analyze_variable(variable *ast.Variable) tast.TypedExpr {
 	symbol, ok := a.scope.Lookup(variable.Name)
 
 	if !ok || symbol == nil {
-		diagnostics.Dbg("Not found!")
-		a.Report(variable.NodeSpan(), "%s", ErrVariableDoesntExist{Name: variable.Name}.Error())
-		return &tast.ErrorExpr{NodeInfo: variable.NodeInfo}
+		diagnostics.Dbg("Not found; creating implicit variable")
+		infer := a.type_table.MakeInference()
+		symbol = &semantic.Symbol{
+			Name:     variable.Name,
+			Kind:     semantic.SymbolVariable,
+			Type:     infer,
+			Declared: variable.NodeSpan(),
+			Mutable:  true,
+		}
+		root := a.scope
+		for root.Parent() != nil {
+			root = root.Parent()
+		}
+		root.Declare(symbol)
+		a.implicit = append(a.implicit, symbol)
+		a.Warn(variable.NodeSpan(), "Variable '%s' is not declared; implicitly declaring it", variable.Name)
 	}
 
 	diagnostics.Dbg("Found! Symbol: ", symbol)
@@ -85,7 +98,6 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 	variable, ok := ass.Target.(*ast.Variable)
 	typed_expr := a.analyze_expression(ass.Content)
 	nonvoid := a.assert_nonvoid(typed_expr)
-	declarative := false
 
 	diagnostics.Dbg("Target: ", ass.Target, reflect.TypeOf(ass.Target))
 
@@ -101,18 +113,20 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 		if _, exists := a.scope.Lookup(variable.Name); !exists {
 			diagnostics.Dbg("Making implicit declaration")
 			typed_expr = defaultUntypedNumber(typed_expr)
-			/* Implicit declaration */
-			a.scope.Declare(
-				&semantic.Symbol{
-					Name:     variable.Name,
-					Kind:     semantic.SymbolVariable,
-					Type:     typed_expr.Type(),
-					Declared: ass.NodeSpan(),
-					Mutable:  true,
-				},
-			)
-
-			declarative = true
+			symbol := &semantic.Symbol{
+				Name:     variable.Name,
+				Kind:     semantic.SymbolVariable,
+				Type:     typed_expr.Type(),
+				Declared: ass.Target.NodeSpan(),
+				Mutable:  true,
+			}
+			root := a.scope
+			for root.Parent() != nil {
+				root = root.Parent()
+			}
+			root.Declare(symbol)
+			a.implicit = append(a.implicit, symbol)
+			a.Warn(ass.Target.NodeSpan(), "Variable '%s' is not declared; implicitly declaring it", variable.Name)
 		}
 	}
 	target := a.analyze_expression(ass.Target)
@@ -143,6 +157,6 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 		NodeInfo:    ass.NodeInfo,
 		Target:      lvalue,
 		Value:       typed_expr,
-		Declarative: declarative,
+		Declarative: false,
 	}
 }
