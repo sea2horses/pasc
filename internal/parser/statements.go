@@ -68,6 +68,11 @@ func skippables(ctx *Context) {
 	}
 }
 
+func skipSemicolons(ctx *Context) {
+	for Tok(lexer.SEMICOLON).Match(ctx).OK() {
+	}
+}
+
 func skipNewlines(ctx *Context) {
 	for Newline().Match(ctx).OK() {
 	}
@@ -93,7 +98,7 @@ func statementBlock(cases bool) Pattern[[]ast.Stmt] {
 				break
 			}
 			// Optional semicolon
-			Optional(Tok(lexer.SEMICOLON)).Match(ctx)
+			skipSemicolons(ctx)
 			if result.OK() && !Newline().Match(ctx).OK() {
 				ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, ExpectedNewline.Expected()))
 				recovery.Recover(ctx)
