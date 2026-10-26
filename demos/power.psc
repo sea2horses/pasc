@@ -1,4 +1,4 @@
-Algoritmo Potencia
+Proceso Potencia
     x := 3^6
     Escribir x
-FinAlgoritmo
+FinProceso

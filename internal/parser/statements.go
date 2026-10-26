@@ -41,7 +41,7 @@ func StatementBlock() Pattern[[]ast.Stmt] {
 var blockBoundaries = []lexer.Keyword{
 	lexer.FINALGORITMO, lexer.SINO, lexer.FINSI, lexer.FINMIENTRAS,
 	lexer.FINPARA, lexer.FINSEGUN, lexer.DE,
-	lexer.HASTA,
+	lexer.HASTA, lexer.FINPROCESO,
 }
 
 func atBlockBoundary(ctx *Context, cases bool) bool {
@@ -98,13 +98,22 @@ func MainFunction() Pattern[*ast.MainFunction] {
 		Seq2(
 			Locate(
 				Right(
-					Kw(lexer.ALGORITMO),
+					OneOf(
+						Kw(lexer.ALGORITMO),
+						Kw(lexer.PROCESO),
+					),
 					Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
 				),
 			),
 			Left(
 				StatementBlock(),
-				Expected(Kw(lexer.FINALGORITMO), ExpectedKeyword{Keyword: lexer.FINALGORITMO}),
+				Expected(
+					OneOf(
+						Kw(lexer.FINALGORITMO),
+						Kw(lexer.FINPROCESO),
+					),
+					ExpectedKeyword{Keyword: lexer.FINALGORITMO},
+				),
 			),
 		),
 		func(p Pair[Located[string], []ast.Stmt]) *ast.MainFunction {

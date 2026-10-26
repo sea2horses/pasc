@@ -10,6 +10,9 @@ const (
 	ALGORITMO Keyword = iota
 	FINALGORITMO
 
+	PROCESO
+	FINPROCESO
+
 	// Que
 	QUE
 
@@ -77,6 +80,8 @@ func MapToKeyword(str []rune) (Keyword, bool) {
 var keywordMap map[string]Keyword = map[string]Keyword{
 	"algoritmo":     ALGORITMO,
 	"finalgoritmo":  FINALGORITMO,
+	"proceso":       PROCESO,
+	"finproceso":    FINPROCESO,
 	"escribir":      ESCRIBIR,
 	"leer":          LEER,
 	"mientras":      MIENTRAS,
