@@ -94,30 +94,7 @@ func While() Pattern[ast.Stmt] {
 func For() Pattern[ast.Stmt] {
 	return Map(
 		Seq2(
-			Locate(
-				Left(
-					Seq3(
-						Right(
-							Kw(lexer.PARA),
-							Expected(Assignment(), ExpectedStatement),
-						),
-						Right(
-							Expected(Kw(lexer.HASTA), ExpectedKeyword{Keyword: lexer.HASTA}),
-							Expected(Expression(), ExpectedExpression),
-						),
-						Optional(
-							Right(
-								Seq2(
-									Kw(lexer.CON),
-									Expected(Kw(lexer.PASO), ExpectedKeyword{Keyword: lexer.PASO}),
-								),
-								Expected(Expression(), ExpectedExpression),
-							),
-						),
-					),
-					Optional(Kw(lexer.HACER)),
-				),
-			),
+			Locate(Left(ForHeader(), Optional(Kw(lexer.HACER)))),
 			Left(
 				StatementBlock(),
 				Expected(EndKeyword(lexer.FINPARA, lexer.PARA), ExpectedKeyword{Keyword: lexer.FINPARA}),
@@ -137,6 +114,36 @@ func For() Pattern[ast.Stmt] {
 			}
 		},
 	)
+}
+
+func ForHeader() Pattern[Trio[ast.Stmt, ast.Expr, OptionalValue[ast.Expr]]] {
+	start := Right(Kw(lexer.PARA), Expected(Assignment(), ExpectedStatement))
+	standard := Seq3(
+		start,
+		Right(Kw(lexer.HASTA), Expected(Expression(), ExpectedExpression)),
+		Optional(Right(
+			Seq2(Kw(lexer.CON), Expected(Kw(lexer.PASO), ExpectedKeyword{Keyword: lexer.PASO})),
+			Expected(Expression(), ExpectedExpression),
+		)),
+	)
+	stepBeforeEnd := Map(
+		Seq3(
+			start,
+			Right(
+				Seq2(Kw(lexer.CON), Expected(Kw(lexer.PASO), ExpectedKeyword{Keyword: lexer.PASO})),
+				Expected(Expression(), ExpectedExpression),
+			),
+			Right(Kw(lexer.HASTA), Expected(Expression(), ExpectedExpression)),
+		),
+		func(parts Trio[ast.Stmt, ast.Expr, ast.Expr]) Trio[ast.Stmt, ast.Expr, OptionalValue[ast.Expr]] {
+			return Trio[ast.Stmt, ast.Expr, OptionalValue[ast.Expr]]{
+				First:  parts.First,
+				Second: parts.Third,
+				Third:  OptionalValue[ast.Expr]{Value: parts.Second, Some: true},
+			}
+		},
+	)
+	return OneOf(standard, stepBeforeEnd)
 }
 
 func Switch() Pattern[ast.Stmt] {
@@ -231,14 +238,14 @@ func switchCases() Pattern[[]*ast.Case] {
 		start := ctx.Pos
 		cases := []*ast.Case{}
 		recovery := Synchronize{Tokens: []lexer.TokenType{lexer.NEWLINE}, Keywords: blockBoundaries}
-		for !atBlockBoundary(ctx, false) {
+		for !atBlockBoundary(ctx, false, false) {
 			before := ctx.Pos
 			result := Recover(Expected(SwitchCase(), LiteralExpectations("expected switch case")), recovery).Match(ctx)
 			if result.OK() {
 				cases = append(cases, result.Value)
 			}
 			skipNewlines(ctx)
-			if ctx.Pos == before && !atBlockBoundary(ctx, false) {
+			if ctx.Pos == before && !atBlockBoundary(ctx, false, false) {
 				ctx.Advance()
 			}
 		}
@@ -247,30 +254,51 @@ func switchCases() Pattern[[]*ast.Case] {
 }
 
 func DoWhile() Pattern[ast.Stmt] {
-	return Map(
+	until := Map(
 		After(
 			Kw(lexer.REPETIR),
 			Seq2(
 				StatementBlock(),
-				Locate(
-					Right(
-						Seq2(
-							Expected(Kw(lexer.HASTA), ExpectedKeyword{Keyword: lexer.HASTA}),
-							Expected(Kw(lexer.QUE), ExpectedKeyword{Keyword: lexer.QUE}),
-						),
-						Expression(),
+				Locate(Right(
+					Seq2(
+						Expected(Kw(lexer.HASTA), ExpectedKeyword{Keyword: lexer.HASTA}),
+						Expected(Kw(lexer.QUE), ExpectedKeyword{Keyword: lexer.QUE}),
 					),
-				),
+					Expression(),
+				)),
 			),
 		),
 		func(p Pair[[]ast.Stmt, Located[ast.Expr]]) ast.Stmt {
 			return &ast.DoWhile{
-				NodeInfo: ast.NodeInfo{
-					Span: p.Second.Span,
-				},
+				NodeInfo:  ast.NodeInfo{Span: p.Second.Span},
 				Stmts:     p.First,
 				Condition: p.Second.Value,
+				Until:     true,
 			}
 		},
 	)
+	while := Map(
+		After(
+			Kw(lexer.HACER),
+			Seq2(
+				statementBlockWithPostTestWhile(false, true),
+				Locate(Right(
+					Seq2(
+						Expected(Kw(lexer.MIENTRAS), ExpectedKeyword{Keyword: lexer.MIENTRAS}),
+						Expected(Kw(lexer.QUE), ExpectedKeyword{Keyword: lexer.QUE}),
+					),
+					Expression(),
+				)),
+			),
+		),
+		func(p Pair[[]ast.Stmt, Located[ast.Expr]]) ast.Stmt {
+			return &ast.DoWhile{
+				NodeInfo:  ast.NodeInfo{Span: p.Second.Span},
+				Stmts:     p.First,
+				Condition: p.Second.Value,
+				Until:     false,
+			}
+		},
+	)
+	return OneOf(until, while)
 }

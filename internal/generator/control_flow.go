@@ -23,7 +23,11 @@ func (g *Generator) genWhile(w *tast.While) *jen.Statement {
 
 func (g *Generator) genDoWhile(dw *tast.DoWhile) *jen.Statement {
 	stmts := g.genStatementBlock(dw.Stmts)
-	_break := jen.If(g.generate(dw.Condition)).Block(jen.Break())
+	condition := g.generate(dw.Condition)
+	if !dw.Until {
+		condition = jen.Op("!").Add(condition)
+	}
+	_break := jen.If(condition).Block(jen.Break())
 	stmts = append(stmts, _break)
 	return jen.For().Block(stmts...)
 }

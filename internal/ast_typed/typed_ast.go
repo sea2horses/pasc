@@ -215,6 +215,7 @@ type DoWhile struct {
 	ast.NodeInfo
 	Condition TypedExpr
 	Stmts     []Stmt
+	Until     bool
 }
 
 /* PSEINT Restriction: not any lvalue can be used for a for, only a variable one */

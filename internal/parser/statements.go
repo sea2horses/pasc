@@ -45,7 +45,7 @@ var blockBoundaries = []lexer.Keyword{
 	lexer.HASTA, lexer.FINPROCESO,
 }
 
-func atBlockBoundary(ctx *Context, cases bool) bool {
+func atBlockBoundary(ctx *Context, cases, postTestWhile bool) bool {
 	if ctx.EOF() {
 		return true
 	}
@@ -57,7 +57,29 @@ func atBlockBoundary(ctx *Context, cases bool) bool {
 	if Peek(EndKeyword(lexer.FINFUNCION, lexer.FUNCION)).Match(ctx).OK() {
 		return true
 	}
+	if postTestWhile && atPostTestWhileTerminator(ctx) {
+		return true
+	}
 	return cases && Peek(CaseHeader()).Match(ctx).OK()
+}
+
+func atPostTestWhileTerminator(ctx *Context) bool {
+	if !Peek(Seq2(Kw(lexer.MIENTRAS), Kw(lexer.QUE))).Match(ctx).OK() {
+		return false
+	}
+	first := ctx.Peek()
+	for offset := uint32(0); ; offset++ {
+		token := ctx.PeekAt(offset)
+		if token == nil || token.Type == lexer.NEWLINE || token.Span.Start.Line != first.Span.Start.Line {
+			break
+		}
+		if token.Type == lexer.KEYWORD {
+			if kw, ok := lexer.MapToKeyword([]rune(token.Value)); ok && kw == lexer.HACER {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func Skippable() Pattern[any] {
@@ -90,6 +112,10 @@ func BlockHeaderNewline() Pattern[lexer.Token] {
 }
 
 func statementBlock(cases bool) Pattern[[]ast.Stmt] {
+	return statementBlockWithPostTestWhile(cases, false)
+}
+
+func statementBlockWithPostTestWhile(cases, postTestWhile bool) Pattern[[]ast.Stmt] {
 	return PatternFunc[[]ast.Stmt](func(ctx *Context) Match[[]ast.Stmt] {
 		start := ctx.Pos
 		// Headers and statements must end on their own line.
@@ -100,13 +126,13 @@ func statementBlock(cases bool) Pattern[[]ast.Stmt] {
 		skippables(ctx)
 		stmts := []ast.Stmt{}
 		recovery := Synchronize{Tokens: []lexer.TokenType{lexer.NEWLINE}, Keywords: blockBoundaries}
-		for !atBlockBoundary(ctx, cases) {
+		for !atBlockBoundary(ctx, cases, postTestWhile) {
 			before := ctx.Pos
 			result := Recover(Expected(Statement(), ExpectedStatement), recovery).Match(ctx)
 			if result.OK() {
 				stmts = append(stmts, result.Value)
 			}
-			if ctx.EOF() || atBlockBoundary(ctx, cases) {
+			if ctx.EOF() || atBlockBoundary(ctx, cases, postTestWhile) {
 				break
 			}
 			// A semicolon separates statements, including on the same line. Without

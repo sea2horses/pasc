@@ -39,6 +39,7 @@ func (a *Analyzer) analyze_dowhile(dw *ast.DoWhile) *tast.DoWhile {
 		NodeInfo:  dw.NodeInfo,
 		Condition: typed_condition,
 		Stmts:     stmts,
+		Until:     dw.Until,
 	}
 }
 

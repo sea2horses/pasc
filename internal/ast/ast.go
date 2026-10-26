@@ -291,6 +291,7 @@ type DoWhile struct {
 	NodeInfo
 	Condition Expr
 	Stmts     []Stmt
+	Until     bool
 }
 
 func (w DoWhile) String() string {
