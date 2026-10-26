@@ -37,47 +37,26 @@ func Operand() Pattern[ast.Expr] {
 }
 
 func Postfix(target ast.Expr) Pattern[ast.Expr] {
-	return OneOf(
-		Index(target),
-		Call(target),
-	)
-}
-
-func Index(target ast.Expr) Pattern[ast.Expr] {
 	return MapWithLocation(
-		Many1(
+		OneOf(
+			Between(
+				Tok(lexer.L_PARENTHESES),
+				SepBy(Expression(), Tok(lexer.COMMA)),
+				Expected(Tok(lexer.R_PARENTHESES), ExpectedToken{Kind: lexer.R_PARENTHESES}),
+			),
 			Between(
 				Tok(lexer.L_BRACKET),
-				Expected(Expression(), ExpectedExpression),
+				SepBy(Expression(), Tok(lexer.COMMA)),
 				Expected(Tok(lexer.R_BRACKET), ExpectedToken{Kind: lexer.R_BRACKET}),
 			),
 		),
-		func(indices []ast.Expr, span models.Span) ast.Expr {
-			return &ast.Index{
-				NodeInfo: ast.NodeInfo{
-					Span: models.JoinSpans(target.NodeSpan(), span),
-				},
-				Indexes: indices,
-				Target:  target,
-			}
-		},
-	)
-}
-
-func Call(target ast.Expr) Pattern[ast.Expr] {
-	return MapWithLocation(
-		Between(
-			Tok(lexer.L_PARENTHESES),
-			SepBy(Expression(), Tok(lexer.COMMA)),
-			Expected(Tok(lexer.R_PARENTHESES), ExpectedToken{Kind: lexer.R_PARENTHESES}),
-		),
 		func(arguments []ast.Expr, span models.Span) ast.Expr {
-			return &ast.Call{
+			return &ast.Postfix{
 				NodeInfo: ast.NodeInfo{
 					Span: models.JoinSpans(target.NodeSpan(), span),
 				},
-				Callable:  target,
 				Arguments: arguments,
+				Target:    target,
 			}
 		},
 	)

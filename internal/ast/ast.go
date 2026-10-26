@@ -119,14 +119,16 @@ func (bo BinaryOperation) String() string {
 	return fmt.Sprintf("(%s %s %s)", bo.LHS, bo.Op, bo.RHS)
 }
 
-type Index struct {
+// Postfix represents either a function call or array indexing. The analyzer
+// resolves which operation applies from the target's type.
+type Postfix struct {
 	NodeInfo
-	Indexes []Expr
-	Target  Expr
+	Arguments []Expr
+	Target    Expr
 }
 
-func (i Index) String() string {
-	return fmt.Sprintf("%s[%s]", i.Target, strings.Join(utils.Map(i.Indexes, func(e Expr) string {
+func (p Postfix) String() string {
+	return fmt.Sprintf("%s(%s)", p.Target, strings.Join(utils.Map(p.Arguments, func(e Expr) string {
 		return e.String()
 	}), ", "))
 }
@@ -358,27 +360,6 @@ func (c Case) String() string {
 		builder.WriteRune('\n')
 	}
 	builder.WriteString("}")
-
-	return builder.String()
-}
-
-type Call struct {
-	NodeInfo
-	Callable  Expr
-	Arguments []Expr
-}
-
-func (c Call) String() string {
-	var builder strings.Builder
-
-	builder.WriteString(fmt.Sprintf("Call '%s': (\n", c.Callable))
-
-	args := utils.Map(c.Arguments, func(a Expr) string {
-		return a.String()
-	})
-
-	builder.WriteString(strings.Join(args, ", "))
-	builder.WriteString(")")
 
 	return builder.String()
 }

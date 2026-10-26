@@ -60,11 +60,9 @@ func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
 	}
 }
 
-func (a *Analyzer) analyze_indexing(d *ast.Index) tast.TypedExpr {
+func (a *Analyzer) analyze_indexing(d *ast.Postfix, typed_expr tast.TypedExpr) tast.TypedExpr {
 	/* Right now you can only index arrays */
 
-	/* Analyze expression to be indexed */
-	typed_expr := a.analyze_expression(d.Target)
 	if typed_expr == nil || semantic.IsInvalid(typed_expr.Type()) {
 		return &tast.ErrorExpr{
 			NodeInfo: d.NodeInfo,
@@ -89,8 +87,8 @@ func (a *Analyzer) analyze_indexing(d *ast.Index) tast.TypedExpr {
 	underlying_type := (typed_expr.Type().(semantic.ArrayType)).Elem
 	array_rank := (typed_expr.Type().(semantic.ArrayType)).Rank
 
-	if len(d.Indexes) != array_rank {
-		a.Report(d.NodeSpan(), "index count mismatch: expected %d, got %d", array_rank, len(d.Indexes))
+	if len(d.Arguments) != array_rank {
+		a.Report(d.NodeSpan(), "index count mismatch: expected %d, got %d", array_rank, len(d.Arguments))
 		return &tast.ErrorExpr{
 			NodeInfo: d.NodeInfo,
 		}
@@ -98,7 +96,7 @@ func (a *Analyzer) analyze_indexing(d *ast.Index) tast.TypedExpr {
 
 	ok = true
 	indexes := []tast.TypedExpr{}
-	for _, index := range d.Indexes {
+	for _, index := range d.Arguments {
 		curr := a.analyze_expression(index)
 		if curr == nil || semantic.IsInvalid(curr.Type()) {
 			ok = false

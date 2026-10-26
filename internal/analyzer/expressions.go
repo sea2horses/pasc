@@ -34,16 +34,31 @@ func (a *Analyzer) analyze_expression(expr ast.Expr) tast.TypedExpr {
 		return a.analyze_unary_operation(node)
 	case *ast.BinaryOperation:
 		return a.analyze_binary_operation(node)
-	case *ast.Index:
-		return a.analyze_indexing(node)
-	case *ast.Call:
-		return a.analyze_call(node)
+	case *ast.Postfix:
+		return a.analyze_postfix(node)
 	}
 
 	diagnostics.Dbg("Could not find the expression type")
 	diagnostics.Dbgfmt("%T\n", expr)
 	a.Report(expr.NodeSpan(), "expression is not valid or implemented")
 	return tast.ErrorExpr{NodeInfo: expr.Info()}
+}
+
+func (a *Analyzer) analyze_postfix(postfix *ast.Postfix) tast.TypedExpr {
+	target := a.analyze_expression(postfix.Target)
+	if target == nil || semantic.IsInvalid(target.Type()) {
+		return tast.ErrorExpr{NodeInfo: postfix.NodeInfo}
+	}
+
+	if semantic.IsArray(target.Type()) {
+		return a.analyze_indexing(postfix, target)
+	}
+	if _, ok := semantic.Resolve(target.Type()).(semantic.FunctionType); ok {
+		return a.analyze_call(postfix, target)
+	}
+
+	a.Report(postfix.Target.NodeSpan(), "expression of type '%s' is neither callable nor indexable", target.Type())
+	return tast.ErrorExpr{NodeInfo: postfix.NodeInfo}
 }
 
 func (a *Analyzer) analyze_binary_operation(bo *ast.BinaryOperation) tast.TypedExpr {

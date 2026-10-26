@@ -6,13 +6,12 @@ import (
 	"pascc/internal/semantic"
 )
 
-func (a *Analyzer) analyze_call(call *ast.Call) tast.TypedExpr {
-	callable := a.analyze_expression(call.Callable)
+func (a *Analyzer) analyze_call(call *ast.Postfix, callable tast.TypedExpr) tast.TypedExpr {
 
 	fnType, ok := semantic.Resolve(callable.Type()).(semantic.FunctionType)
 	if !ok {
 		a.Report(
-			call.Callable.NodeSpan(),
+			call.Target.NodeSpan(),
 			"expression of type '%s' is not callable",
 			callable.Type(),
 		)
