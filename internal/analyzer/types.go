@@ -68,7 +68,9 @@ func coerce_to(expr tast.TypedExpr, target semantic.Type) (tast.TypedExpr, bool)
 		// Numeric literals carry an inference variable until context selects a
 		// concrete type. Resolve that variable directly, without a Cast node.
 		if infer, ok := target.(*semantic.InferType); ok && infer.Resolved == nil {
-			number.ResolvedType = infer
+			/* infer float by default */
+			number.ResolvedType = semantic.Real_T{}
+			infer.Resolved = number.ResolvedType
 			return expr, true
 		}
 		if !semantic.IsNumeric(target) {

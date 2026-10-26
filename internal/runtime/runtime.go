@@ -150,17 +150,17 @@ func IntegerToReal(value int32) float64 {
 const array_bias = 0
 
 type Tensor[T Value] struct {
-	shape   []int
-	strides []int
+	shape   []int32
+	strides []int32
 	data    []T
 }
 
-func NewTensor[T Value](shape ...int) *Tensor[T] {
+func NewTensor[T Value](shape ...int32) *Tensor[T] {
 	if len(shape) == 0 {
 		RuntimeError(ErrNoDimensions)
 	}
 
-	size := 1
+	var size int32 = 1
 	for _, dim := range shape {
 		if dim <= 0 {
 			RuntimeError(ErrNegativeDimension)
@@ -169,15 +169,15 @@ func NewTensor[T Value](shape ...int) *Tensor[T] {
 		size *= dim
 	}
 
-	strides := make([]int, len(shape))
-	stride := 1
+	strides := make([]int32, len(shape))
+	var stride int32 = 1
 	for i := len(shape) - 1; i >= 0; i-- {
 		strides[i] = stride
 		stride *= shape[i]
 	}
 
 	return &Tensor[T]{
-		shape:   append([]int(nil), shape...),
+		shape:   append([]int32(nil), shape...),
 		strides: strides,
 		data:    make([]T, size),
 	}

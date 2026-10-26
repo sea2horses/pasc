@@ -52,7 +52,7 @@ func (g *Generator) genFor(f *tast.For) *jen.Statement {
 	}
 
 	_for := jen.For(
-		g.generate(f.Var).Op(":=").Add(_range),
+		g.generate(f.Var).Op(":=").Range().Add(_range),
 	).Block(
 		g.genStatementBlock(f.Stmts)...,
 	)
