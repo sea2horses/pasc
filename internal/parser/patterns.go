@@ -110,6 +110,10 @@ func Type() Pattern[*ast.TypeRef] {
 					Kw(lexer.CADENA),
 					Kw(lexer.REAL),
 					Kw(lexer.LOGICO),
+					Kw(lexer.CARACTER),
+					Kw(lexer.TEXTO),
+					Kw(lexer.NUMERO),
+					Kw(lexer.NUMERICO),
 				),
 			),
 			func(kw Located[lexer.Keyword]) *ast.TypeRef {

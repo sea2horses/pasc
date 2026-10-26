@@ -42,8 +42,12 @@ const (
 	COMO
 	ENTERO
 	CADENA
+	TEXTO
+	CARACTER
 	LOGICO
 	REAL
+	NUMERO
+	NUMERICO
 
 	// Arreglos
 	DIMENSIONAR
@@ -128,4 +132,8 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"que":           QUE,
 	"y":             Y,
 	"o":             O,
+	"caracter":      CARACTER,
+	"texto":         TEXTO,
+	"numero":        NUMERO,
+	"numerico":      NUMERICO,
 }
