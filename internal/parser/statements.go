@@ -106,13 +106,19 @@ func statementBlock(cases bool) Pattern[[]ast.Stmt] {
 			if ctx.EOF() || atBlockBoundary(ctx, cases) {
 				break
 			}
-			// Optional semicolon
-			skipSemicolons(ctx)
-			if result.OK() && !Newline().Match(ctx).OK() {
+			// A semicolon separates statements, including on the same line. Without
+			// one, statements must remain newline-separated.
+			if Tok(lexer.SEMICOLON).Match(ctx).OK() {
+				skipSemicolons(ctx)
+				if Newline().Match(ctx).OK() {
+					skipNewlines(ctx)
+				}
+			} else if Newline().Match(ctx).OK() {
+				skipNewlines(ctx)
+			} else if result.OK() {
 				ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, ExpectedNewline.Expected()))
 				recovery.Recover(ctx)
 			}
-			skippables(ctx)
 			if ctx.Pos == before {
 				ctx.Advance()
 			}
