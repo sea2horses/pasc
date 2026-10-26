@@ -239,8 +239,8 @@ type WaitKey struct {
 
 type Case struct {
 	ast.NodeInfo
-	Value TypedExpr
-	Stmts []Stmt
+	Values []TypedExpr
+	Stmts  []Stmt
 }
 
 type Switch struct {

@@ -364,14 +364,15 @@ func (s Switch) String() string {
 
 type Case struct {
 	NodeInfo
-	Clause Expr
-	Stmts  []Stmt
+	Clauses []Expr
+	Stmts   []Stmt
 }
 
 func (c Case) String() string {
 	var builder strings.Builder
 
-	builder.WriteString(fmt.Sprintf("Case '%s': {\n", c.Clause))
+	labels := utils.Map(c.Clauses, func(clause Expr) string { return clause.String() })
+	builder.WriteString(fmt.Sprintf("Case '%s': {\n", strings.Join(labels, ", ")))
 	for _, stmt := range c.Stmts {
 		builder.WriteString(stmt.String())
 		builder.WriteRune('\n')

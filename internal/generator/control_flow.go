@@ -29,7 +29,8 @@ func (g *Generator) genDoWhile(dw *tast.DoWhile) *jen.Statement {
 }
 
 func (g *Generator) genCase(c *tast.Case) *jen.Statement {
-	return jen.Case(g.generate(c.Value)).Block(g.genStatementBlock(c.Stmts)...)
+	values := utils.Map(c.Values, func(value tast.TypedExpr) jen.Code { return g.generate(value) })
+	return jen.Case(values...).Block(g.genStatementBlock(c.Stmts)...)
 }
 
 func (g *Generator) genSwitch(s *tast.Switch) *jen.Statement {

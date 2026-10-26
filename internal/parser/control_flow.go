@@ -176,10 +176,10 @@ func Switch() Pattern[ast.Stmt] {
 	)
 }
 
-func CaseHeader() Pattern[ast.Expr] {
+func CaseHeader() Pattern[[]ast.Expr] {
 	return Right(
 		Optional(Kw(lexer.CASO)),
-		Left(Expression(), Tok(lexer.COLON)),
+		Left(SepBy1(Expression(), Tok(lexer.COMMA)), Tok(lexer.COLON)),
 	)
 }
 
@@ -213,13 +213,13 @@ func SwitchCase() Pattern[*ast.Case] {
 			),
 			statementBlock(true),
 		),
-		func(c Pair[Located[ast.Expr], []ast.Stmt]) *ast.Case {
+		func(c Pair[Located[[]ast.Expr], []ast.Stmt]) *ast.Case {
 			return &ast.Case{
 				NodeInfo: ast.NodeInfo{
 					Span: c.First.Span,
 				},
-				Clause: c.First.Value,
-				Stmts:  c.Second,
+				Clauses: c.First.Value,
+				Stmts:   c.Second,
 			}
 		},
 	)

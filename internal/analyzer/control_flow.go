@@ -48,22 +48,31 @@ func (a *Analyzer) analyze_switch(s *ast.Switch) *tast.Switch {
 
 	cases := make([]*tast.Case, 0, len(s.Cases))
 	for _, c := range s.Cases {
-		typed_value := a.analyze_expression(c.Clause)
-		/* Check that type is comparable */
-		if !semantic.EqualTypes(typed_base.Type(), typed_value.Type()) {
-			var ok bool
-			original := typed_value
-			typed_value, ok = coerce_to(typed_value, typed_base.Type())
-			if !ok {
-				a.Report(original.NodeSpan(), "expression of type %s cannot be assigned to %s", original.Type(), typed_base.Type())
-				continue
+		typed_values := make([]tast.TypedExpr, 0, len(c.Clauses))
+		valid := true
+		for _, clause := range c.Clauses {
+			typed_value := a.analyze_expression(clause)
+			/* Check that type is comparable */
+			if !semantic.EqualTypes(typed_base.Type(), typed_value.Type()) {
+				var ok bool
+				original := typed_value
+				typed_value, ok = coerce_to(typed_value, typed_base.Type())
+				if !ok {
+					a.Report(original.NodeSpan(), "expression of type %s cannot be assigned to %s", original.Type(), typed_base.Type())
+					valid = false
+					continue
+				}
 			}
+			typed_values = append(typed_values, typed_value)
+		}
+		if !valid {
+			continue
 		}
 
 		typed_stmts := a.analyze_statement_block(c.Stmts)
 		cases = append(cases, &tast.Case{
 			NodeInfo: c.NodeInfo,
-			Value:    typed_value,
+			Values:   typed_values,
 			Stmts:    typed_stmts,
 		})
 	}

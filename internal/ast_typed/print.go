@@ -272,8 +272,10 @@ func (p *treePrinter) printCase(stmt *Case, depth int) {
 	}
 
 	p.line(depth, "Case span=%s", formatSpan(stmt.NodeSpan()))
-	p.line(depth+1, "Value:")
-	p.printExpr(stmt.Value, depth+2)
+	p.line(depth+1, "Values:")
+	for _, value := range stmt.Values {
+		p.printExpr(value, depth+2)
+	}
 	p.printStatements("Body", stmt.Stmts, depth+1)
 }
 
