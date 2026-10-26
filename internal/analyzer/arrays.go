@@ -9,22 +9,28 @@ import (
 func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
 	ok := true
 
-	inf := a.type_table.MakeInference()
-
-	var symbol *semantic.Symbol = &semantic.Symbol{
-		Type:     semantic.ArrayType{Elem: inf, Rank: len(d.Dimensions)},
-		Declared: d.NodeSpan(),
-		Kind:     semantic.SymbolVariable,
-		Mutable:  false,
-		Name:     d.Name,
-	}
-
-	/* Check that symbol doesn't exist */
-	if s, ok := a.scope.Lookup(d.Name); ok {
-		a.Report(d.NodeSpan(), "'%s' is already defined in this scope", d.Name)
-		a.Info(s.Declared, "declared here")
-		ok = false
+	symbol, declared := a.scope.Lookup(d.Name)
+	var elemType semantic.Type
+	if declared {
+		if symbol.Kind != semantic.SymbolVariable {
+			a.Report(d.NodeSpan(), "'%s' cannot be dimensioned because it is not a variable", d.Name)
+			return nil
+		}
+		if semantic.IsArray(symbol.Type) {
+			a.Report(d.NodeSpan(), "'%s' is already dimensioned", d.Name)
+			a.Info(symbol.Declared, "declared here")
+			return nil
+		}
+		elemType = symbol.Type
 	} else {
+		elemType = a.type_table.MakeInference()
+		symbol = &semantic.Symbol{
+			Type:     semantic.ArrayType{Elem: elemType, Rank: len(d.Dimensions)},
+			Declared: d.NodeSpan(),
+			Kind:     semantic.SymbolVariable,
+			Mutable:  true,
+			Name:     d.Name,
+		}
 		a.scope.Declare(symbol)
 	}
 
@@ -52,6 +58,10 @@ func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
 	if !ok {
 		return nil
 	}
+
+	// A prior scalar definition supplies the element type. Implicitly
+	// dimensioned arrays retain inference and learn their element type later.
+	symbol.Type = semantic.ArrayType{Elem: elemType, Rank: len(d.Dimensions)}
 
 	return &tast.Dimension{
 		NodeInfo:   d.NodeInfo,

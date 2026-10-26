@@ -13,8 +13,19 @@ func (g *Generator) genVariable(v *tast.VariableExpr) *jen.Statement {
 }
 
 func (g *Generator) genDeclaration(d *tast.Declaration) *jen.Statement {
+	var symbols []*semantic.Symbol
+	for _, symbol := range d.Symbols {
+		// A scalar definition can later be refined by Dimensionar into an
+		// array. The array allocation declares that variable instead.
+		if !semantic.IsArray(symbol.Type) {
+			symbols = append(symbols, symbol)
+		}
+	}
+	if len(symbols) == 0 {
+		return jen.Empty()
+	}
 	return jen.Var().List(
-		utils.Map(d.Symbols, func(s *semantic.Symbol) jen.Code {
+		utils.Map(symbols, func(s *semantic.Symbol) jen.Code {
 			return jen.Id(s.Name)
 		})...,
 	).Add(g.genType(d.Type))
