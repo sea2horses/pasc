@@ -52,9 +52,10 @@ func (a *Analyzer) analyze_switch(s *ast.Switch) *tast.Switch {
 		/* Check that type is comparable */
 		if !semantic.EqualTypes(typed_base.Type(), typed_value.Type()) {
 			var ok bool
-			typed_value, ok = tryConvert(typed_value, typed_base.Type())
+			original := typed_value
+			typed_value, ok = coerce_to(typed_value, typed_base.Type())
 			if !ok {
-				a.Report(typed_value.NodeSpan(), "expression of type %s cannot be assigned to %s", typed_value.Type(), typed_base.Type())
+				a.Report(original.NodeSpan(), "expression of type %s cannot be assigned to %s", original.Type(), typed_base.Type())
 				continue
 			}
 		}

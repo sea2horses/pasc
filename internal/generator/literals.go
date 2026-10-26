@@ -17,7 +17,7 @@ func (g *Generator) genNumberLiteral(nl *tast.NumberLiteral) *jen.Statement {
 		if strings.Trim(nl.Frac, "0") != "" {
 			panic("non-integral number literal resolved as integer")
 		}
-		return jen.Id("int64").Call(jen.Lit(nl.Int))
+		return genInt(nl)
 
 	case semantic.Real_T:
 		return genRealLiteral(nl)
@@ -26,7 +26,7 @@ func (g *Generator) genNumberLiteral(nl *tast.NumberLiteral) *jen.Statement {
 		// Untyped literals should normally be settled by the analyzer. Keep
 		// code generation deterministic if an unconstrained one reaches here.
 		if nl.Frac == "" {
-			return jen.Id("int64").Call(jen.Lit(nl.Int))
+			return genInt(nl)
 		}
 		return genRealLiteral(nl)
 
@@ -35,13 +35,19 @@ func (g *Generator) genNumberLiteral(nl *tast.NumberLiteral) *jen.Statement {
 	}
 }
 
+func genInt(nl *tast.NumberLiteral) *jen.Statement {
+	text := nl.Int
+	/* raw printing */
+	return jen.Id(text)
+}
+
 func genRealLiteral(nl *tast.NumberLiteral) *jen.Statement {
 	text := nl.Int
 	if nl.Frac != "" {
 		text += "." + nl.Frac
 	}
 	num, _ := strconv.ParseFloat(text, 64)
-	return jen.Id("float64").Call(jen.Lit(num))
+	return jen.Lit(num)
 }
 
 func (g *Generator) genStringLiteral(sl *tast.StringLiteral) *jen.Statement {
