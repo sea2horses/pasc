@@ -395,6 +395,8 @@ type Function struct {
 	Name           string
 	ReturnVariable string
 	Arguments      []string
+	ByReference    []bool
+	HasReturn      bool
 	Stmts          []Stmt
 }
 

@@ -3,8 +3,9 @@ package semantic
 import "pascc/internal/utils"
 
 type FunctionType struct {
-	Params []Type
-	Return Type
+	Params      []Type
+	ByReference []bool
+	Return      Type
 }
 
 func (f FunctionType) Signature() TypeSignature {

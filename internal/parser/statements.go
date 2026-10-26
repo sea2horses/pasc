@@ -195,36 +195,84 @@ type functionHeader struct {
 	returnVariable string
 	name           string
 	arguments      []string
+	byReference    []bool
+	hasReturn      bool
+}
+
+type functionArgument struct {
+	name        string
+	byReference bool
+}
+
+func FunctionArgument() Pattern[functionArgument] {
+	return Map(
+		Seq2(
+			Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
+			Optional(Right(
+				Kw(lexer.POR),
+				Expected(Kw(lexer.REFERENCIA), ExpectedKeyword{Keyword: lexer.REFERENCIA}),
+			)),
+		),
+		func(p Pair[string, OptionalValue[lexer.Keyword]]) functionArgument {
+			return functionArgument{name: p.First, byReference: p.Second.Some}
+		},
+	)
+}
+
+func FunctionArguments() Pattern[[]functionArgument] {
+	return Between(
+		Tok(lexer.L_PARENTHESES),
+		SepBy(FunctionArgument(), Tok(lexer.COMMA)),
+		Expected(Tok(lexer.R_PARENTHESES), ExpectedToken{Kind: lexer.R_PARENTHESES}),
+	)
+}
+
+func FunctionHeader() Pattern[functionHeader] {
+	return PatternFunc[functionHeader](func(ctx *Context) Match[functionHeader] {
+		start := ctx.Checkpoint()
+		keyword := Kw(lexer.FUNCION).Match(ctx)
+		if keyword.Kind != Matched {
+			return Match[functionHeader]{Kind: keyword.Kind, Start: start.Pos, End: keyword.End, Err: keyword.Err}
+		}
+		firstName := Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}).Match(ctx)
+		if firstName.Kind != Matched {
+			return Match[functionHeader]{Kind: firstName.Kind, Start: start.Pos, End: firstName.End, Err: firstName.Err}
+		}
+
+		header := functionHeader{}
+		if Tok(lexer.L_ANGLE).Match(ctx).OK() {
+			minus := Expected(Tok(lexer.MINUS), ExpectedToken{Kind: lexer.MINUS}).Match(ctx)
+			if minus.Kind != Matched {
+				return Match[functionHeader]{Kind: minus.Kind, Start: start.Pos, End: minus.End, Err: minus.Err}
+			}
+			name := Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}).Match(ctx)
+			if name.Kind != Matched {
+				return Match[functionHeader]{Kind: name.Kind, Start: start.Pos, End: name.End, Err: name.Err}
+			}
+			header.returnVariable = firstName.Value
+			header.name = name.Value
+			header.hasReturn = true
+		} else {
+			header.name = firstName.Value
+		}
+
+		arguments := FunctionArguments().Match(ctx)
+		if arguments.Kind != Matched {
+			return Match[functionHeader]{Kind: arguments.Kind, Start: start.Pos, End: arguments.End, Err: arguments.Err}
+		}
+		for _, argument := range arguments.Value {
+			header.arguments = append(header.arguments, argument.name)
+			header.byReference = append(header.byReference, argument.byReference)
+		}
+		return Match[functionHeader]{Kind: Matched, Value: header, Start: start.Pos, End: ctx.Pos}
+	})
 }
 
 func FunctionDeclaration() Pattern[*ast.Function] {
-	header := Map(
-		Seq3(
-			Right(
-				Kw(lexer.FUNCION),
-				Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
-			),
-			Left(
-				Tok(lexer.L_ANGLE),
-				Expected(Tok(lexer.MINUS), ExpectedToken{Kind: lexer.MINUS}),
-			),
-			Seq2(
-				Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
-				Between(
-					Tok(lexer.L_PARENTHESES),
-					SepBy(Name(), Tok(lexer.COMMA)),
-					Expected(Tok(lexer.R_PARENTHESES), ExpectedToken{Kind: lexer.R_PARENTHESES}),
-				),
-			),
-		),
-		func(p Trio[string, lexer.Token, Pair[string, []string]]) functionHeader {
-			return functionHeader{returnVariable: p.First, name: p.Third.First, arguments: p.Third.Second}
-		},
-	)
 
 	return Map(
 		Locate(Seq3(
-			header,
+			FunctionHeader(),
 			StatementBlock(),
 			Expected(EndKeyword(lexer.FINFUNCION, lexer.FUNCION), ExpectedKeyword{Keyword: lexer.FINFUNCION}),
 		)),
@@ -234,6 +282,8 @@ func FunctionDeclaration() Pattern[*ast.Function] {
 				Name:           p.Value.First.name,
 				ReturnVariable: p.Value.First.returnVariable,
 				Arguments:      p.Value.First.arguments,
+				ByReference:    p.Value.First.byReference,
+				HasReturn:      p.Value.First.hasReturn,
 				Stmts:          p.Value.Second,
 			}
 		},

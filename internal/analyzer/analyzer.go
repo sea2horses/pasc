@@ -48,11 +48,15 @@ func (a *Analyzer) Analyze(program *ast.MainFunction) (*tast.MainFunction, []dia
 		for i := range params {
 			params[i] = a.type_table.MakeInference()
 		}
-		result := a.type_table.MakeInference()
+		result := semantic.Type(semantic.Void_T{})
+		if function.HasReturn {
+			result = a.type_table.MakeInference()
+		}
+		byReference := append([]bool(nil), function.ByReference...)
 		symbol := &semantic.Symbol{
 			Name: function.Name,
 			Kind: semantic.SymbolFunction,
-			Type: semantic.FunctionType{Params: params, Return: result},
+			Type: semantic.FunctionType{Params: params, ByReference: byReference, Return: result},
 		}
 		if !a.scope.Declare(symbol) {
 			a.Report(function.NodeSpan(), "function '%s' is already declared", function.Name)
@@ -101,9 +105,11 @@ func (a *Analyzer) Analyze(program *ast.MainFunction) (*tast.MainFunction, []dia
 				a.Warn(function.NodeSpan(), "cannot infer type of function argument '%s'; using string", name)
 			}
 		}
-		if infer, ok := semantic.Resolve(fnType.Return).(*semantic.InferType); ok && infer.Resolved == nil {
-			infer.Resolved = semantic.String_T{}
-			a.Warn(function.NodeSpan(), "cannot infer return type of function '%s'; using string", function.Name)
+		if function.HasReturn {
+			if infer, ok := semantic.Resolve(fnType.Return).(*semantic.InferType); ok && infer.Resolved == nil {
+				infer.Resolved = semantic.String_T{}
+				a.Warn(function.NodeSpan(), "cannot infer return type of function '%s'; using string", function.Name)
+			}
 		}
 	}
 	for _, infer := range a.readInferences {
@@ -135,11 +141,12 @@ func (a *Analyzer) analyze_function(function *ast.Function) *tast.Function {
 	parameters := make([]*semantic.Symbol, len(function.Arguments))
 	for i, name := range function.Arguments {
 		parameter := &semantic.Symbol{
-			Name:     name,
-			Kind:     semantic.SymbolParameter,
-			Type:     fnType.Params[i],
-			Declared: function.NodeSpan(),
-			Mutable:  true,
+			Name:        name,
+			Kind:        semantic.SymbolParameter,
+			Type:        fnType.Params[i],
+			Declared:    function.NodeSpan(),
+			Mutable:     true,
+			ByReference: i < len(function.ByReference) && function.ByReference[i],
 		}
 		if !functionScope.Declare(parameter) {
 			a.Report(function.NodeSpan(), "duplicate function argument '%s'", name)
@@ -154,12 +161,16 @@ func (a *Analyzer) analyze_function(function *ast.Function) *tast.Function {
 		}
 	}
 
-	returnNode := &ast.Variable{NodeInfo: function.NodeInfo, Name: function.ReturnVariable}
-	returnValue := a.analyze_variable(returnNode)
-	returnValue, ok := coerce_to(returnValue, fnType.Return)
-	if !ok {
-		a.Report(function.NodeSpan(), "function '%s' returns an incompatible value", function.Name)
-		returnValue = &tast.ErrorExpr{NodeInfo: function.NodeInfo}
+	var returnValue tast.TypedExpr
+	if function.HasReturn {
+		returnNode := &ast.Variable{NodeInfo: function.NodeInfo, Name: function.ReturnVariable}
+		returnValue = a.analyze_variable(returnNode)
+		var ok bool
+		returnValue, ok = coerce_to(returnValue, fnType.Return)
+		if !ok {
+			a.Report(function.NodeSpan(), "function '%s' returns an incompatible value", function.Name)
+			returnValue = &tast.ErrorExpr{NodeInfo: function.NodeInfo}
+		}
 	}
 	implicitSymbols := a.implicit
 	a.implicit = nil
@@ -171,6 +182,7 @@ func (a *Analyzer) analyze_function(function *ast.Function) *tast.Function {
 		Name:            function.Name,
 		Parameters:      parameters,
 		Return:          returnValue,
+		HasReturn:       function.HasReturn,
 		Stmts:           statements,
 		ImplicitSymbols: implicitSymbols,
 	}

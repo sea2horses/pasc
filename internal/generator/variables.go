@@ -9,6 +9,9 @@ import (
 )
 
 func (g *Generator) genVariable(v *tast.VariableExpr) *jen.Statement {
+	if v.Symbol.ByReference {
+		return jen.Op("*").Id(v.Symbol.Name)
+	}
 	return jen.Id(v.Symbol.Name)
 }
 

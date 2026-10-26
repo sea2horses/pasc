@@ -15,12 +15,13 @@ const (
 )
 
 type Symbol struct {
-	Name     string
-	Kind     SymbolKind
-	Type     Type
-	Declared models.Span
-	Mutable  bool
-	Builtin  *BuiltinInfo
+	Name        string
+	Kind        SymbolKind
+	Type        Type
+	Declared    models.Span
+	Mutable     bool
+	Builtin     *BuiltinInfo
+	ByReference bool
 }
 
 type Scope struct {

@@ -54,11 +54,21 @@ func (g *Generator) genFunction(function *tast.Function) {
 	params := make([]jen.Code, 0, len(function.Parameters))
 	var body []jen.Code
 	for _, parameter := range function.Parameters {
-		params = append(params, jen.Id(parameter.Name).Add(g.genType(parameter.Type)))
+		parameterType := g.genType(parameter.Type)
+		if parameter.ByReference {
+			parameterType = jen.Op("*").Add(parameterType)
+		}
+		params = append(params, jen.Id(parameter.Name).Add(parameterType))
 		body = append(body, jen.Id("_").Op("=").Id(parameter.Name))
 	}
 	body = append(body, g.genStatementBlock(function.Stmts)...)
-	body = append(body, jen.Return(g.generate(function.Return)))
+	if function.HasReturn {
+		body = append(body, jen.Return(g.generate(function.Return)))
+	}
 
-	g.file.Func().Id(function.Name).Params(params...).Add(g.genType(function.Return.Type())).Block(body...)
+	declaration := g.file.Func().Id(function.Name).Params(params...)
+	if function.HasReturn {
+		declaration.Add(g.genType(function.Return.Type()))
+	}
+	declaration.Block(body...)
 }

@@ -48,7 +48,11 @@ func (g *Generator) genCall(c *tast.Call) *jen.Statement {
 	if variable, ok := c.Callable.(*tast.VariableExpr); ok && variable.Symbol.Builtin != nil {
 		return g.genBuiltinCall(variable.Symbol.Builtin, c.Arguments)
 	}
-	return g.generate(c.Callable).Call(
-		utils.Map(c.Arguments, func(expr tast.TypedExpr) jen.Code { return g.generate(expr) })...,
-	)
+	args := utils.Map(c.Arguments, func(expr tast.TypedExpr) jen.Code { return g.generate(expr) })
+	for i := range args {
+		if i < len(c.ByReference) && c.ByReference[i] {
+			args[i] = jen.Op("&").Add(args[i])
+		}
+	}
+	return g.generate(c.Callable).Call(args...)
 }

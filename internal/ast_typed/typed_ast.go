@@ -185,9 +185,10 @@ func (i Index) Type() semantic.Type {
 
 type Call struct {
 	ast.NodeInfo
-	Callable  TypedExpr
-	Arguments []TypedExpr
-	Return    semantic.Type
+	Callable    TypedExpr
+	Arguments   []TypedExpr
+	ByReference []bool
+	Return      semantic.Type
 }
 
 func (*Call) exprNode() {}
@@ -298,6 +299,12 @@ type Function struct {
 	Name            string
 	Parameters      []*semantic.Symbol
 	Return          TypedExpr
+	HasReturn       bool
 	Stmts           []Stmt
 	ImplicitSymbols []*semantic.Symbol
+}
+
+type ExprStmt struct {
+	ast.NodeInfo
+	Expr TypedExpr
 }

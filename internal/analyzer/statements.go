@@ -4,6 +4,7 @@ import (
 	"pascc/internal/ast"
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/diagnostics"
+	"pascc/internal/semantic"
 )
 
 /* TODO: Global Scope Totality, PSEINT doesn't have scopes */
@@ -27,6 +28,16 @@ func (a *Analyzer) analyze_statement(stmt ast.Stmt) []tast.Stmt {
 		return []tast.Stmt{a.analyze_assignment(s)}
 	case *ast.Write:
 		return []tast.Stmt{a.analyze_write(s)}
+	case *ast.ExprStmt:
+		expression := a.analyze_expression(s.Expr)
+		if semantic.IsInvalid(expression.Type()) {
+			return nil
+		}
+		if _, ok := expression.(*tast.Call); !ok {
+			a.Report(s.NodeSpan(), "only function calls can be used as standalone expression statements")
+			return nil
+		}
+		return []tast.Stmt{&tast.ExprStmt{NodeInfo: s.NodeInfo, Expr: expression}}
 	case *ast.Read:
 		reads := a.analyze_read(s)
 		statements := make([]tast.Stmt, 0, len(reads))

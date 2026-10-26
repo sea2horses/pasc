@@ -26,6 +26,9 @@ var conversionMap map[semantic.ConversionKind]func() *jen.Statement = map[semant
 
 func (g *Generator) genType(t semantic.Type) *jen.Statement {
 	t = semantic.Resolve(t)
+	if array, ok := t.(semantic.ArrayType); ok {
+		return jen.Op("*").Id("Tensor").Types(g.genType(array.Elem))
+	}
 	code, ok := typeMap[t]
 	if !ok {
 		panic("Type " + t.Signature().String() + " does not have a mapped representation")

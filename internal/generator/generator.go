@@ -62,6 +62,8 @@ func (g *Generator) generate(tree tast.Node) *jen.Statement {
 		return g.genClearScreen(node)
 	case *tast.Call:
 		return g.genCall(node)
+	case *tast.ExprStmt:
+		return g.generate(node.Expr)
 	case *tast.UnaryOperation:
 		return g.genUnExpr(node)
 	case *tast.BinaryOperation:
