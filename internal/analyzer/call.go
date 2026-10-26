@@ -38,6 +38,7 @@ func (a *Analyzer) analyze_call(call *ast.Postfix, callable tast.TypedExpr) tast
 
 	for i, arg := range call.Arguments {
 		typedArg := a.analyze_expression(arg)
+		got := typedArg.Type()
 
 		// This is EXACTLY the same target typing as assignment.
 		typedArg, ok = coerce_to(typedArg, fnType.Params[i])
@@ -47,7 +48,7 @@ func (a *Analyzer) analyze_call(call *ast.Postfix, callable tast.TypedExpr) tast
 				"argument %d: expected '%s', got '%s'",
 				i+1,
 				fnType.Params[i],
-				typedArg.Type(),
+				got,
 			)
 
 			return tast.ErrorExpr{

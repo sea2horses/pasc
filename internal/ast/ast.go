@@ -383,8 +383,17 @@ func (c Case) String() string {
 
 type MainFunction struct {
 	NodeInfo
-	Name  string
-	Stmts []Stmt
+	Name      string
+	Stmts     []Stmt
+	Functions []*Function
+}
+
+type Function struct {
+	NodeInfo
+	Name           string
+	ReturnVariable string
+	Arguments      []string
+	Stmts          []Stmt
 }
 
 type ClearScreen struct {

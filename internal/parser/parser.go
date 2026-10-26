@@ -20,7 +20,7 @@ func (p *Parser) Parse() (ast.Node, []diagnostics.Diagnostic) {
 	p.DiagnosticEmitter = diagnostics.NewDiagnosticEmitter()
 	ctx := &Context{Tokens: p.Tokens}
 	skipNewlines(ctx)
-	result := Expected(MainFunction(), ExpectedKeyword{Keyword: lexer.ALGORITMO}).Match(ctx)
+	result := Expected(Program(), ExpectedKeyword{Keyword: lexer.ALGORITMO}).Match(ctx)
 	if !result.OK() {
 		ctx.Diagnostics = append(ctx.Diagnostics, ensureError(ctx, result, "expected algorithm"))
 	} else {

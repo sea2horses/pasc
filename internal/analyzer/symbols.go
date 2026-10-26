@@ -23,11 +23,7 @@ func (a *Analyzer) analyze_variable(variable *ast.Variable) tast.TypedExpr {
 			Declared: variable.NodeSpan(),
 			Mutable:  true,
 		}
-		root := a.scope
-		for root.Parent() != nil {
-			root = root.Parent()
-		}
-		root.Declare(symbol)
+		a.implicitDeclarationScope().Declare(symbol)
 		a.implicit = append(a.implicit, symbol)
 		a.Warn(variable.NodeSpan(), "Variable '%s' is not declared; implicitly declaring it", variable.Name)
 	}
@@ -120,11 +116,7 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 				Declared: ass.Target.NodeSpan(),
 				Mutable:  true,
 			}
-			root := a.scope
-			for root.Parent() != nil {
-				root = root.Parent()
-			}
-			root.Declare(symbol)
+			a.implicitDeclarationScope().Declare(symbol)
 			a.implicit = append(a.implicit, symbol)
 			a.Warn(ass.Target.NodeSpan(), "Variable '%s' is not declared; implicitly declaring it", variable.Name)
 		}
@@ -159,4 +151,15 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 		Value:       typed_expr,
 		Declarative: false,
 	}
+}
+
+func (a *Analyzer) implicitDeclarationScope() *semantic.Scope {
+	if a.implicitScope != nil {
+		return a.implicitScope
+	}
+	root := a.scope
+	for root.Parent() != nil {
+		root = root.Parent()
+	}
+	return root
 }

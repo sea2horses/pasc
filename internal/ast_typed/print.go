@@ -63,6 +63,9 @@ func (p *treePrinter) printMainFunction(function *MainFunction, depth int) {
 		function.Name,
 		formatSpan(function.NodeSpan()),
 	)
+	for _, function := range function.Functions {
+		p.line(depth+1, "Function name=%q", function.Name)
+	}
 
 	if len(function.Stmts) == 0 {
 		p.line(depth+1, "Statements: <empty>")

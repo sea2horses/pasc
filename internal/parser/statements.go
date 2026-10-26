@@ -41,7 +41,7 @@ func StatementBlock() Pattern[[]ast.Stmt] {
 
 var blockBoundaries = []lexer.Keyword{
 	lexer.FINALGORITMO, lexer.FIN, lexer.SINO, lexer.FINSI, lexer.FINMIENTRAS,
-	lexer.FINPARA, lexer.FINSEGUN, lexer.DE,
+	lexer.FINPARA, lexer.FINSEGUN, lexer.FINFUNCION, lexer.DE,
 	lexer.HASTA, lexer.FINPROCESO,
 }
 
@@ -53,6 +53,9 @@ func atBlockBoundary(ctx *Context, cases bool) bool {
 		if Peek(Kw(kw)).Match(ctx).OK() {
 			return true
 		}
+	}
+	if Peek(EndKeyword(lexer.FINFUNCION, lexer.FUNCION)).Match(ctx).OK() {
+		return true
 	}
 	return cases && Peek(CaseHeader()).Match(ctx).OK()
 }
@@ -160,6 +163,97 @@ func MainFunction() Pattern[*ast.MainFunction] {
 			}
 		},
 	)
+}
+
+type functionHeader struct {
+	returnVariable string
+	name           string
+	arguments      []string
+}
+
+func FunctionDeclaration() Pattern[*ast.Function] {
+	header := Map(
+		Seq3(
+			Right(
+				Kw(lexer.FUNCION),
+				Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
+			),
+			Left(
+				Tok(lexer.L_ANGLE),
+				Expected(Tok(lexer.MINUS), ExpectedToken{Kind: lexer.MINUS}),
+			),
+			Seq2(
+				Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
+				Between(
+					Tok(lexer.L_PARENTHESES),
+					SepBy(Name(), Tok(lexer.COMMA)),
+					Expected(Tok(lexer.R_PARENTHESES), ExpectedToken{Kind: lexer.R_PARENTHESES}),
+				),
+			),
+		),
+		func(p Trio[string, lexer.Token, Pair[string, []string]]) functionHeader {
+			return functionHeader{returnVariable: p.First, name: p.Third.First, arguments: p.Third.Second}
+		},
+	)
+
+	return Map(
+		Locate(Seq3(
+			header,
+			StatementBlock(),
+			Expected(EndKeyword(lexer.FINFUNCION, lexer.FUNCION), ExpectedKeyword{Keyword: lexer.FINFUNCION}),
+		)),
+		func(p Located[Trio[functionHeader, []ast.Stmt, lexer.Keyword]]) *ast.Function {
+			return &ast.Function{
+				NodeInfo:       ast.NodeInfo{Span: p.Span},
+				Name:           p.Value.First.name,
+				ReturnVariable: p.Value.First.returnVariable,
+				Arguments:      p.Value.First.arguments,
+				Stmts:          p.Value.Second,
+			}
+		},
+	)
+}
+
+func Program() Pattern[*ast.MainFunction] {
+	return PatternFunc[*ast.MainFunction](func(ctx *Context) Match[*ast.MainFunction] {
+		start := ctx.Checkpoint()
+		functions := []*ast.Function{}
+		skipNewlines(ctx)
+		for {
+			before := ctx.Checkpoint()
+			function := FunctionDeclaration().Match(ctx)
+			if function.Kind == Failed {
+				return Match[*ast.MainFunction]{Kind: Failed, Start: start.Pos, End: function.End, Err: function.Err}
+			}
+			if function.Kind == NoMatch {
+				ctx.Restore(before)
+				break
+			}
+			functions = append(functions, function.Value)
+			skipNewlines(ctx)
+		}
+
+		main := MainFunction().Match(ctx)
+		if main.Kind != Matched {
+			return Match[*ast.MainFunction]{Kind: main.Kind, Start: start.Pos, End: main.End, Err: main.Err}
+		}
+		main.Value.Functions = functions
+		skipNewlines(ctx)
+		for {
+			before := ctx.Checkpoint()
+			function := FunctionDeclaration().Match(ctx)
+			if function.Kind == Failed {
+				return Match[*ast.MainFunction]{Kind: Failed, Start: start.Pos, End: function.End, Err: function.Err}
+			}
+			if function.Kind == NoMatch {
+				ctx.Restore(before)
+				break
+			}
+			main.Value.Functions = append(main.Value.Functions, function.Value)
+			skipNewlines(ctx)
+		}
+		return Match[*ast.MainFunction]{Kind: Matched, Value: main.Value, Start: start.Pos, End: ctx.Pos}
+	})
 }
 
 func Declaration() Pattern[ast.Stmt] {

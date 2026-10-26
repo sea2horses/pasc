@@ -83,6 +83,8 @@ const (
 	Y
 	O
 	CASO
+	FUNCION
+	FINFUNCION
 )
 
 func MapToKeyword(str []rune) (Keyword, bool) {
@@ -133,6 +135,10 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"segundos":      SEGUNDOS,
 	"milisegundos":  MILISEGUNDOS,
 	"fin":           FIN,
+	"funcion":       FUNCION,
+	"función":       FUNCION,
+	"finfuncion":    FINFUNCION,
+	"finfunción":    FINFUNCION,
 	"que":           QUE,
 	"y":             Y,
 	"o":             O,

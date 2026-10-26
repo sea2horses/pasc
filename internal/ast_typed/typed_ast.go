@@ -287,6 +287,16 @@ type ClearScreen struct {
 
 type MainFunction struct {
 	ast.NodeInfo
-	Name  string
-	Stmts []Stmt
+	Name      string
+	Stmts     []Stmt
+	Functions []*Function
+}
+
+type Function struct {
+	ast.NodeInfo
+	Name            string
+	Parameters      []*semantic.Symbol
+	Return          TypedExpr
+	Stmts           []Stmt
+	ImplicitSymbols []*semantic.Symbol
 }

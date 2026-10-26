@@ -37,6 +37,9 @@ func (g *Generator) genStatementBlock(stmts []tast.Stmt) []jen.Code {
 
 func (g *Generator) genMainFunction(mf *tast.MainFunction) {
 	f := g.file
+	for _, function := range mf.Functions {
+		g.genFunction(function)
+	}
 
 	preload_statements := []jen.Code{jen.Defer().Id("writer").Dot("Flush").Call()}
 	inner_statements := g.genStatementBlock(mf.Stmts)
@@ -45,4 +48,17 @@ func (g *Generator) genMainFunction(mf *tast.MainFunction) {
 
 	f.Commentf("original pseint name: %s", mf.Name)
 	f.Func().Id("main").Params().Block(body...)
+}
+
+func (g *Generator) genFunction(function *tast.Function) {
+	params := make([]jen.Code, 0, len(function.Parameters))
+	var body []jen.Code
+	for _, parameter := range function.Parameters {
+		params = append(params, jen.Id(parameter.Name).Add(g.genType(parameter.Type)))
+		body = append(body, jen.Id("_").Op("=").Id(parameter.Name))
+	}
+	body = append(body, g.genStatementBlock(function.Stmts)...)
+	body = append(body, jen.Return(g.generate(function.Return)))
+
+	g.file.Func().Id(function.Name).Params(params...).Add(g.genType(function.Return.Type())).Block(body...)
 }
