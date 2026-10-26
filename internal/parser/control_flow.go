@@ -177,9 +177,9 @@ func Switch() Pattern[ast.Stmt] {
 }
 
 func CaseHeader() Pattern[ast.Expr] {
-	return Left(
-		Expression(),
-		Tok(lexer.COLON),
+	return Right(
+		Optional(Kw(lexer.CASO)),
+		Left(Expression(), Tok(lexer.COLON)),
 	)
 }
 

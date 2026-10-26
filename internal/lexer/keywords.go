@@ -82,6 +82,7 @@ const (
 
 	Y
 	O
+	CASO
 )
 
 func MapToKeyword(str []rune) (Keyword, bool) {
@@ -115,6 +116,7 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"limpiar":       LIMPIAR,
 	"pantalla":      PANTALLA,
 	"segun":         SEGUN,
+	"caso":          CASO,
 	"finsegun":      FINSEGUN,
 	"de":            DE,
 	"otro":          OTRO,
