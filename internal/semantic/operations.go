@@ -154,6 +154,9 @@ func ResolveBinaryOperation(op OperatorType, left, right Type) (BinaryOperationR
 		if (op == EQUALS || op == NOT_EQUALS) && EqualTypes(Resolve(left), Bool_T{}) && EqualTypes(Resolve(right), Bool_T{}) {
 			return BinaryOperationRule{Operator: op, Left: Bool_T{}, Right: Bool_T{}, Result: Bool_T{}}, true
 		}
+		if (op == EQUALS || op == NOT_EQUALS) && EqualTypes(Resolve(left), String_T{}) && EqualTypes(Resolve(right), String_T{}) {
+			return BinaryOperationRule{Operator: op, Left: String_T{}, Right: String_T{}, Result: Bool_T{}}, true
+		}
 		l, r, common, lc, rc, ok := numericOperands(left, right, false)
 		if !ok {
 			return rule, false
