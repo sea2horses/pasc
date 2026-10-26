@@ -23,6 +23,7 @@ const (
 	L_BRACKET     // [
 	R_BRACKET     // ]
 	COLON         // :
+	SEMICOLON     // ;
 
 	// Binary Operators
 	// Arithmetic
@@ -72,6 +73,7 @@ var charMap map[rune]TokenType = map[rune]TokenType{
 	'[':  L_BRACKET,
 	']':  R_BRACKET,
 	':':  COLON,
+	';':  SEMICOLON,
 	'%':  MODULO,
 	'^':  UPTICK,
 	'\n': NEWLINE,

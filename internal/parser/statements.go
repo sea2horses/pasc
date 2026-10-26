@@ -56,6 +56,18 @@ func atBlockBoundary(ctx *Context, cases bool) bool {
 	return cases && Peek(CaseHeader()).Match(ctx).OK()
 }
 
+func Skippable() Pattern[any] {
+	return OneOf(
+		AsAny(Newline()),
+		AsAny(Tok(lexer.SEMICOLON)),
+	)
+}
+
+func skippables(ctx *Context) {
+	for Skippable().Match(ctx).OK() {
+	}
+}
+
 func skipNewlines(ctx *Context) {
 	for Newline().Match(ctx).OK() {
 	}
@@ -68,7 +80,7 @@ func statementBlock(cases bool) Pattern[[]ast.Stmt] {
 		if !ctx.EOF() && !Newline().Match(ctx).OK() {
 			ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, ExpectedNewline.Expected()))
 		}
-		skipNewlines(ctx)
+		skippables(ctx)
 		stmts := []ast.Stmt{}
 		recovery := Synchronize{Tokens: []lexer.TokenType{lexer.NEWLINE}, Keywords: blockBoundaries}
 		for !atBlockBoundary(ctx, cases) {
@@ -80,11 +92,13 @@ func statementBlock(cases bool) Pattern[[]ast.Stmt] {
 			if ctx.EOF() || atBlockBoundary(ctx, cases) {
 				break
 			}
+			// Optional semicolon
+			Optional(Tok(lexer.SEMICOLON)).Match(ctx)
 			if result.OK() && !Newline().Match(ctx).OK() {
 				ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, ExpectedNewline.Expected()))
 				recovery.Recover(ctx)
 			}
-			skipNewlines(ctx)
+			skippables(ctx)
 			if ctx.Pos == before {
 				ctx.Advance()
 			}
