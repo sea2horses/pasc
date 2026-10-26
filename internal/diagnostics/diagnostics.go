@@ -63,15 +63,17 @@ func (d *Diagnostics) Errorf(s models.Span, level DiagnosticLevel, f string, a .
 
 func SummaryAsError(ds []Diagnostic) error {
 	var builder strings.Builder
+	firstError := true
 
-	for i, d := range ds {
-		if i > 0 {
+	for _, d := range ds {
+		if d.Level != ERROR {
+			continue
+		}
+		if !firstError {
 			builder.WriteString(", ")
 		}
-
-		if d.Level == ERROR {
-			builder.WriteString(d.Msg)
-		}
+		builder.WriteString(d.Msg)
+		firstError = false
 	}
 
 	msg := builder.String()
