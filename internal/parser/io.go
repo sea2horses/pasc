@@ -19,9 +19,11 @@ func Write() Pattern[ast.Stmt] {
 						),
 					),
 				),
-				SepBy1(
-					Expected(Expression(), ExpectedExpression),
-					Tok(lexer.COMMA),
+				Many(
+					Left(
+						Expression(),
+						Optional(Tok(lexer.COMMA)),
+					),
 				),
 			),
 		),
@@ -41,9 +43,11 @@ func Read() Pattern[ast.Stmt] {
 	return MapWithLocation(
 		After(
 			Kw(lexer.LEER),
-			SepBy1(
-				Expected(Expression(), ExpectedExpression),
-				Tok(lexer.COMMA),
+			Many(
+				Left(
+					Expression(),
+					Optional(Tok(lexer.COMMA)),
+				),
 			),
 		),
 		func(read []ast.Expr, span models.Span) ast.Stmt {
