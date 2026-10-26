@@ -40,7 +40,7 @@ func StatementBlock() Pattern[[]ast.Stmt] {
 }
 
 var blockBoundaries = []lexer.Keyword{
-	lexer.FINALGORITMO, lexer.SINO, lexer.FINSI, lexer.FINMIENTRAS,
+	lexer.FINALGORITMO, lexer.FIN, lexer.SINO, lexer.FINSI, lexer.FINMIENTRAS,
 	lexer.FINPARA, lexer.FINSEGUN, lexer.DE,
 	lexer.HASTA, lexer.FINPROCESO,
 }
@@ -137,8 +137,8 @@ func MainFunction() Pattern[*ast.MainFunction] {
 				StatementBlock(),
 				Expected(
 					OneOf(
-						Kw(lexer.FINALGORITMO),
-						Kw(lexer.FINPROCESO),
+						EndKeyword(lexer.FINALGORITMO, lexer.ALGORITMO),
+						EndKeyword(lexer.FINPROCESO, lexer.PROCESO),
 					),
 					ExpectedKeyword{Keyword: lexer.FINALGORITMO},
 				),

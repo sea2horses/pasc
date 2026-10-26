@@ -78,6 +78,7 @@ const (
 	TECLA
 	SEGUNDOS
 	MILISEGUNDOS
+	FIN
 
 	Y
 	O
@@ -133,6 +134,7 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"tecla":         TECLA,
 	"segundos":      SEGUNDOS,
 	"milisegundos":  MILISEGUNDOS,
+	"fin":           FIN,
 	"que":           QUE,
 	"y":             Y,
 	"o":             O,
