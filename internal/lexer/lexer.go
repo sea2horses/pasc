@@ -273,6 +273,54 @@ func (l *Lexer) tokenize_character() (Token, error) {
 	return Token{Type: tk_type, Value: string(ch), Span: models.Span{Start: capture_position, End: capture_position}}, nil
 }
 
+// skipLineComment consumes a // comment but leaves its newline for Tokenize,
+// which emits it as a statement separator.
+func (l *Lexer) skipLineComment() {
+	for {
+		ch, err := l.getch()
+		if err != nil || ch == '\n' {
+			return
+		}
+		_ = l.advance()
+	}
+}
+
+// skipBlockComment consumes a /* */ comment. Newlines inside comments remain
+// significant to the parser, so emit a NEWLINE token for each one.
+func (l *Lexer) skipBlockComment(tokens *[]Token) {
+	start := l.position
+	_ = l.advance() // /
+	_ = l.advance() // *
+
+	for {
+		ch, err := l.getch()
+		if err != nil {
+			l.Report(models.Span{Start: start, End: l.position}, "%s", ErrUnterminatedComment.Error())
+			return
+		}
+
+		if ch == '*' {
+			next, nextErr := l.at(l.position.Offset + 1)
+			if nextErr == nil && next == '/' {
+				_ = l.advance()
+				_ = l.advance()
+				return
+			}
+		}
+
+		if ch == '\n' {
+			position := l.position
+			_ = l.advance()
+			*tokens = append(*tokens, Token{
+				Type: NEWLINE, Value: "\n",
+				Span: models.Span{Start: position, End: l.position},
+			})
+			continue
+		}
+		_ = l.advance()
+	}
+}
+
 /* TODO: Use newline to better and more intelligently report diagnostics */
 /* Tokenize function */
 func (l *Lexer) Tokenize() ([]Token, error) {
@@ -283,7 +331,21 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 	for l.position.Offset < uint32(len(l.Src)) {
 		ch, _ := l.getch()
 
-		if unicode.IsSpace(ch) && ch != '\n' {
+		if ch == '/' {
+			next, err := l.at(l.position.Offset + 1)
+			if err == nil && next == '/' {
+				_ = l.advance()
+				_ = l.advance()
+				l.skipLineComment()
+			} else if err == nil && next == '*' {
+				l.skipBlockComment(&tokens)
+			} else {
+				token, err := l.tokenize_character()
+				if err == nil {
+					tokens = append(tokens, token)
+				}
+			}
+		} else if unicode.IsSpace(ch) && ch != '\n' {
 			l.skip_whitespace()
 		} else if ch == '"' {
 			token, err := l.tokenize_string_literal()

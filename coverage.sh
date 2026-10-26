@@ -9,6 +9,8 @@ mapfile -d '' -t files < <(find . -type f -name "*.psc" -print0)
 total=${#files[@]}
 successful=0
 
+echo "Total .psc files found: $total"
+
 for file in "${files[@]}"; do
     if output=$("$pascc" "${build_args[@]}" "$file" 2>&1); then
         ((successful += 1))

@@ -26,8 +26,9 @@ func (e LexerErr) Error() string {
 }
 
 const (
-	ErrExpectedIdentifier = LexerErr("expected identifier")
-	ErrExpectedString     = LexerErr("expected string")
-	ErrExpectedNumber     = LexerErr("expected number")
-	ErrUnterminatedString = LexerErr("unterminated string")
+	ErrExpectedIdentifier  = LexerErr("expected identifier")
+	ErrExpectedString      = LexerErr("expected string")
+	ErrExpectedNumber      = LexerErr("expected number")
+	ErrUnterminatedString  = LexerErr("unterminated string")
+	ErrUnterminatedComment = LexerErr("unterminated block comment")
 )
