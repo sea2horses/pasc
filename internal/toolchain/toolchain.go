@@ -139,10 +139,10 @@ func tokenize(file []byte, filename string) ([]lexer.Token, error) {
 	src := []rune(string(file))
 	lexer := lexer.NewLexer(src)
 
-	tokens, err := lexer.Tokenize()
+	tokens, _ := lexer.Tokenize()
 	diagnostics.PrintDiagnostics(lexer.Diagnostics(), filename)
 
-	return tokens, err
+	return tokens, diagnostics.SummaryAsError(lexer.Diagnostics())
 }
 
 func parse(tokens []lexer.Token, filename string) (ast.Node, error) {
