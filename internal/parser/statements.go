@@ -162,6 +162,13 @@ func Assignment() Pattern[ast.Stmt] {
 							Tok(lexer.R_ANGLE),
 						),
 					),
+					AsAny(
+						Seq2(
+							/* := */
+							Tok(lexer.COLON),
+							Tok(lexer.EQUALS),
+						),
+					),
 				),
 				Expected(Expression(), ExpectedExpression),
 			),

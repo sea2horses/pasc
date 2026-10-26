@@ -37,6 +37,7 @@ const (
 	AMPERSAND // &
 	PIPE      // |
 	EX_MARK   // !
+	UPTICK    // ^
 
 	// Special
 	NEWLINE
@@ -72,5 +73,6 @@ var charMap map[rune]TokenType = map[rune]TokenType{
 	']':  R_BRACKET,
 	':':  COLON,
 	'%':  MODULO,
+	'^':  UPTICK,
 	'\n': NEWLINE,
 }

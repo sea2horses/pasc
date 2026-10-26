@@ -126,6 +126,10 @@ func BinaryOperator() Pattern[*ast.Operator] {
 					),
 					semantic.OR,
 				),
+				If(
+					Tok(lexer.UPTICK),
+					semantic.POWER,
+				),
 			),
 		),
 		func(o Located[semantic.OperatorType]) *ast.Operator {
