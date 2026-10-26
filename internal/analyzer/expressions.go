@@ -50,7 +50,7 @@ func (a *Analyzer) analyze_binary_operation(bo *ast.BinaryOperation) tast.TypedE
 	LHS := a.analyze_expression(bo.LHS)
 	RHS := a.analyze_expression(bo.RHS)
 	/* Invalid by default */
-	var resolved_type semantic.Type = semantic.InvalidType{}
+	var resolved_type semantic.Type = semantic.Invalid_T{}
 
 	ok := a.assert_nonvoid(LHS, RHS)
 	if !ok {
@@ -92,7 +92,7 @@ func (a *Analyzer) analyze_unary_operation(uo *ast.UnaryOperation) tast.TypedExp
 	/* Analyze the inner expression */
 	typed_expr := a.analyze_expression(uo.Expr)
 	/* Invalid by default */
-	var resolved_type semantic.Type = semantic.InvalidType{}
+	var resolved_type semantic.Type = semantic.Invalid_T{}
 
 	ok := a.assert_nonvoid(typed_expr)
 	if !ok {

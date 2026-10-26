@@ -31,85 +31,85 @@ type UnaryOperationRule struct {
 }
 
 var allowedCasts = []ImplicitCast{
-	{From: IntegerType{}, To: RealType{}, ConversionKind: ConversionIntegerToReal},
-	{From: RealType{}, To: IntegerType{}, ConversionKind: ConversionRealToIntegerExact},
+	{From: Integer_T{}, To: Real_T{}, ConversionKind: ConversionIntegerToReal},
+	{From: Real_T{}, To: Integer_T{}, ConversionKind: ConversionRealToIntegerExact},
 }
 
 var binaryOperationTable = []BinaryOperationRule{
 	// Addition and string concatenation.
-	{ADD, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
-	{ADD, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
-	{ADD, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
-	{ADD, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
-	{ADD, StringType{}, StringType{}, StringType{}, ConversionNone, ConversionNone},
+	{ADD, Integer_T{}, Integer_T{}, Integer_T{}, ConversionNone, ConversionNone},
+	{ADD, Integer_T{}, Real_T{}, Real_T{}, ConversionIntegerToReal, ConversionNone},
+	{ADD, Real_T{}, Integer_T{}, Real_T{}, ConversionNone, ConversionIntegerToReal},
+	{ADD, Real_T{}, Real_T{}, Real_T{}, ConversionNone, ConversionNone},
+	{ADD, String_T{}, String_T{}, String_T{}, ConversionNone, ConversionNone},
 
 	// Arithmetic.
-	{SUBTRACT, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
-	{SUBTRACT, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
-	{SUBTRACT, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
-	{SUBTRACT, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
+	{SUBTRACT, Integer_T{}, Integer_T{}, Integer_T{}, ConversionNone, ConversionNone},
+	{SUBTRACT, Integer_T{}, Real_T{}, Real_T{}, ConversionIntegerToReal, ConversionNone},
+	{SUBTRACT, Real_T{}, Integer_T{}, Real_T{}, ConversionNone, ConversionIntegerToReal},
+	{SUBTRACT, Real_T{}, Real_T{}, Real_T{}, ConversionNone, ConversionNone},
 
-	{MULTIPLY, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
-	{MULTIPLY, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
-	{MULTIPLY, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
-	{MULTIPLY, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
+	{MULTIPLY, Integer_T{}, Integer_T{}, Integer_T{}, ConversionNone, ConversionNone},
+	{MULTIPLY, Integer_T{}, Real_T{}, Real_T{}, ConversionIntegerToReal, ConversionNone},
+	{MULTIPLY, Real_T{}, Integer_T{}, Real_T{}, ConversionNone, ConversionIntegerToReal},
+	{MULTIPLY, Real_T{}, Real_T{}, Real_T{}, ConversionNone, ConversionNone},
 
 	// Division and exponentiation always produce a real value.
-	{DIVIDE, IntegerType{}, IntegerType{}, RealType{}, ConversionIntegerToReal, ConversionIntegerToReal},
-	{DIVIDE, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
-	{DIVIDE, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
-	{DIVIDE, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
+	{DIVIDE, Integer_T{}, Integer_T{}, Real_T{}, ConversionIntegerToReal, ConversionIntegerToReal},
+	{DIVIDE, Integer_T{}, Real_T{}, Real_T{}, ConversionIntegerToReal, ConversionNone},
+	{DIVIDE, Real_T{}, Integer_T{}, Real_T{}, ConversionNone, ConversionIntegerToReal},
+	{DIVIDE, Real_T{}, Real_T{}, Real_T{}, ConversionNone, ConversionNone},
 
-	{POWER, IntegerType{}, IntegerType{}, RealType{}, ConversionIntegerToReal, ConversionIntegerToReal},
-	{POWER, IntegerType{}, RealType{}, RealType{}, ConversionIntegerToReal, ConversionNone},
-	{POWER, RealType{}, IntegerType{}, RealType{}, ConversionNone, ConversionIntegerToReal},
-	{POWER, RealType{}, RealType{}, RealType{}, ConversionNone, ConversionNone},
+	{POWER, Integer_T{}, Integer_T{}, Real_T{}, ConversionIntegerToReal, ConversionIntegerToReal},
+	{POWER, Integer_T{}, Real_T{}, Real_T{}, ConversionIntegerToReal, ConversionNone},
+	{POWER, Real_T{}, Integer_T{}, Real_T{}, ConversionNone, ConversionIntegerToReal},
+	{POWER, Real_T{}, Real_T{}, Real_T{}, ConversionNone, ConversionNone},
 
 	// MOD is strict and integer-only.
-	{MODULO, IntegerType{}, IntegerType{}, IntegerType{}, ConversionNone, ConversionNone},
-	{MODULO, IntegerType{}, RealType{}, IntegerType{}, ConversionNone, ConversionRealToIntegerExact},
-	{MODULO, RealType{}, IntegerType{}, RealType{}, ConversionRealToIntegerExact, ConversionNone},
-	{MODULO, RealType{}, RealType{}, IntegerType{}, ConversionRealToIntegerExact, ConversionRealToIntegerExact},
+	{MODULO, Integer_T{}, Integer_T{}, Integer_T{}, ConversionNone, ConversionNone},
+	{MODULO, Integer_T{}, Real_T{}, Integer_T{}, ConversionNone, ConversionRealToIntegerExact},
+	{MODULO, Real_T{}, Integer_T{}, Real_T{}, ConversionRealToIntegerExact, ConversionNone},
+	{MODULO, Real_T{}, Real_T{}, Integer_T{}, ConversionRealToIntegerExact, ConversionRealToIntegerExact},
 
 	// Numeric ordering.
-	{GREATER, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{GREATER, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{GREATER, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{GREATER, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{GREATER_EQ, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{GREATER_EQ, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{GREATER_EQ, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{GREATER_EQ, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{LESSER, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{LESSER, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{LESSER, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{LESSER, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{LESSER_EQ, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{LESSER_EQ, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{LESSER_EQ, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{LESSER_EQ, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{GREATER, Integer_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{GREATER, Integer_T{}, Real_T{}, Bool_T{}, ConversionIntegerToReal, ConversionNone},
+	{GREATER, Real_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionIntegerToReal},
+	{GREATER, Real_T{}, Real_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{GREATER_EQ, Integer_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{GREATER_EQ, Integer_T{}, Real_T{}, Bool_T{}, ConversionIntegerToReal, ConversionNone},
+	{GREATER_EQ, Real_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionIntegerToReal},
+	{GREATER_EQ, Real_T{}, Real_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{LESSER, Integer_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{LESSER, Integer_T{}, Real_T{}, Bool_T{}, ConversionIntegerToReal, ConversionNone},
+	{LESSER, Real_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionIntegerToReal},
+	{LESSER, Real_T{}, Real_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{LESSER_EQ, Integer_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{LESSER_EQ, Integer_T{}, Real_T{}, Bool_T{}, ConversionIntegerToReal, ConversionNone},
+	{LESSER_EQ, Real_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionIntegerToReal},
+	{LESSER_EQ, Real_T{}, Real_T{}, Bool_T{}, ConversionNone, ConversionNone},
 
 	// Equality is intentionally unavailable for strings.
-	{EQUALS, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{EQUALS, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{EQUALS, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{EQUALS, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{EQUALS, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{NOT_EQUALS, IntegerType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{NOT_EQUALS, IntegerType{}, RealType{}, BooleanType{}, ConversionIntegerToReal, ConversionNone},
-	{NOT_EQUALS, RealType{}, IntegerType{}, BooleanType{}, ConversionNone, ConversionIntegerToReal},
-	{NOT_EQUALS, RealType{}, RealType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{NOT_EQUALS, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{EQUALS, Integer_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{EQUALS, Integer_T{}, Real_T{}, Bool_T{}, ConversionIntegerToReal, ConversionNone},
+	{EQUALS, Real_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionIntegerToReal},
+	{EQUALS, Real_T{}, Real_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{EQUALS, Bool_T{}, Bool_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{NOT_EQUALS, Integer_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{NOT_EQUALS, Integer_T{}, Real_T{}, Bool_T{}, ConversionIntegerToReal, ConversionNone},
+	{NOT_EQUALS, Real_T{}, Integer_T{}, Bool_T{}, ConversionNone, ConversionIntegerToReal},
+	{NOT_EQUALS, Real_T{}, Real_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{NOT_EQUALS, Bool_T{}, Bool_T{}, Bool_T{}, ConversionNone, ConversionNone},
 
 	// Logical
-	{AND, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
-	{OR, BooleanType{}, BooleanType{}, BooleanType{}, ConversionNone, ConversionNone},
+	{AND, Bool_T{}, Bool_T{}, Bool_T{}, ConversionNone, ConversionNone},
+	{OR, Bool_T{}, Bool_T{}, Bool_T{}, ConversionNone, ConversionNone},
 }
 
 var UnaryOperationTable = []UnaryOperationRule{
-	{SUBTRACT, IntegerType{}, IntegerType{}, ConversionNone},
-	{SUBTRACT, RealType{}, RealType{}, ConversionNone},
-	{NOT, BooleanType{}, BooleanType{}, ConversionNone},
+	{SUBTRACT, Integer_T{}, Integer_T{}, ConversionNone},
+	{SUBTRACT, Real_T{}, Real_T{}, ConversionNone},
+	{NOT, Bool_T{}, Bool_T{}, ConversionNone},
 }
 
 func CanCast(from Type, to Type) *ConversionKind {
@@ -121,14 +121,14 @@ func CanCast(from Type, to Type) *ConversionKind {
 	return nil
 }
 
-func SearchConversion(with Type, c ConversionKind) *ImplicitCast {
-	for _, cast := range allowedCasts {
-		if EqualTypes(cast.From, with) && cast.ConversionKind == c {
-			return &cast
-		}
-	}
-	return nil
-}
+// func SearchConversion(with Type, c ConversionKind) *ImplicitCast {
+// 	for _, cast := range allowedCasts {
+// 		if EqualTypes(cast.From, with) && cast.ConversionKind == c {
+// 			return &cast
+// 		}
+// 	}
+// 	return nil
+// }
 
 func ResolveBinaryOperation(op OperatorType, left, right Type) (BinaryOperationRule, bool) {
 	for _, rule := range binaryOperationTable {

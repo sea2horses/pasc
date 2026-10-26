@@ -81,10 +81,10 @@ type TypeTable struct {
 }
 
 var default_table map[string]Type = map[string]Type{
-	"entero": IntegerType{},
-	"cadena": StringType{},
-	"logico": BooleanType{},
-	"real":   RealType{},
+	"entero": Integer_T{},
+	"cadena": String_T{},
+	"logico": Bool_T{},
+	"real":   Real_T{},
 }
 
 func NewTypeTable() *TypeTable {

@@ -8,10 +8,10 @@ import (
 )
 
 var typeMap map[semantic.Type]*jen.Statement = map[semantic.Type]*jen.Statement{
-	semantic.IntegerType{}: jen.Id("int64"),
-	semantic.StringType{}:  jen.Id("string"),
-	semantic.BooleanType{}: jen.Id("bool"),
-	semantic.RealType{}:    jen.Id("float64"),
+	semantic.Integer_T{}: jen.Id("int64"),
+	semantic.String_T{}:  jen.Id("string"),
+	semantic.Bool_T{}:    jen.Id("bool"),
+	semantic.Real_T{}:    jen.Id("float64"),
 }
 
 var conversionMap map[semantic.ConversionKind]func() *jen.Statement = map[semantic.ConversionKind]func() *jen.Statement{

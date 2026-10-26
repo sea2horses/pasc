@@ -5,6 +5,7 @@ type PrimKind uint8
 const (
 	INVALID PrimKind = iota
 	VOID
+	UNTYPED_NUMBER
 	INTEGER // translates to int64
 	REAL    // translates to float64
 	STRING  // translates to string
@@ -17,102 +18,112 @@ type PrimitiveType interface {
 	Signature() TypeSignature
 }
 
-type IntegerType struct{}
+type UntypedNumber_T struct{}
 
-func (i IntegerType) Kind() PrimKind {
+func (un UntypedNumber_T) Kind() PrimKind {
+	return UNTYPED_NUMBER
+}
+
+func (un UntypedNumber_T) String() string {
+	return "untyped_number"
+}
+
+type Integer_T struct{}
+
+func (i Integer_T) Kind() PrimKind {
 	return INTEGER
 }
 
-func (i IntegerType) String() string {
+func (i Integer_T) String() string {
 	return "integer"
 }
 
-func (i IntegerType) Signature() TypeSignature {
+func (i Integer_T) Signature() TypeSignature {
 	return TypeSignature{
 		BaseType:      i.String(),
 		GenericParams: nil,
 	}
 }
 
-type RealType struct{}
+type Real_T struct{}
 
-func (RealType) Kind() PrimKind {
+func (Real_T) Kind() PrimKind {
 	return REAL
 }
 
-func (r RealType) String() string {
+func (r Real_T) String() string {
 	return "real"
 }
 
-func (r RealType) Signature() TypeSignature {
+func (r Real_T) Signature() TypeSignature {
 	return TypeSignature{
 		BaseType:      r.String(),
 		GenericParams: nil,
 	}
 }
 
-type StringType struct{}
+type String_T struct{}
 
-func (s StringType) Kind() PrimKind {
+func (s String_T) Kind() PrimKind {
 	return STRING
 }
 
-func (s StringType) String() string {
+func (s String_T) String() string {
 	return "string"
 }
 
-func (s StringType) Signature() TypeSignature {
+func (s String_T) Signature() TypeSignature {
 	return TypeSignature{
 		BaseType:      s.String(),
 		GenericParams: nil,
 	}
 }
 
-type BooleanType struct{}
+type Bool_T struct{}
 
-func (b BooleanType) Kind() PrimKind {
+func (b Bool_T) Kind() PrimKind {
 	return BOOLEAN
 }
 
-func (b BooleanType) String() string {
+func (b Bool_T) String() string {
 	return "boolean"
 }
 
-func (b BooleanType) Signature() TypeSignature {
+func (b Bool_T) Signature() TypeSignature {
 	return TypeSignature{
 		BaseType:      b.String(),
 		GenericParams: nil,
 	}
 }
 
-type VoidType struct{}
+type Void_T struct{}
 
-func (v VoidType) Kind() PrimKind {
+func (v Void_T) Kind() PrimKind {
 	return VOID
 }
 
-func (v VoidType) String() string {
+func (v Void_T) String() string {
 	return "void"
 }
 
-func (v VoidType) Signature() TypeSignature {
+func (v Void_T) Signature() TypeSignature {
 	return TypeSignature{
 		BaseType:      v.String(),
 		GenericParams: nil,
 	}
 }
 
-type InvalidType struct{}
+type Invalid_T struct{}
 
-func (i InvalidType) Kind() PrimKind {
+func (i Invalid_T) Kind() PrimKind {
 	return INVALID
 }
 
-func (i InvalidType) String() string {
+func (i Invalid_T) String() string {
 	return "<invalid>"
 }
 
-func (i InvalidType) Signature() TypeSignature {
+func (i Invalid_T) Signature() TypeSignature {
 	return TypeSignature{
 		BaseType:      i.String(),
 		GenericParams: nil,

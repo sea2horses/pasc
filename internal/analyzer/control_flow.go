@@ -13,7 +13,7 @@ func (a *Analyzer) analyze_if(i *ast.If) *tast.If {
 	typed_condition := a.analyze_expression(i.Condition)
 	stmts := a.analyze_statement_block(i.Stmts)
 	/* Assert the condition type to be boolean */
-	ok := a.assert_type(semantic.BooleanType{}, typed_condition)
+	ok := a.assert_type(semantic.Bool_T{}, typed_condition)
 	if !ok {
 		return nil
 	}

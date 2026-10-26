@@ -7,25 +7,25 @@ import (
 
 func TestEqualities(t *testing.T) {
 	/*  */
-	intType := semantic.IntegerType{}
+	intType := semantic.Integer_T{}
 
 	if !semantic.IsInteger(intType) {
 		t.Errorf("expected intType to be an integer type")
 	}
 
-	realType := semantic.RealType{}
+	realType := semantic.Real_T{}
 
 	if !semantic.IsReal(realType) {
 		t.Errorf("expected realType to be a real type")
 	}
 
-	stringType := semantic.StringType{}
+	stringType := semantic.String_T{}
 
 	if !semantic.IsString(stringType) {
 		t.Errorf("expected stringType to be a string type")
 	}
 
-	boolType := semantic.BooleanType{}
+	boolType := semantic.Bool_T{}
 
 	if !semantic.IsBoolean(boolType) {
 		t.Errorf("expected boolType to be a bool type")
@@ -33,7 +33,7 @@ func TestEqualities(t *testing.T) {
 }
 
 func TestIsVoid(t *testing.T) {
-	voidType := semantic.VoidType{}
+	voidType := semantic.Void_T{}
 
 	if !semantic.IsVoid(voidType) {
 		t.Errorf("expected voidType to be a void type")
@@ -41,7 +41,7 @@ func TestIsVoid(t *testing.T) {
 }
 
 func TestInvalid(t *testing.T) {
-	invalidType := semantic.InvalidType{}
+	invalidType := semantic.Invalid_T{}
 
 	if !semantic.IsInvalid(invalidType) {
 		t.Errorf("expected invalidType to be an invalid type")
@@ -49,7 +49,7 @@ func TestInvalid(t *testing.T) {
 }
 
 func TestArrays(t *testing.T) {
-	arrayType := semantic.ArrayType{Elem: semantic.IntegerType{}}
+	arrayType := semantic.ArrayType{Elem: semantic.Integer_T{}}
 
 	if !semantic.IsArray(arrayType) {
 		t.Errorf("expected arrayType to be an array type")

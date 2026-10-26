@@ -9,8 +9,8 @@ func (a *Analyzer) declare_builtins() {
 			Name: "Sen",
 			Kind: semantic.SymbolFunction,
 			Type: semantic.FunctionType{
-				Params: []semantic.Type{semantic.RealType{}},
-				Return: semantic.RealType{},
+				Params: []semantic.Type{semantic.Real_T{}},
+				Return: semantic.Real_T{},
 			},
 			Builtin: &semantic.BuiltinInfo{
 				Kind: semantic.BuiltinSin,
@@ -21,8 +21,8 @@ func (a *Analyzer) declare_builtins() {
 			Name: "Cos",
 			Kind: semantic.SymbolFunction,
 			Type: semantic.FunctionType{
-				Params: []semantic.Type{semantic.RealType{}},
-				Return: semantic.RealType{},
+				Params: []semantic.Type{semantic.Real_T{}},
+				Return: semantic.Real_T{},
 			},
 			Builtin: &semantic.BuiltinInfo{
 				Kind: semantic.BuiltinCos,
@@ -33,8 +33,8 @@ func (a *Analyzer) declare_builtins() {
 			Name: "Trunc",
 			Kind: semantic.SymbolFunction,
 			Type: semantic.FunctionType{
-				Params: []semantic.Type{semantic.RealType{}},
-				Return: semantic.RealType{},
+				Params: []semantic.Type{semantic.Real_T{}},
+				Return: semantic.Real_T{},
 			},
 			Builtin: &semantic.BuiltinInfo{
 				Kind: semantic.BuiltinTrunc,

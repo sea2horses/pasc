@@ -33,7 +33,7 @@ func (a *Analyzer) assert_nontype(target semantic.Type, msg string, exprs ...tas
 }
 
 func (a *Analyzer) assert_nonvoid(exprs ...tast.TypedExpr) bool {
-	return a.assert_nontype(semantic.VoidType{}, ErrUnexpectedVoid, exprs...)
+	return a.assert_nontype(semantic.Void_T{}, ErrUnexpectedVoid, exprs...)
 }
 
 func unify(target semantic.Type, source semantic.Type) bool {

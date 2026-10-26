@@ -9,10 +9,10 @@ import (
 )
 
 var allowed_write_types []semantic.Type = []semantic.Type{
-	semantic.IntegerType{},
-	semantic.BooleanType{},
-	semantic.RealType{},
-	semantic.StringType{},
+	semantic.Integer_T{},
+	semantic.Bool_T{},
+	semantic.Real_T{},
+	semantic.String_T{},
 }
 
 func (a *Analyzer) analyze_write(write *ast.Write) *tast.Write {

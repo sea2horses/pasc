@@ -62,7 +62,7 @@ func IsInvalid(t Type) bool {
 }
 
 func IsVoid(t Type) bool {
-	return EqualTypes(t, VoidType{})
+	return EqualTypes(t, Void_T{})
 }
 
 func IsNumeric(t Type) bool {
@@ -75,19 +75,19 @@ func IsNumeric(t Type) bool {
 }
 
 func IsInteger(t Type) bool {
-	return EqualTypes(t, IntegerType{})
+	return EqualTypes(t, Integer_T{})
 }
 
 func IsReal(t Type) bool {
-	return EqualTypes(t, RealType{})
+	return EqualTypes(t, Real_T{})
 }
 
 func IsString(t Type) bool {
-	return EqualTypes(t, StringType{})
+	return EqualTypes(t, String_T{})
 }
 
 func IsBoolean(t Type) bool {
-	return EqualTypes(t, BooleanType{})
+	return EqualTypes(t, Bool_T{})
 }
 
 func IsGeneric(t Type) bool {
@@ -95,5 +95,5 @@ func IsGeneric(t Type) bool {
 }
 
 func IsArray(t Type) bool {
-	return EqualTopLevelType(t, ArrayType{Elem: VoidType{}})
+	return EqualTopLevelType(t, ArrayType{Elem: Void_T{}})
 }

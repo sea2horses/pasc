@@ -27,7 +27,7 @@ func (a *Analyzer) Analyze(program *ast.MainFunction) (*tast.MainFunction, []dia
 		&semantic.Symbol{
 			Name:     program.Name,
 			Kind:     semantic.SymbolFunction,
-			Type:     semantic.VoidType{},
+			Type:     semantic.Void_T{},
 			Mutable:  false,
 			Declared: program.Span,
 		},

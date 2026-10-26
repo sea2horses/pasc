@@ -39,7 +39,7 @@ func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
 		}
 
 		/* Try coercing */
-		expr, ok = coerce_to(expr, semantic.IntegerType{})
+		expr, ok = coerce_to(expr, semantic.Integer_T{})
 		if !ok {
 			a.Report(dim.NodeSpan(), "dimension must be an integer")
 			ok = false
@@ -105,7 +105,7 @@ func (a *Analyzer) analyze_indexing(d *ast.Index) tast.TypedExpr {
 			continue
 		}
 
-		curr, ok := coerce_to(curr, semantic.IntegerType{})
+		curr, ok := coerce_to(curr, semantic.Integer_T{})
 		if !ok {
 			a.Report(curr.NodeSpan(), "index must be an integer")
 			continue

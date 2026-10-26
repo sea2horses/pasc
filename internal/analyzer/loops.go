@@ -13,7 +13,7 @@ func (a *Analyzer) analyze_while(while *ast.While) *tast.While {
 	typed_condition := a.analyze_expression(while.Condition)
 	stmts := a.analyze_statement_block(while.Stmts)
 	/* Assert the condition type to be boolean */
-	ok := a.assert_type(semantic.BooleanType{}, typed_condition)
+	ok := a.assert_type(semantic.Bool_T{}, typed_condition)
 	if !ok {
 		return nil
 	}
@@ -30,7 +30,7 @@ func (a *Analyzer) analyze_dowhile(dw *ast.DoWhile) *tast.DoWhile {
 	typed_condition := a.analyze_expression(dw.Condition)
 	stmts := a.analyze_statement_block(dw.Stmts)
 	/* Assert the condition type to be boolean */
-	ok := a.assert_type(semantic.BooleanType{}, typed_condition)
+	ok := a.assert_type(semantic.Bool_T{}, typed_condition)
 	if !ok {
 		return nil
 	}
@@ -55,7 +55,7 @@ func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 	start := a.analyze_expression(f.Start.Content)
 	end := a.analyze_expression(f.Until)
 
-	targetType := semantic.RealType{}
+	targetType := semantic.Real_T{}
 
 	start, ok = coerce_to(start, targetType)
 	if !ok {
