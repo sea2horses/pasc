@@ -6,11 +6,11 @@ Funcion es_mayor <- EsMayor(a, b)
 	es_mayor = a > b
 Fin Funcion
 
-Funcion Intercambiar(a Por Referencia, b Por Referencia)
+SubProceso Intercambiar(a Por Referencia, b Por Referencia)
 	auxiliar = a
 	a = b
 	b = auxiliar
-Fin Funcion
+Fin SubProceso
 
 Algoritmo PruebaFunciones
 	Definir total Como Entero

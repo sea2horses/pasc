@@ -41,7 +41,7 @@ func StatementBlock() Pattern[[]ast.Stmt] {
 
 var blockBoundaries = []lexer.Keyword{
 	lexer.FINALGORITMO, lexer.FIN, lexer.SINO, lexer.FINSI, lexer.FINMIENTRAS,
-	lexer.FINPARA, lexer.FINSEGUN, lexer.FINFUNCION, lexer.DE,
+	lexer.FINPARA, lexer.FINSEGUN, lexer.FINFUNCION, lexer.FINSUBPROCESO, lexer.DE,
 	lexer.HASTA, lexer.FINPROCESO,
 }
 
@@ -55,6 +55,9 @@ func atBlockBoundary(ctx *Context, cases, postTestWhile bool) bool {
 		}
 	}
 	if Peek(EndKeyword(lexer.FINFUNCION, lexer.FUNCION)).Match(ctx).OK() {
+		return true
+	}
+	if Peek(EndKeyword(lexer.FINSUBPROCESO, lexer.SUBPROCESO)).Match(ctx).OK() {
 		return true
 	}
 	if postTestWhile && atPostTestWhileTerminator(ctx) {
@@ -197,6 +200,8 @@ type functionHeader struct {
 	arguments      []string
 	byReference    []bool
 	hasReturn      bool
+	endKeyword     lexer.Keyword
+	endTail        lexer.Keyword
 }
 
 type functionArgument struct {
@@ -230,7 +235,7 @@ func FunctionArguments() Pattern[[]functionArgument] {
 func FunctionHeader() Pattern[functionHeader] {
 	return PatternFunc[functionHeader](func(ctx *Context) Match[functionHeader] {
 		start := ctx.Checkpoint()
-		keyword := Kw(lexer.FUNCION).Match(ctx)
+		keyword := OneOf(Kw(lexer.FUNCION), Kw(lexer.SUBPROCESO)).Match(ctx)
 		if keyword.Kind != Matched {
 			return Match[functionHeader]{Kind: keyword.Kind, Start: start.Pos, End: keyword.End, Err: keyword.Err}
 		}
@@ -240,6 +245,12 @@ func FunctionHeader() Pattern[functionHeader] {
 		}
 
 		header := functionHeader{}
+		header.endKeyword = lexer.FINFUNCION
+		header.endTail = lexer.FUNCION
+		if keyword.Value == lexer.SUBPROCESO {
+			header.endKeyword = lexer.FINSUBPROCESO
+			header.endTail = lexer.SUBPROCESO
+		}
 		if Tok(lexer.L_ANGLE).Match(ctx).OK() {
 			minus := Expected(Tok(lexer.MINUS), ExpectedToken{Kind: lexer.MINUS}).Match(ctx)
 			if minus.Kind != Matched {
@@ -269,25 +280,28 @@ func FunctionHeader() Pattern[functionHeader] {
 }
 
 func FunctionDeclaration() Pattern[*ast.Function] {
-
-	return Map(
-		Locate(Seq3(
-			FunctionHeader(),
-			StatementBlock(),
-			Expected(EndKeyword(lexer.FINFUNCION, lexer.FUNCION), ExpectedKeyword{Keyword: lexer.FINFUNCION}),
-		)),
-		func(p Located[Trio[functionHeader, []ast.Stmt, lexer.Keyword]]) *ast.Function {
-			return &ast.Function{
-				NodeInfo:       ast.NodeInfo{Span: p.Span},
-				Name:           p.Value.First.name,
-				ReturnVariable: p.Value.First.returnVariable,
-				Arguments:      p.Value.First.arguments,
-				ByReference:    p.Value.First.byReference,
-				HasReturn:      p.Value.First.hasReturn,
-				Stmts:          p.Value.Second,
-			}
-		},
-	)
+	return Bind(Locate(FunctionHeader()), func(header Located[functionHeader]) Pattern[*ast.Function] {
+		return Map(
+			Seq2(
+				StatementBlock(),
+				Expected(
+					EndKeyword(header.Value.endKeyword, header.Value.endTail),
+					ExpectedKeyword{Keyword: header.Value.endKeyword},
+				),
+			),
+			func(body Pair[[]ast.Stmt, lexer.Keyword]) *ast.Function {
+				return &ast.Function{
+					NodeInfo:       ast.NodeInfo{Span: header.Span},
+					Name:           header.Value.name,
+					ReturnVariable: header.Value.returnVariable,
+					Arguments:      header.Value.arguments,
+					ByReference:    header.Value.byReference,
+					HasReturn:      header.Value.hasReturn,
+					Stmts:          body.First,
+				}
+			},
+		)
+	})
 }
 
 func Program() Pattern[*ast.MainFunction] {

@@ -87,6 +87,8 @@ const (
 	FINFUNCION
 	POR
 	REFERENCIA
+	SUBPROCESO
+	FINSUBPROCESO
 )
 
 func MapToKeyword(str []rune) (Keyword, bool) {
@@ -143,6 +145,8 @@ var keywordMap map[string]Keyword = map[string]Keyword{
 	"finfunción":    FINFUNCION,
 	"por":           POR,
 	"referencia":    REFERENCIA,
+	"subproceso":    SUBPROCESO,
+	"finsubproceso": FINSUBPROCESO,
 	"que":           QUE,
 	"y":             Y,
 	"o":             O,
