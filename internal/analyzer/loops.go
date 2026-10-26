@@ -57,6 +57,9 @@ func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 	targetType := semantic.Real_T{}
 
 	valid := true
+	if start == nil || end == nil {
+		return nil
+	}
 	start, ok = coerce_to(start, targetType)
 	if !ok || start == nil {
 		got := semantic.Type(semantic.Invalid_T{})
@@ -80,6 +83,9 @@ func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 
 	if f.Step != nil {
 		step = a.analyze_expression(f.Step)
+		if step == nil {
+			return nil
+		}
 		step, ok = coerce_to(step, targetType)
 		if !ok || step == nil {
 			got := semantic.Type(semantic.Invalid_T{})

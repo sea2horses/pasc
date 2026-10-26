@@ -61,7 +61,12 @@ func (a *Analyzer) analyze_postfix(postfix *ast.Postfix) tast.TypedExpr {
 
 	if len(chain) > 1 {
 		baseExpr := a.analyze_expression(base)
-		if baseExpr != nil && semantic.IsArray(baseExpr.Type()) {
+		baseType := semantic.Type(nil)
+		if baseExpr != nil {
+			baseType = semantic.Resolve(baseExpr.Type())
+		}
+		_, unresolved := baseType.(*semantic.InferType)
+		if baseExpr != nil && (semantic.IsArray(baseType) || unresolved) {
 			arguments := make([]ast.Expr, 0)
 			for i := len(chain) - 1; i >= 0; i-- {
 				arguments = append(arguments, chain[i].Arguments...)
@@ -81,6 +86,9 @@ func (a *Analyzer) analyze_postfix(postfix *ast.Postfix) tast.TypedExpr {
 	}
 
 	if semantic.IsArray(target.Type()) {
+		return a.analyze_indexing(postfix, target)
+	}
+	if _, ok := semantic.Resolve(target.Type()).(*semantic.InferType); ok {
 		return a.analyze_indexing(postfix, target)
 	}
 	if _, ok := semantic.Resolve(target.Type()).(semantic.FunctionType); ok {

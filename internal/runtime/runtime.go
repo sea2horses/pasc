@@ -68,8 +68,8 @@ func writeval(value any) {
 func Write(values ...any) {
 	for _, value := range values {
 		writeval(value)
-		writer.WriteRune('\n')
 	}
+	writer.WriteRune('\n')
 }
 
 func WriteContinuous(values ...any) {

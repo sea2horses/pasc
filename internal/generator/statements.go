@@ -11,6 +11,12 @@ import (
 func (g *Generator) genStatementBlock(stmts []tast.Stmt) []jen.Code {
 	var code []jen.Code
 	for _, stmt := range stmts {
+		if dimension, ok := stmt.(*tast.Dimension); ok {
+			code = append(code, g.generate(dimension))
+			// A dimensioned array can be unused in PSeInt; Go still requires a reference.
+			code = append(code, jen.Id("_").Op("=").Id(dimension.Symbol.Name))
+			continue
+		}
 		if read, ok := stmt.(*tast.Read); ok && read.Declare {
 			variable := read.Into.(*tast.VariableExpr)
 			code = append(code, jen.Var().Id(variable.Symbol.Name).Add(g.genType(semantic.Resolve(variable.Type()))))

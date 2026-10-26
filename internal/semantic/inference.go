@@ -24,6 +24,9 @@ func (i *InferType) String() string {
 }
 
 func Resolve(t Type) Type {
+	if t == nil {
+		return nil
+	}
 	infer, ok := t.(*InferType)
 	if !ok {
 		return t

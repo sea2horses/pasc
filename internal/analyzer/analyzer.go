@@ -12,6 +12,7 @@ type Analyzer struct {
 	type_table      *semantic.TypeTable
 	readInferences  []*semantic.InferType
 	implicit        []*semantic.Symbol
+	dimensioned     []*semantic.Symbol
 	implicitScope   *semantic.Scope
 	functionSymbols map[string]*semantic.Symbol
 	diagnostics.DiagnosticEmitter
@@ -27,6 +28,7 @@ func (a *Analyzer) Analyze(program *ast.MainFunction) (*tast.MainFunction, []dia
 	a.type_table = semantic.NewTypeTable()
 	a.readInferences = nil
 	a.implicit = nil
+	a.dimensioned = nil
 	a.functionSymbols = map[string]*semantic.Symbol{}
 	a.DiagnosticEmitter = diagnostics.NewDiagnosticEmitter()
 
@@ -117,6 +119,15 @@ func (a *Analyzer) Analyze(program *ast.MainFunction) (*tast.MainFunction, []dia
 			infer.Resolved = semantic.String_T{}
 		}
 	}
+	// Arrays whose element type is still unconstrained need a concrete fallback
+	// before declarations and dimensions are handed to the Go generator.
+	for _, symbol := range a.dimensioned {
+		if array, ok := semantic.Resolve(symbol.Type).(semantic.ArrayType); ok {
+			if infer, ok := semantic.Resolve(array.Elem).(*semantic.InferType); ok && infer.Resolved == nil {
+				infer.Resolved = semantic.String_T{}
+			}
+		}
+	}
 	implicitDeclarations := a.implicitDeclarations(mainImplicit, true)
 	statements = append(implicitDeclarations, statements...)
 
@@ -137,6 +148,17 @@ func (a *Analyzer) analyze_function(function *ast.Function) *tast.Function {
 	a.scope = functionScope
 	a.implicitScope = functionScope
 	a.implicit = nil
+	if function.HasReturn {
+		returnSymbol := &semantic.Symbol{
+			Name:     function.ReturnVariable,
+			Kind:     semantic.SymbolVariable,
+			Type:     fnType.Return,
+			Declared: function.NodeSpan(),
+			Mutable:  true,
+		}
+		functionScope.Declare(returnSymbol)
+		a.implicit = append(a.implicit, returnSymbol)
+	}
 
 	parameters := make([]*semantic.Symbol, len(function.Arguments))
 	for i, name := range function.Arguments {

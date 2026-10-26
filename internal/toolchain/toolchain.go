@@ -3,6 +3,7 @@ package toolchain
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -16,6 +17,7 @@ import (
 	"pascc/internal/parser"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strings"
 )
 
@@ -45,6 +47,12 @@ type ToolchainConfig struct {
 }
 
 func RunToolchain(config *ToolchainConfig) (err error) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			err = fmt.Errorf("internal compiler error: %v\n%s", recovered, debug.Stack())
+		}
+	}()
+
 	output_dir := config.OutputDir
 	if config.TempBuild {
 		output_dir, err = tempDir()

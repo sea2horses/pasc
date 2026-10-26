@@ -39,6 +39,9 @@ func (a *Analyzer) assert_nonvoid(exprs ...tast.TypedExpr) bool {
 }
 
 func unify(target semantic.Type, source semantic.Type) bool {
+	if target == nil || source == nil {
+		return false
+	}
 	target = semantic.Resolve(target)
 	source = semantic.Resolve(source)
 	if targetInfer, ok := target.(*semantic.InferType); ok {
@@ -58,11 +61,18 @@ func unify(target semantic.Type, source semantic.Type) bool {
 		infer.Resolved = target
 		return true
 	}
+	if targetArray, targetOK := target.(semantic.ArrayType); targetOK {
+		sourceArray, sourceOK := source.(semantic.ArrayType)
+		return sourceOK && targetArray.Rank == sourceArray.Rank && unify(targetArray.Elem, sourceArray.Elem)
+	}
 
 	return semantic.EqualTypes(target, source)
 }
 
 func coerce_to(expr tast.TypedExpr, target semantic.Type) (tast.TypedExpr, bool) {
+	if expr == nil || expr.Type() == nil || target == nil || semantic.IsInvalid(expr.Type()) {
+		return nil, false
+	}
 	target = semantic.Resolve(target)
 	if number, ok := expr.(*tast.NumberLiteral); ok {
 		// Numeric literals carry an inference variable until context selects a

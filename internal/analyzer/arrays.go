@@ -33,6 +33,7 @@ func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
 		}
 		a.scope.Declare(symbol)
 	}
+	a.dimensioned = append(a.dimensioned, symbol)
 
 	var dims []tast.TypedExpr
 	for _, dim := range d.Dimensions {
@@ -87,15 +88,26 @@ func (a *Analyzer) analyze_indexing(d *ast.Postfix, typed_expr tast.TypedExpr) t
 		}
 	}
 
-	if !semantic.IsArray(typed_expr.Type()) {
+	resolvedType := semantic.Resolve(typed_expr.Type())
+	if infer, ok := resolvedType.(*semantic.InferType); ok && infer.Resolved == nil {
+		// Indexing constrains an untyped function parameter or implicit variable
+		// to an array. The element type can be inferred from writes/call sites.
+		infer.Resolved = semantic.ArrayType{
+			Elem: a.type_table.MakeInference(),
+			Rank: len(d.Arguments),
+		}
+		resolvedType = semantic.Resolve(infer)
+	}
+	arrayType, isArray := resolvedType.(semantic.ArrayType)
+	if !isArray {
 		a.Report(d.NodeSpan(), "cannot index non-array type '%s'", typed_expr.Type())
 		return &tast.ErrorExpr{
 			NodeInfo: d.NodeInfo,
 		}
 	}
 
-	underlying_type := (typed_expr.Type().(semantic.ArrayType)).Elem
-	array_rank := (typed_expr.Type().(semantic.ArrayType)).Rank
+	underlying_type := arrayType.Elem
+	array_rank := arrayType.Rank
 
 	if len(d.Arguments) != array_rank {
 		a.Report(d.NodeSpan(), "index count mismatch: expected %d, got %d", array_rank, len(d.Arguments))
@@ -113,12 +125,13 @@ func (a *Analyzer) analyze_indexing(d *ast.Postfix, typed_expr tast.TypedExpr) t
 			continue
 		}
 
-		curr, ok := coerce_to(curr, semantic.Integer_T{})
-		if !ok {
-			a.Report(curr.NodeSpan(), "index must be an integer")
+		coerced, indexOK := coerce_to(curr, semantic.Integer_T{})
+		if !indexOK {
+			a.Report(index.NodeSpan(), "index must be an integer")
+			ok = false
 			continue
 		}
-		indexes = append(indexes, curr)
+		indexes = append(indexes, coerced)
 	}
 
 	if !ok {

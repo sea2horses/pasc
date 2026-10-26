@@ -48,15 +48,25 @@ type Type interface{ Signature() TypeSignature }
 
 /* Based on type signatures */
 func EqualTypes(a, b Type) bool {
+	if a == nil || b == nil {
+		return false
+	}
 	return a.Signature().Equals(b.Signature())
 }
 
 /* Checks if two types are equal at the top level (array vs array) */
 func EqualTopLevelType(a, b Type) bool {
+	if a == nil || b == nil {
+		return false
+	}
 	return a.Signature().BaseType == b.Signature().BaseType
 }
 
 func IsInvalid(t Type) bool {
+	if t == nil {
+		return true
+	}
+	t = Resolve(t)
 	prim, ok := t.(PrimitiveType)
 	return ok && prim.Kind() == INVALID
 }
@@ -95,5 +105,6 @@ func IsGeneric(t Type) bool {
 }
 
 func IsArray(t Type) bool {
-	return EqualTopLevelType(t, ArrayType{Elem: Void_T{}})
+	_, ok := Resolve(t).(ArrayType)
+	return ok
 }

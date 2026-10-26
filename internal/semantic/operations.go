@@ -158,7 +158,7 @@ func ResolveBinaryOperation(op OperatorType, left, right Type) (BinaryOperationR
 		case IsInteger(l) && IsReal(r):
 			return BinaryOperationRule{Operator: op, Left: l, Right: r, Result: Integer_T{}, RightConversion: CanCast(r, Integer_T{})}, true
 		case IsReal(l) && IsInteger(r):
-			return BinaryOperationRule{Operator: op, Left: l, Right: r, Result: Real_T{}, LeftConversion: CanCast(l, Integer_T{})}, true
+			return BinaryOperationRule{Operator: op, Left: l, Right: r, Result: Integer_T{}, LeftConversion: CanCast(l, Integer_T{})}, true
 		case IsReal(l) && IsReal(r):
 			return BinaryOperationRule{Operator: op, Left: l, Right: r, Result: Integer_T{}, LeftConversion: CanCast(l, Integer_T{}), RightConversion: CanCast(r, Integer_T{})}, true
 		default:
