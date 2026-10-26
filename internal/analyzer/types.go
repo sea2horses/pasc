@@ -104,7 +104,6 @@ func coerce_to(expr tast.TypedExpr, target semantic.Type) (tast.TypedExpr, bool)
 		}
 	}
 	source := semantic.Resolve(expr.Type())
-
 	/* Unify in case */
 	ok := unify(target, source)
 	/* Try conversion */

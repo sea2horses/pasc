@@ -48,6 +48,34 @@ func TestParseRepetirLoop(t *testing.T) {
 	}
 }
 
+func TestParseSinoSiChain(t *testing.T) {
+	ctx := parseContext(t, "algoritmo demo\nsi verdadero entonces\n escribir 1\nsino si falso\n escribir 2\nfinsi\nfinsi\nfinalgoritmo\n")
+	p := Parser{Tokens: ctx.Tokens}
+	node, diagnostics := p.Parse()
+	if len(diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %v", diagnostics)
+	}
+	main := node.(*ast.MainFunction)
+	if len(main.Stmts) != 1 {
+		t.Fatalf("got %d statements", len(main.Stmts))
+	}
+	outer := main.Stmts[0].(*ast.If)
+	if outer.Else == nil || len(outer.Else.Stmts) != 1 {
+		t.Fatalf("Sino Si not represented in else body: %#v", outer.Else)
+	}
+	if _, ok := outer.Else.Stmts[0].(*ast.If); !ok {
+		t.Fatalf("else-if parsed as %T", outer.Else.Stmts[0])
+	}
+}
+
+func TestParseNegatedCompoundConditionWithEntonces(t *testing.T) {
+	ctx := parseContext(t, "algoritmo demo\nsi i < 10 y i > 0 o no i >= 20 entonces\n escribir 1\nfinsi\nfinalgoritmo\n")
+	p := Parser{Tokens: ctx.Tokens}
+	if node, diagnostics := p.Parse(); len(diagnostics) != 0 || node == nil {
+		t.Fatalf("node=%#v diagnostics=%v", node, diagnostics)
+	}
+}
+
 func TestParseDiagnostics(t *testing.T) {
 	for _, tc := range []struct {
 		source, message string

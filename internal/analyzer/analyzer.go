@@ -13,6 +13,7 @@ type Analyzer struct {
 	readInferences  []*semantic.InferType
 	implicit        []*semantic.Symbol
 	dimensioned     []*semantic.Symbol
+	currentReturn   *semantic.Symbol
 	implicitScope   *semantic.Scope
 	functionSymbols map[string]*semantic.Symbol
 	diagnostics.DiagnosticEmitter
@@ -144,6 +145,7 @@ func (a *Analyzer) analyze_function(function *ast.Function) *tast.Function {
 	fnType := semantic.Resolve(functionSymbol.Type).(semantic.FunctionType)
 	previousScope := a.scope
 	previousImplicitScope := a.implicitScope
+	previousReturn := a.currentReturn
 	functionScope := semantic.NewScope(previousScope)
 	a.scope = functionScope
 	a.implicitScope = functionScope
@@ -158,6 +160,9 @@ func (a *Analyzer) analyze_function(function *ast.Function) *tast.Function {
 		}
 		functionScope.Declare(returnSymbol)
 		a.implicit = append(a.implicit, returnSymbol)
+		a.currentReturn = returnSymbol
+	} else {
+		a.currentReturn = nil
 	}
 
 	parameters := make([]*semantic.Symbol, len(function.Arguments))
@@ -198,6 +203,7 @@ func (a *Analyzer) analyze_function(function *ast.Function) *tast.Function {
 	a.implicit = nil
 	a.scope = previousScope
 	a.implicitScope = previousImplicitScope
+	a.currentReturn = previousReturn
 
 	return &tast.Function{
 		NodeInfo:        function.NodeInfo,

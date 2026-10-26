@@ -18,6 +18,10 @@ func UnaryOperator() Pattern[*ast.Operator] {
 					Tok(lexer.EX_MARK),
 					semantic.NOT,
 				),
+				If(
+					Kw(lexer.NO),
+					semantic.NOT,
+				),
 			),
 		),
 		func(o Located[semantic.OperatorType]) *ast.Operator {
@@ -42,6 +46,10 @@ func BinaryOperator() Pattern[*ast.Operator] {
 				If(
 					Tok(lexer.MINUS),
 					semantic.SUBTRACT,
+				),
+				If(
+					Seq2(Tok(lexer.ASTERISK), Tok(lexer.ASTERISK)),
+					semantic.POWER,
 				),
 				If(
 					Tok(lexer.ASTERISK),

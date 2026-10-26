@@ -79,6 +79,6 @@ func (a *Analyzer) analyze_call(call *ast.Postfix, callable tast.TypedExpr) tast
 		Callable:    callable,
 		Arguments:   args,
 		ByReference: byReference,
-		Return:      semantic.Resolve(fnType.Return),
+		Return:      fnType.Return,
 	}
 }

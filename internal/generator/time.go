@@ -21,7 +21,12 @@ func (g *Generator) genTimeUnit(t semantic.TimeUnit) *jen.Statement {
 }
 
 func (g *Generator) genTimeout(to *tast.TimeOut) *jen.Statement {
-	return TimeoutFunc().Call(
-		g.generate(to.Amount).Op("*").Add(g.genTimeUnit(to.Unit)),
+	// Convert both operands to float64 before multiplication so fractional
+	// delays (for example, Esperar 0.5 Segundos) remain valid Go expressions.
+	duration := jen.Qual("time", "Duration").Call(
+		jen.Id("float64").Call(g.generate(to.Amount)).Op("*").Add(
+			jen.Id("float64").Call(g.genTimeUnit(to.Unit)),
+		),
 	)
+	return TimeoutFunc().Call(duration)
 }

@@ -35,10 +35,21 @@ func (a *Analyzer) analyze_variable(variable *ast.Variable) tast.TypedExpr {
 	}
 }
 
-func (a *Analyzer) analyze_single_decl(decl *ast.Declaration, name string, t semantic.Type) *semantic.Symbol {
-	if _, exists := a.scope.Lookup(name); exists {
+func (a *Analyzer) analyze_single_decl(decl *ast.Declaration, name string, t semantic.Type) (*semantic.Symbol, bool) {
+	if existing, exists := a.scope.Lookup(name); exists {
+		// PSeInt source commonly repeats a same-type Definir, especially for a
+		// function's return variable. Treat it as the existing declaration.
+		if existing == a.currentReturn && existing.Kind == semantic.SymbolVariable {
+			if infer, ok := existing.Type.(*semantic.InferType); ok {
+				infer.Resolved = t
+				return existing, false
+			}
+		}
+		if existing.Kind == semantic.SymbolVariable && unify(existing.Type, t) {
+			return existing, false
+		}
 		a.Report(decl.Span, "%s", ErrSymbolAlreadyExists{Name: name}.Error())
-		return nil
+		return nil, false
 	}
 
 	symbol := &semantic.Symbol{
@@ -50,7 +61,7 @@ func (a *Analyzer) analyze_single_decl(decl *ast.Declaration, name string, t sem
 	}
 
 	a.scope.Declare(symbol)
-	return symbol
+	return symbol, true
 }
 
 func (a *Analyzer) analyze_declaration(decl *ast.Declaration) *tast.Declaration {
@@ -67,13 +78,15 @@ func (a *Analyzer) analyze_declaration(decl *ast.Declaration) *tast.Declaration 
 
 	symbols := []*semantic.Symbol{}
 	for _, n := range decl.Names {
-		symbol := a.analyze_single_decl(decl, n, t)
+		symbol, created := a.analyze_single_decl(decl, n, t)
 
 		if symbol == nil {
 			ok = false
+			continue
 		}
-
-		symbols = append(symbols, symbol)
+		if created {
+			symbols = append(symbols, symbol)
+		}
 	}
 
 	if !ok {

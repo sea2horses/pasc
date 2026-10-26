@@ -3,6 +3,8 @@ package parser
 import (
 	"pascc/internal/ast"
 	"pascc/internal/lexer"
+	"pascc/internal/models"
+	"pascc/internal/semantic"
 )
 
 func IfStmt() Pattern[ast.Stmt] {
@@ -41,13 +43,36 @@ func IfStmt() Pattern[ast.Stmt] {
 }
 
 func ElseStmt() Pattern[*ast.Else] {
-	return Map(
-		Seq2(
-			Locate(
-				Kw(lexer.SINO),
+	return PatternFunc[*ast.Else](func(ctx *Context) Match[*ast.Else] {
+		return elseStmtPattern().Match(ctx)
+	})
+}
+
+func elseStmtPattern() Pattern[*ast.Else] {
+	elseIf := Map(
+		After(
+			Kw(lexer.SI),
+			Left(
+				Seq3(
+					Locate(Left(Expected(Expression(), ExpectedExpression), Optional(Kw(lexer.ENTONCES)))),
+					StatementBlock(),
+					Optional(ElseStmt()),
+				),
+				Expected(EndKeyword(lexer.FINSI, lexer.SI), ExpectedKeyword{Keyword: lexer.FINSI}),
 			),
-			StatementBlock(),
 		),
+		func(branch Trio[Located[ast.Expr], []ast.Stmt, OptionalValue[*ast.Else]]) []ast.Stmt {
+			return []ast.Stmt{&ast.If{
+				NodeInfo:  ast.NodeInfo{Span: branch.First.Span},
+				Condition: branch.First.Value,
+				Stmts:     branch.Second,
+				Else:      branch.Third.Or(nil),
+			}}
+		},
+	)
+	body := OneOf(elseIf, StatementBlock())
+	return Map(
+		Seq2(Locate(Kw(lexer.SINO)), Left(body, Many(Newline()))),
 		func(p Pair[Located[lexer.Keyword], []ast.Stmt]) *ast.Else {
 			return &ast.Else{
 				NodeInfo: ast.NodeInfo{
@@ -117,7 +142,7 @@ func For() Pattern[ast.Stmt] {
 }
 
 func ForHeader() Pattern[Trio[ast.Stmt, ast.Expr, OptionalValue[ast.Expr]]] {
-	start := Right(Kw(lexer.PARA), Expected(Assignment(), ExpectedStatement))
+	start := Right(Kw(lexer.PARA), Expected(ForStart(), ExpectedStatement))
 	standard := Seq3(
 		start,
 		Right(Kw(lexer.HASTA), Expected(Expression(), ExpectedExpression)),
@@ -144,6 +169,16 @@ func ForHeader() Pattern[Trio[ast.Stmt, ast.Expr, OptionalValue[ast.Expr]]] {
 		},
 	)
 	return OneOf(standard, stepBeforeEnd)
+}
+
+func ForStart() Pattern[ast.Stmt] {
+	return OneOf(
+		Assignment(),
+		MapWithLocation(Name(), func(name string, span models.Span) ast.Stmt {
+			variable := &ast.Variable{NodeInfo: ast.NodeInfo{Span: span}, Name: name}
+			return &ast.Assignment{NodeInfo: ast.NodeInfo{Span: span}, Target: variable, Content: variable}
+		}),
+	)
 }
 
 func Switch() Pattern[ast.Stmt] {
@@ -184,21 +219,36 @@ func Switch() Pattern[ast.Stmt] {
 }
 
 func CaseHeader() Pattern[[]ast.Expr] {
-	return Right(
-		Optional(Kw(lexer.CASO)),
-		Left(SepBy1(Expression(), Tok(lexer.COMMA)), Tok(lexer.COLON)),
+	return Map(
+		Right(
+			Optional(Kw(lexer.CASO)),
+			Left(SepBy1(Expression(), Tok(lexer.COMMA)), Tok(lexer.COLON)),
+		),
+		func(values []ast.Expr) []ast.Expr {
+			var flattened []ast.Expr
+			for _, value := range values {
+				flattenCaseOrLabels(value, &flattened)
+			}
+			return flattened
+		},
 	)
 }
 
+func flattenCaseOrLabels(expr ast.Expr, into *[]ast.Expr) {
+	if operation, ok := expr.(*ast.BinaryOperation); ok && operation.Op.Type == semantic.OR {
+		flattenCaseOrLabels(operation.LHS, into)
+		flattenCaseOrLabels(operation.RHS, into)
+		return
+	}
+	*into = append(*into, expr)
+}
+
 func DefaultHeader() Pattern[any] {
-	return AsAny(Seq2(
-		Seq3(
-			Kw(lexer.DE),
-			Expected(Kw(lexer.OTRO), ExpectedKeyword{Keyword: lexer.OTRO}),
-			Expected(Kw(lexer.MODO), ExpectedKeyword{Keyword: lexer.MODO}),
-		),
-		Expected(Tok(lexer.COLON), ExpectedToken{Kind: lexer.COLON}),
-	))
+	return AsAny(Left(Seq3(
+		Kw(lexer.DE),
+		Expected(Kw(lexer.OTRO), ExpectedKeyword{Keyword: lexer.OTRO}),
+		Expected(Kw(lexer.MODO), ExpectedKeyword{Keyword: lexer.MODO}),
+	), Optional(Tok(lexer.COLON))))
 }
 
 func EndKeyword(compound, tail lexer.Keyword) Pattern[lexer.Keyword] {
@@ -258,22 +308,25 @@ func DoWhile() Pattern[ast.Stmt] {
 		After(
 			Kw(lexer.REPETIR),
 			Seq2(
-				StatementBlock(),
-				Locate(Right(
+				statementBlockWithPostTestWhile(false, true),
+				Locate(Map(
 					Seq2(
-						Expected(Kw(lexer.HASTA), ExpectedKeyword{Keyword: lexer.HASTA}),
-						Expected(Kw(lexer.QUE), ExpectedKeyword{Keyword: lexer.QUE}),
+						OneOf(
+							Map(Seq2(Kw(lexer.HASTA), Kw(lexer.QUE)), func(Pair[lexer.Keyword, lexer.Keyword]) bool { return true }),
+							Map(Seq2(Kw(lexer.MIENTRAS), Kw(lexer.QUE)), func(Pair[lexer.Keyword, lexer.Keyword]) bool { return false }),
+						),
+						Expression(),
 					),
-					Expression(),
+					func(p Pair[bool, ast.Expr]) Pair[bool, ast.Expr] { return p },
 				)),
 			),
 		),
-		func(p Pair[[]ast.Stmt, Located[ast.Expr]]) ast.Stmt {
+		func(p Pair[[]ast.Stmt, Located[Pair[bool, ast.Expr]]]) ast.Stmt {
 			return &ast.DoWhile{
 				NodeInfo:  ast.NodeInfo{Span: p.Second.Span},
 				Stmts:     p.First,
-				Condition: p.Second.Value,
-				Until:     true,
+				Condition: p.Second.Value.Second,
+				Until:     p.Second.Value.First,
 			}
 		},
 	)
@@ -287,7 +340,7 @@ func DoWhile() Pattern[ast.Stmt] {
 						Expected(Kw(lexer.MIENTRAS), ExpectedKeyword{Keyword: lexer.MIENTRAS}),
 						Expected(Kw(lexer.QUE), ExpectedKeyword{Keyword: lexer.QUE}),
 					),
-					Expression(),
+					Left(Expression(), Optional(Kw(lexer.HACER))),
 				)),
 			),
 		),

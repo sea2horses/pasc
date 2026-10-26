@@ -80,7 +80,7 @@ func Expression() Pattern[ast.Expr] {
 			op := operatorStack[n-1]
 			operatorStack = operatorStack[:n-1]
 
-			expr := &ast.BinaryOperation{
+			binary := &ast.BinaryOperation{
 				NodeInfo: ast.NodeInfo{
 					Span: models.JoinSpans(
 						lhs.NodeSpan(),
@@ -91,6 +91,24 @@ func Expression() Pattern[ast.Expr] {
 				LHS: lhs,
 				Op:  op,
 				RHS: rhs,
+			}
+			var expr ast.Expr = binary
+			// In PSeInt, NO applies to a following comparison as a whole:
+			// "NO x >= 20" means "NO (x >= 20)", not "(!x) >= 20".
+			if isComparison(op.Type) {
+				if unary, ok := lhs.(*ast.UnaryOperation); ok && unary.Op.Type == semantic.NOT {
+					comparison := &ast.BinaryOperation{
+						NodeInfo: ast.NodeInfo{Span: models.JoinSpans(unary.Expr.NodeSpan(), rhs.NodeSpan(), op.NodeSpan())},
+						LHS:      unary.Expr,
+						Op:       op,
+						RHS:      rhs,
+					}
+					expr = &ast.UnaryOperation{
+						NodeInfo: ast.NodeInfo{Span: models.JoinSpans(unary.NodeSpan(), rhs.NodeSpan())},
+						Op:       unary.Op,
+						Expr:     comparison,
+					}
+				}
 			}
 
 			operandStack = append(operandStack, expr)
@@ -175,4 +193,13 @@ func Expression() Pattern[ast.Expr] {
 			End:   ctx.Pos,
 		}
 	})
+}
+
+func isComparison(operator semantic.OperatorType) bool {
+	switch operator {
+	case semantic.GREATER, semantic.GREATER_EQ, semantic.LESSER, semantic.LESSER_EQ, semantic.EQUALS, semantic.NOT_EQUALS:
+		return true
+	default:
+		return false
+	}
 }

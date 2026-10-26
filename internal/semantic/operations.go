@@ -176,6 +176,10 @@ func ResolveBinaryOperation(op OperatorType, left, right Type) (BinaryOperationR
 		if (op == EQUALS || op == NOT_EQUALS) && EqualTypes(Resolve(left), String_T{}) && EqualTypes(Resolve(right), String_T{}) {
 			return BinaryOperationRule{Operator: op, Left: String_T{}, Right: String_T{}, Result: Bool_T{}}, true
 		}
+		if (op == GREATER || op == GREATER_EQ || op == LESSER || op == LESSER_EQ) &&
+			EqualTypes(Resolve(left), String_T{}) && EqualTypes(Resolve(right), String_T{}) {
+			return BinaryOperationRule{Operator: op, Left: String_T{}, Right: String_T{}, Result: Bool_T{}}, true
+		}
 		l, r, common, lc, rc, ok := numericOperands(left, right, false)
 		if !ok {
 			return rule, false

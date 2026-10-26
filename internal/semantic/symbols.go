@@ -83,11 +83,13 @@ type TypeTable struct {
 
 var default_table map[string]Type = map[string]Type{
 	"entero":   Integer_T{},
+	"entera":   Integer_T{},
 	"cadena":   String_T{},
 	"caracter": String_T{},
 	"texto":    String_T{},
 	"logico":   Bool_T{},
 	"real":     Real_T{},
+	"reales":   Real_T{},
 	"numero":   Real_T{},
 	"numerico": Real_T{},
 }

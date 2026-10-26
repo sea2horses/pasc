@@ -47,6 +47,11 @@ func (g *Generator) genAssignment(a *tast.Assignment) *jen.Statement {
 		}
 	} else {
 		op = jen.Op("=")
+		if cast := semantic.CanCast(a.Value.Type(), a.Target.Type()); cast != nil {
+			if convert, ok := conversionMap[cast.ConversionKind]; ok {
+				value = convert().Call(value)
+			}
+		}
 	}
 
 	return code.Add(op, value)

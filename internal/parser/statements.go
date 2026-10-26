@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"strings"
+
 	"pascc/internal/ast"
 	"pascc/internal/lexer"
 	"pascc/internal/models"
@@ -121,11 +123,9 @@ func statementBlock(cases bool) Pattern[[]ast.Stmt] {
 func statementBlockWithPostTestWhile(cases, postTestWhile bool) Pattern[[]ast.Stmt] {
 	return PatternFunc[[]ast.Stmt](func(ctx *Context) Match[[]ast.Stmt] {
 		start := ctx.Pos
-		// Headers and statements must end on their own line.
+		// Semicolons after a block header are optional; block bodies may also
+		// begin on the same line (for example, "SiNo Escribir ...").
 		skipSemicolons(ctx)
-		if !ctx.EOF() && !Newline().Match(ctx).OK() {
-			ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, ExpectedNewline.Expected()))
-		}
 		skippables(ctx)
 		stmts := []ast.Stmt{}
 		recovery := Synchronize{Tokens: []lexer.TokenType{lexer.NEWLINE}, Keywords: blockBoundaries}
@@ -215,19 +215,37 @@ func FunctionArgument() Pattern[functionArgument] {
 			Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}),
 			Optional(Right(
 				Kw(lexer.POR),
-				Expected(Kw(lexer.REFERENCIA), ExpectedKeyword{Keyword: lexer.REFERENCIA}),
+				OneOf(
+					If(Kw(lexer.REFERENCIA), true),
+					byValueKeyword(),
+				),
 			)),
 		),
-		func(p Pair[string, OptionalValue[lexer.Keyword]]) functionArgument {
-			return functionArgument{name: p.First, byReference: p.Second.Some}
+		func(p Pair[string, OptionalValue[bool]]) functionArgument {
+			return functionArgument{name: p.First, byReference: p.Second.Or(false)}
 		},
 	)
+}
+
+func byValueKeyword() Pattern[bool] {
+	return PatternFunc[bool](func(ctx *Context) Match[bool] {
+		start := ctx.Checkpoint()
+		token := Tok(lexer.IDENTIFIER).Match(ctx)
+		if token.Kind != Matched || !strings.EqualFold(token.Value.Value, "valor") {
+			ctx.Restore(start)
+			return Match[bool]{Kind: NoMatch, Start: start.Pos, End: start.Pos}
+		}
+		return Match[bool]{Kind: Matched, Value: false, Start: start.Pos, End: ctx.Pos}
+	})
 }
 
 func FunctionArguments() Pattern[[]functionArgument] {
 	return Between(
 		Tok(lexer.L_PARENTHESES),
-		SepBy(FunctionArgument(), Tok(lexer.COMMA)),
+		OneOf(
+			If(Peek(Tok(lexer.R_PARENTHESES)), []functionArgument{}),
+			SepBy1(FunctionArgument(), Tok(lexer.COMMA)),
+		),
 		Expected(Tok(lexer.R_PARENTHESES), ExpectedToken{Kind: lexer.R_PARENTHESES}),
 	)
 }
@@ -251,10 +269,17 @@ func FunctionHeader() Pattern[functionHeader] {
 			header.endKeyword = lexer.FINSUBPROCESO
 			header.endTail = lexer.SUBPROCESO
 		}
-		if Tok(lexer.L_ANGLE).Match(ctx).OK() {
-			minus := Expected(Tok(lexer.MINUS), ExpectedToken{Kind: lexer.MINUS}).Match(ctx)
-			if minus.Kind != Matched {
-				return Match[functionHeader]{Kind: minus.Kind, Start: start.Pos, End: minus.End, Err: minus.Err}
+		returnArrow := Tok(lexer.L_ANGLE).Match(ctx)
+		returnEquals := NoMatch
+		if returnArrow.Kind != Matched {
+			returnEquals = Tok(lexer.EQUALS).Match(ctx).Kind
+		}
+		if returnArrow.Kind == Matched || returnEquals == Matched {
+			if returnArrow.Kind == Matched {
+				minus := Expected(Tok(lexer.MINUS), ExpectedToken{Kind: lexer.MINUS}).Match(ctx)
+				if minus.Kind != Matched {
+					return Match[functionHeader]{Kind: minus.Kind, Start: start.Pos, End: minus.End, Err: minus.Err}
+				}
 			}
 			name := Expected(Name(), ExpectedToken{Kind: lexer.IDENTIFIER}).Match(ctx)
 			if name.Kind != Matched {
@@ -267,11 +292,11 @@ func FunctionHeader() Pattern[functionHeader] {
 			header.name = firstName.Value
 		}
 
-		arguments := FunctionArguments().Match(ctx)
+		arguments := Optional(FunctionArguments()).Match(ctx)
 		if arguments.Kind != Matched {
 			return Match[functionHeader]{Kind: arguments.Kind, Start: start.Pos, End: arguments.End, Err: arguments.Err}
 		}
-		for _, argument := range arguments.Value {
+		for _, argument := range arguments.Value.Or(nil) {
 			header.arguments = append(header.arguments, argument.name)
 			header.byReference = append(header.byReference, argument.byReference)
 		}

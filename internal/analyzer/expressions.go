@@ -29,6 +29,12 @@ func (a *Analyzer) analyze_expression(expr ast.Expr) tast.TypedExpr {
 		}
 	case *ast.Variable:
 		v := a.analyze_variable(node)
+		if variable, ok := v.(*tast.VariableExpr); ok && variable.Symbol.Kind == semantic.SymbolFunction {
+			if function, ok := semantic.Resolve(variable.Type()).(semantic.FunctionType); ok && len(function.Params) == 0 {
+				call := &ast.Postfix{NodeInfo: node.NodeInfo, Target: node}
+				return a.analyze_call(call, variable)
+			}
+		}
 		return v
 	case *ast.UnaryOperation:
 		return a.analyze_unary_operation(node)
@@ -60,7 +66,7 @@ func (a *Analyzer) analyze_postfix(postfix *ast.Postfix) tast.TypedExpr {
 	}
 
 	if len(chain) > 1 {
-		baseExpr := a.analyze_expression(base)
+		baseExpr := a.analyze_postfix_target(base)
 		baseType := semantic.Type(nil)
 		if baseExpr != nil {
 			baseType = semantic.Resolve(baseExpr.Type())
@@ -80,7 +86,7 @@ func (a *Analyzer) analyze_postfix(postfix *ast.Postfix) tast.TypedExpr {
 		}
 	}
 
-	target := a.analyze_expression(postfix.Target)
+	target := a.analyze_postfix_target(postfix.Target)
 	if target == nil || semantic.IsInvalid(target.Type()) {
 		return tast.ErrorExpr{NodeInfo: postfix.NodeInfo}
 	}
@@ -97,6 +103,15 @@ func (a *Analyzer) analyze_postfix(postfix *ast.Postfix) tast.TypedExpr {
 
 	a.Report(postfix.Target.NodeSpan(), "expression of type '%s' is neither callable nor indexable", target.Type())
 	return tast.ErrorExpr{NodeInfo: postfix.NodeInfo}
+}
+
+func (a *Analyzer) analyze_postfix_target(expr ast.Expr) tast.TypedExpr {
+	if variable, ok := expr.(*ast.Variable); ok {
+		if symbol, found := a.scope.Lookup(variable.Name); found && symbol.Kind == semantic.SymbolFunction {
+			return &tast.VariableExpr{NodeInfo: variable.NodeInfo, Symbol: symbol}
+		}
+	}
+	return a.analyze_expression(expr)
 }
 
 func (a *Analyzer) analyze_binary_operation(bo *ast.BinaryOperation) tast.TypedExpr {

@@ -194,7 +194,7 @@ type Call struct {
 func (*Call) exprNode() {}
 
 func (i Call) Type() semantic.Type {
-	return i.Return
+	return semantic.Resolve(i.Return)
 }
 
 func (i Index) AssignmentOrigin() *AssignmentOrigin {
