@@ -153,7 +153,7 @@ func open_file(filename string) ([]byte, error) {
 }
 
 func tokenize(file []byte, filename string) ([]lexer.Token, error) {
-	src := []rune(string(file))
+	src := decodeSource(file)
 	lexer := lexer.NewLexer(src)
 
 	tokens, _ := lexer.Tokenize()
