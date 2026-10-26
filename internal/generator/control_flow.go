@@ -51,11 +51,16 @@ func (g *Generator) genFor(f *tast.For) *jen.Statement {
 		_range = IterFunc().Call(g.generate(f.Start), g.generate(f.Until), g.generate(f.Step))
 	}
 
+	body := []jen.Code{
+		// Go rejects an unused range variable, while PSeInt permits a loop
+		// variable to be omitted from the body.
+		jen.Id("_").Op("=").Add(g.generate(f.Var)),
+	}
+	body = append(body, g.genStatementBlock(f.Stmts)...)
+
 	_for := jen.For(
 		g.generate(f.Var).Op(":=").Range().Add(_range),
-	).Block(
-		g.genStatementBlock(f.Stmts)...,
-	)
+	).Block(body...)
 
 	return jen.Block(_for)
 }

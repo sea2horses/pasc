@@ -2,19 +2,31 @@ package generator
 
 import (
 	tast "pascc/internal/ast_typed"
-	"pascc/internal/utils"
+	"pascc/internal/semantic"
 	"slices"
 
 	"github.com/dave/jennifer/jen"
 )
 
 func (g *Generator) genStatementBlock(stmts []tast.Stmt) []jen.Code {
-	return utils.Map(
-		stmts,
-		func(stmt tast.Stmt) jen.Code {
-			return g.generate(stmt)
-		},
-	)
+	var code []jen.Code
+	for _, stmt := range stmts {
+		declaration, ok := stmt.(*tast.Declaration)
+		if !ok {
+			code = append(code, g.generate(stmt))
+			continue
+		}
+
+		code = append(code, g.genDeclaration(declaration))
+		for _, symbol := range declaration.Symbols {
+			// Dimensioned names are declared by NewTensor. Mark only emitted
+			// scalar declarations used so Go accepts unused PSeInt variables.
+			if !semantic.IsArray(symbol.Type) {
+				code = append(code, jen.Id("_").Op("=").Id(symbol.Name))
+			}
+		}
+	}
+	return code
 }
 
 func (g *Generator) genMainFunction(mf *tast.MainFunction) {
