@@ -31,7 +31,7 @@ var writer bufio.Writer = *bufio.NewWriter(os.Stdout)
 var reader bufio.Reader = *bufio.NewReader(os.Stdin)
 
 type Value interface {
-	int64 | float64 | string | bool
+	int32 | float64 | string | bool
 }
 
 func Timeout(duration time.Duration) {
@@ -40,8 +40,8 @@ func Timeout(duration time.Duration) {
 
 func writeval(value any) {
 	switch val := value.(type) {
-	case int64:
-		writer.WriteString(strconv.FormatInt(val, 10))
+	case int32:
+		writer.WriteString(strconv.FormatInt(int64(val), 10))
 	case string:
 		writer.WriteString(val)
 	case float64:
@@ -82,12 +82,12 @@ func Read[T Value](dest *T) {
 	input, _, _ := reader.ReadLine()
 
 	switch d := any(dest).(type) {
-	case *int64:
-		result, err := strconv.ParseInt(string(input), 10, 64)
+	case *int32:
+		result, err := strconv.ParseInt(string(input), 10, 32)
 		if err != nil {
 			RuntimeError(ErrIncorrectType)
 		}
-		*d = result
+		*d = int32(result)
 	case *string:
 		*d = string(input)
 	case *float64:
@@ -133,16 +133,16 @@ func Read[T Value](dest *T) {
 
 /* Implicit Casting */
 
-func ToIntegerExact(value float64) int64 {
+func ToIntegerExact(value float64) int32 {
 	const maxExclusive = 9223372036854775808.0
 	if math.IsNaN(value) || math.IsInf(value, 0) || math.Trunc(value) != value ||
-		value < float64(math.MinInt64) || value >= maxExclusive {
+		value < float64(math.MinInt32) || value >= maxExclusive {
 		RuntimeError(ErrNonWholeInteger)
 	}
-	return int64(value)
+	return int32(value)
 }
 
-func IntegerToReal(value int64) float64 {
+func IntegerToReal(value int32) float64 {
 	return float64(value)
 }
 
@@ -183,36 +183,36 @@ func NewTensor[T Value](shape ...int) *Tensor[T] {
 	}
 }
 
-func DimensionSize[T Value](t *Tensor[T], dim int) int64 {
-	return int64(t.shape[dim])
+func DimensionSize[T Value](t *Tensor[T], dim int32) int32 {
+	return int32(t.shape[dim])
 }
 
-func IndexTensor[T Value](t *Tensor[T], indexes ...int) *T {
+func IndexTensor[T Value](t *Tensor[T], indexes ...int32) *T {
 	if len(indexes) != len(t.shape) {
 		RuntimeError(ErrWrongIndexCount)
 	}
 
 	/* Index bias */
-	offset := 0
+	var offset int32 = 0
 
 	for i, index := range indexes {
 		/* Turn into real indexes */
 		index = index - array_bias
 
-		if index < 0 || index >= t.shape[i] {
+		if index < 0 || index >= int32(t.shape[i]) {
 			RuntimeError(ErrIndexOutOfBounds)
 		}
 
-		offset += index * t.strides[i]
+		offset += index * int32(t.strides[i])
 	}
 
 	return &t.data[offset]
 }
 
-func IterTensor[T Value](tensor *Tensor[T]) iter.Seq2[T, int64] {
-	return func(yield func(T, int64) bool) {
+func IterTensor[T Value](tensor *Tensor[T]) iter.Seq2[T, int32] {
+	return func(yield func(T, int32) bool) {
 		for i := 0; i < len(tensor.data); i++ {
-			if !yield(tensor.data[i], int64(i+array_bias)) {
+			if !yield(tensor.data[i], int32(i+array_bias)) {
 				return
 			}
 		}

@@ -8,7 +8,7 @@ import (
 )
 
 var typeMap map[semantic.Type]*jen.Statement = map[semantic.Type]*jen.Statement{
-	semantic.Integer_T{}: jen.Id("int64"),
+	semantic.Integer_T{}: jen.Id("int32"),
 	semantic.String_T{}:  jen.Id("string"),
 	semantic.Bool_T{}:    jen.Id("bool"),
 	semantic.Real_T{}:    jen.Id("float64"),
