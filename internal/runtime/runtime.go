@@ -87,7 +87,7 @@ func Read[T Value](dest *T) {
 
 	switch d := any(dest).(type) {
 	case *int32:
-		result, err := strconv.ParseInt(string(input), 10, 32)
+		result, err := strconv.ParseInt(strings.TrimSpace(string(input)), 10, 32)
 		if err != nil {
 			RuntimeError(ErrIncorrectType)
 		}
@@ -95,7 +95,7 @@ func Read[T Value](dest *T) {
 	case *string:
 		*d = string(input)
 	case *float64:
-		result, err := strconv.ParseFloat(string(input), 64)
+		result, err := strconv.ParseFloat(strings.TrimSpace(string(input)), 64)
 		if err != nil {
 			RuntimeError(ErrIncorrectType)
 		}
@@ -108,7 +108,7 @@ func Read[T Value](dest *T) {
 			}
 
 			/* Try to match input to other strings */
-			input := strings.ToLower(string(input))
+			input := strings.ToLower(strings.TrimSpace(string(input)))
 			if input == "verdadero" {
 				return true
 			}
