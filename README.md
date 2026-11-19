@@ -9,6 +9,7 @@
 [![Go](https://img.shields.io/badge/go-1.25%2B-blue?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
 [![Pseint](https://img.shields.io/badge/compilador%20de-pseint-yellow?style=for-the-badge&logoColor=white)](https://pseint.sourceforge.net/)
 [![Plataforma](https://img.shields.io/badge/multiplataforma-3c3c3c?style=for-the-badge)](#requisitos)
+[![Compatibilidad](https://img.shields.io/badge/compila-99.8%25%20de%20programas%20v%C3%A1lidos-brightgreen?style=for-the-badge)](#compatibilidad-con-programas-reales)
 
 </div>
 
@@ -179,20 +180,34 @@ pascc run mayoria_edad.psc
 pascc build mayoria_edad.psc
 ```
 
+## Compatibilidad con programas reales
+
+Para medir la compatibilidad, `pascc` se probó contra los **18 repositorios más populares de GitHub con el tema [`pseint`](https://github.com/topics/pseint)**: **531 programas `.psc`** escritos por estudiantes y docentes, sin modificar, con codificaciones mixtas (UTF-8 y Windows-1252), estilos de sintaxis distintos y arreglos en base 0 y en base 1.
+
+| Resultado | Programas | |
+| --- | ---: | ---: |
+| Compilan a un ejecutable nativo | **519 / 531** | **97.7 %** |
+| Compilan, contando solo los programas válidos | **519 / 520** | **99.8 %** |
+| Rechazados por errores reales en el código fuente | 11 | |
+| Rechazados por sintaxis aún no soportada (`x es par`) | 1 | |
+| Base de arreglos deducida automáticamente como 1 | 40 | |
+
+Los 11 programas rechazados tienen errores reales que PSeInt también rechaza: archivos incompletos, plantillas sin rellenar, comillas que no cierran, `Definir a, b, Como Entero`, etc. En todos los casos `pascc` señala el archivo, la línea y la columna del problema.
+
+**Ejecución.** Cada ejecutable se corrió respondiendo `3` a todas las lecturas. Además de los programas que terminan normalmente, se revisaron a mano todos los que no lo hicieron. Solo **2 de los 519** fallan por una limitación del compilador: variables sin declarar que empiezan como enteras y después acumulan reales. El resto de los casos se explica por la entrada sintética (menús que nunca reciben la opción de salida, esperas con `Esperar`) o por errores del propio programa: leer fuera de una cadena con `Subcadena`, guardar decimales en una variable `Entero` o ciclos infinitos.
+
+**Deducción de la base de arreglos.** Con la detección automática de base 0 o base 1, **35 programas que antes fallaban en tiempo de ejecución ahora funcionan** y ninguno empeoró. Esos programas recorren arreglos con `Para i <- 1 Hasta n`.
+
 ## Estado del proyecto
 
-PSeInt tiene muchos comportamientos particulares que todavía faltan por replicar. Actualmente faltan, entre otras cosas:
+PSeInt tiene muchos comportamientos particulares y todavía quedan algunos por replicar:
 
-- Redimensionar.
-- Subprocesos, funciones y retorno de valores.
-- Sintaxis flexible.
-- Aliases como `Proceso` o `:=`.
-- El ciclo `Para Cada` y `Repetir`.
-- El operador de potencia `^`.
-- Funciones como `Subcadena`.
+- `Redimensionar`.
+- El ciclo `Para Cada`.
+- Expresiones coloquiales (`x es par`, `x es mayor que y`, …).
+- Ampliar una variable sin declarar de entero a real cuando más adelante recibe decimales.
 - Modo no-scope.
-- Perfiles.
-- Arreglos con índice inicial 1.
+- Opciones de perfil distintas de la base de los arreglos.
 
 ## Probar los ejemplos
 
