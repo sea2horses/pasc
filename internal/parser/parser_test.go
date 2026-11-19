@@ -107,7 +107,7 @@ func TestParseDiagnostics(t *testing.T) {
 				}
 			}
 			if tc.eof && len(ctx.Tokens) > 0 {
-				end := ctx.Tokens[len(ctx.Tokens)-1].Span.End
+				end := lastSignificantToken(ctx.Tokens).Span.End
 				if ds[0].Span.Start != end || ds[0].Span.End != end {
 					t.Fatalf("wrong EOF span: %+v", ds[0].Span)
 				}
@@ -162,5 +162,17 @@ func TestRecoveredDiagnosticSpans(t *testing.T) {
 		if !found {
 			t.Fatalf("missing target token: %+v", target)
 		}
+	}
+}
+
+func TestMissingEndInCRLFFilePointsAtLastToken(t *testing.T) {
+	ctx := parseContext(t, "Algoritmo A\r\n\tEscribir 1\r\n\r\n")
+	p := Parser{Tokens: ctx.Tokens}
+	_, ds := p.Parse()
+	if len(ds) != 1 {
+		t.Fatalf("diagnostics = %v", ds)
+	}
+	if ds[0].Span.Start.Line != 2 {
+		t.Fatalf("EOF diagnostic should point at the last statement, got %+v", ds[0].Span)
 	}
 }

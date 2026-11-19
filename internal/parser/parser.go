@@ -34,8 +34,10 @@ func (p *Parser) Parse() (ast.Node, []diagnostics.Diagnostic) {
 		span := models.Span{}
 		if pos < uint32(len(p.Tokens)) {
 			span = p.Tokens[pos].Span
-		} else if len(p.Tokens) > 0 {
-			end := p.Tokens[len(p.Tokens)-1].Span.End
+		} else if last := lastSignificantToken(p.Tokens); last != nil {
+			// Point just past the last real token instead of at trailing blank
+			// lines, which may not exist as visible columns (e.g. CRLF files).
+			end := last.Span.End
 			span = models.Span{Start: end, End: end}
 		}
 		p.Report(span, "%s", err.Error())
@@ -45,4 +47,16 @@ func (p *Parser) Parse() (ast.Node, []diagnostics.Diagnostic) {
 		return nil, ds
 	}
 	return result.Value, ds
+}
+
+func lastSignificantToken(tokens []lexer.Token) *lexer.Token {
+	for i := len(tokens) - 1; i >= 0; i-- {
+		if tokens[i].Type != lexer.NEWLINE {
+			return &tokens[i]
+		}
+	}
+	if len(tokens) > 0 {
+		return &tokens[len(tokens)-1]
+	}
+	return nil
 }

@@ -36,6 +36,7 @@ func FormatDiagnostic(
 ) (string, error) {
 	normalizedSource := strings.ReplaceAll(string(source), "\r\n", "\n")
 	lines := strings.Split(normalizedSource, "\n")
+	diagnostic.Span = clampSpanColumns(lines, diagnostic.Span)
 
 	if err := validateSpan(lines, diagnostic.Span); err != nil {
 		return "", err
@@ -325,4 +326,21 @@ func expandTabs(line string, tabWidth int) string {
 	}
 
 	return expanded.String()
+}
+
+// clampSpanColumns keeps columns within their line. The lexer counts '\r' as
+// a column while the formatter strips it, so spans near the end of a line in
+// a CRLF file can point one column past the visible text.
+func clampSpanColumns(lines []string, span models.Span) models.Span {
+	clamp := func(position models.Position) models.Position {
+		if position.Line == 0 || int(position.Line) > len(lines) {
+			return position
+		}
+		maxColumn := uint32(utf8.RuneCountInString(lines[position.Line-1]) + 1)
+		position.Column = min(position.Column, maxColumn)
+		return position
+	}
+	span.Start = clamp(span.Start)
+	span.End = clamp(span.End)
+	return span
 }
