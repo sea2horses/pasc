@@ -189,8 +189,12 @@ func Subcadena(value string, start, end int32) string {
 	runes := []rune(value)
 	start -= array_bias
 	end -= array_bias
-	if start < 0 || end < start || end >= int32(len(runes)) {
-		RuntimeError("Subcadena: posición fuera de los límites de la cadena")
+	// PSeInt clamps out-of-range positions instead of failing, and an empty
+	// range yields "" (e.g. Subcadena("A5", 2, 4) is "5").
+	start = max(start, 0)
+	end = min(end, int32(len(runes))-1)
+	if end < start {
+		return ""
 	}
 	return string(runes[start : end+1])
 }
