@@ -19,6 +19,7 @@ func Statement() Pattern[ast.Stmt] {
 		IfStmt(),
 		While(),
 		DoWhile(),
+		ForEach(),
 		For(),
 		Switch(),
 		Dimension(),

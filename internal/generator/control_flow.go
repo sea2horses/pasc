@@ -69,3 +69,14 @@ func (g *Generator) genFor(f *tast.For) *jen.Statement {
 
 	return jen.Block(_for)
 }
+
+// genForEach ranges over pointers to the elements, so the loop variable (a
+// reference symbol, emitted as *name) reads and writes the array itself.
+func (g *Generator) genForEach(f *tast.ForEach) *jen.Statement {
+	name := f.Var.Symbol.Name
+	body := []jen.Code{jen.Id("_").Op("=").Id(name)}
+	body = append(body, g.genStatementBlock(f.Stmts)...)
+	return jen.For(
+		jen.Id(name).Op(":=").Range().Id("TensorElements").Call(g.generate(f.Array)),
+	).Block(body...)
+}

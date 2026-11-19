@@ -141,6 +141,47 @@ func For() Pattern[ast.Stmt] {
 	)
 }
 
+// ForEach parses "Para Cada x De v Hacer ... FinPara" (also "en" for "De").
+// "cada" is recognized only in this exact shape, so a loop variable named
+// cada still works in an ordinary Para.
+func ForEach() Pattern[ast.Stmt] {
+	rest := Seq2(
+		Left(Expected(Expression(), ExpectedExpression), Optional(Kw(lexer.HACER))),
+		Left(
+			StatementBlock(),
+			Expected(EndKeyword(lexer.FINPARA, lexer.PARA), ExpectedKeyword{Keyword: lexer.FINPARA}),
+		),
+	)
+	return PatternFunc[ast.Stmt](func(ctx *Context) Match[ast.Stmt] {
+		start := ctx.Mark()
+		name := ctx.PeekAt(2)
+		if !wordAt(ctx, 0, "para") || ctx.Peek().Type != lexer.KEYWORD || !wordAt(ctx, 1, "cada") ||
+			name == nil || name.Type != lexer.IDENTIFIER || !(wordAt(ctx, 3, "de") || wordAt(ctx, 3, "en")) {
+			return Match[ast.Stmt]{Kind: NoMatch, Start: start, End: start}
+		}
+		header := models.JoinSpans(ctx.Peek().Span, ctx.PeekAt(3).Span)
+		variable := &ast.Variable{NodeInfo: ast.NodeInfo{Span: name.Span}, Name: name.Value}
+		for range 4 {
+			ctx.Advance()
+		}
+		result := rest.Match(ctx)
+		if !result.OK() {
+			return Match[ast.Stmt]{Kind: Failed, Start: start, End: max(ctx.Pos, result.End), Err: result.Err}
+		}
+		return Match[ast.Stmt]{
+			Kind: Matched,
+			Value: &ast.ForEach{
+				NodeInfo: ast.NodeInfo{Span: models.JoinSpans(header, result.Value.First.NodeSpan())},
+				Var:      variable,
+				Array:    result.Value.First,
+				Stmts:    result.Value.Second,
+			},
+			Start: start,
+			End:   ctx.Pos,
+		}
+	})
+}
+
 func ForHeader() Pattern[Trio[ast.Stmt, ast.Expr, OptionalValue[ast.Expr]]] {
 	start := Right(Kw(lexer.PARA), Expected(ForStart(), ExpectedStatement))
 	standard := Seq3(

@@ -338,3 +338,41 @@ func TestRedimensionar(t *testing.T) {
 		})
 	}
 }
+
+func TestParaCada(t *testing.T) {
+	source := `Algoritmo A
+	Definir suma, cada Como Entero
+	Dimensionar v[3]
+	v[0] = 1
+	Para Cada x De v Hacer
+		suma = suma + x
+		x = 0
+	FinPara
+	Para Cada y2 en v
+		Escribir y2
+	FinPara
+	Para cada <- 1 Hasta 2 Hacer
+		Escribir cada
+	FinPara
+FinAlgoritmo`
+	main, ds := analyzeSource(t, source, IndexBaseAuto)
+	if diagnosticsAt(ds, diagnostics.ERROR, "") != 0 {
+		t.Fatalf("unexpected errors: %v", ds)
+	}
+	code, err := generator.NewGenerator().Gen(main)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"for x := range TensorElements(v)", "*x = 0", "for y2 := range TensorElements(v)"} {
+		if !strings.Contains(string(code), want) {
+			t.Errorf("generated code is missing %q:\n%s", want, code)
+		}
+	}
+}
+
+func TestParaCadaNeedsAnArray(t *testing.T) {
+	_, ds := analyzeSource(t, "Algoritmo A\n\tDefinir n Como Entero\n\tPara Cada x De n Hacer\n\t\tEscribir x\n\tFinPara\nFinAlgoritmo", IndexBaseAuto)
+	if diagnosticsAt(ds, diagnostics.ERROR, "needs an array") != 1 {
+		t.Fatalf("expected a non-array error, got %v", ds)
+	}
+}

@@ -123,3 +123,37 @@ func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 		Stmts: stmts,
 	}
 }
+
+// analyze_foreach checks "Para Cada x De v": v must be an array, and x is a
+// new reference to each element, so assigning to x writes into v.
+func (a *Analyzer) analyze_foreach(f *ast.ForEach) *tast.ForEach {
+	array := a.analyze_expression(f.Array)
+	if array == nil || semantic.IsInvalid(array.Type()) {
+		return nil
+	}
+	arrayType, ok := semantic.Resolve(array.Type()).(semantic.ArrayType)
+	if !ok {
+		a.Report(f.Array.NodeSpan(), "'Para Cada' needs an array, got '%s'", array.Type())
+		return nil
+	}
+
+	a.new_scope()
+	symbol := &semantic.Symbol{
+		Name:        f.Var.Name,
+		Kind:        semantic.SymbolVariable,
+		Type:        arrayType.Elem,
+		Declared:    f.Var.NodeSpan(),
+		Mutable:     true,
+		ByReference: true,
+	}
+	a.scope.Declare(symbol)
+	stmts := a.analyze_statement_block(f.Stmts)
+	a.destroy_scope()
+
+	return &tast.ForEach{
+		NodeInfo: f.NodeInfo,
+		Var:      &tast.VariableExpr{NodeInfo: f.Var.NodeInfo, Symbol: symbol},
+		Array:    array,
+		Stmts:    stmts,
+	}
+}

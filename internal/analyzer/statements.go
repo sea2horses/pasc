@@ -68,6 +68,11 @@ func (a *Analyzer) analyze_statement(stmt ast.Stmt) []tast.Stmt {
 		return statements
 	case *ast.For:
 		return []tast.Stmt{a.analyze_for(s)}
+	case *ast.ForEach:
+		if typed := a.analyze_foreach(s); typed != nil {
+			return []tast.Stmt{typed}
+		}
+		return nil
 	case *ast.TimeOut:
 		return []tast.Stmt{a.analyze_timeout(s)}
 	case *ast.WaitKey:

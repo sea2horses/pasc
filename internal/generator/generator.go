@@ -78,6 +78,8 @@ func (g *Generator) generate(tree tast.Node) *jen.Statement {
 		return g.genSwitch(node)
 	case *tast.For:
 		return g.genFor(node)
+	case *tast.ForEach:
+		return g.genForEach(node)
 	case *tast.Dimension:
 		return g.genDimension(node)
 	case *tast.Index:

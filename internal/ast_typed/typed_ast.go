@@ -310,3 +310,12 @@ type ExprStmt struct {
 	ast.NodeInfo
 	Expr TypedExpr
 }
+
+// ForEach visits every element of an array in storage order. Var is a
+// reference symbol bound to the current element.
+type ForEach struct {
+	ast.NodeInfo
+	Var   *VariableExpr
+	Array TypedExpr
+	Stmts []Stmt
+}

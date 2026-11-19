@@ -312,6 +312,17 @@ func IndexTensor[T Value](t *Tensor[T], indexes ...int32) *T {
 	return &t.data[offset]
 }
 
+// TensorElements yields a pointer to every element, for Para Cada.
+func TensorElements[T Value](tensor *Tensor[T]) iter.Seq[*T] {
+	return func(yield func(*T) bool) {
+		for i := range tensor.data {
+			if !yield(&tensor.data[i]) {
+				return
+			}
+		}
+	}
+}
+
 func IterTensor[T Value](tensor *Tensor[T]) iter.Seq2[T, int32] {
 	return func(yield func(T, int32) bool) {
 		for i := 0; i < len(tensor.data); i++ {

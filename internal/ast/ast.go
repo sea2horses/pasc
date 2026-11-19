@@ -421,3 +421,23 @@ func (mf MainFunction) String() string {
 
 	return builder.String()
 }
+
+// ForEach is "Para Cada elemento De arreglo Hacer ... FinPara". The element
+// variable aliases each array element in turn, so writes go to the array.
+type ForEach struct {
+	NodeInfo
+	Var   *Variable
+	Array Expr
+	Stmts []Stmt
+}
+
+func (f ForEach) String() string {
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("ForEach %s in %s {", f.Var, f.Array))
+	for _, s := range f.Stmts {
+		builder.WriteRune('\n')
+		builder.WriteString(s.String())
+	}
+	builder.WriteString("\n}")
+	return builder.String()
+}

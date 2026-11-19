@@ -200,6 +200,9 @@ func (p *staticPass) stmt(stmt tast.Stmt, topLevel bool) {
 		}, node.Base)
 	case *tast.For:
 		p.forLoop(node)
+	case *tast.ForEach:
+		p.eval(node.Array)
+		p.block(node.Stmts, false)
 	case *tast.Dimension:
 		dims := make([]absval, len(node.Dimensions))
 		for i, dim := range node.Dimensions {
@@ -694,6 +697,9 @@ func walkStmt(stmt tast.Stmt, onStmt func(tast.Stmt), onExpr func(tast.TypedExpr
 		walkStmts(node.Stmts, onStmt, onExpr)
 	case *tast.DoWhile:
 		expr(node.Condition)
+		walkStmts(node.Stmts, onStmt, onExpr)
+	case *tast.ForEach:
+		expr(node.Array)
 		walkStmts(node.Stmts, onStmt, onExpr)
 	case *tast.For:
 		expr(node.Start)
