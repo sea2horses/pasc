@@ -135,6 +135,15 @@ func (l *Lexer) tokenize_identifier() (Token, error) {
 	return l.emmit(token_type, string(value), models.Span{Start: init_position, End: end_position}), nil
 }
 
+func (l *Lexer) reportUnterminatedString(start models.Position, delimiter rune, otherQuote bool) {
+	span := models.Span{Start: start, End: l.position}
+	if otherQuote {
+		l.Report(span, "%s: opened with %c but the line closes it with a different quote", ErrUnterminatedString.Error(), delimiter)
+		return
+	}
+	l.Report(span, "%s: missing closing %c on this line", ErrUnterminatedString.Error(), delimiter)
+}
+
 /* Parse string literal */
 func (l *Lexer) tokenize_string_literal() (Token, error) {
 	init_position := l.position
@@ -147,11 +156,22 @@ func (l *Lexer) tokenize_string_literal() (Token, error) {
 	l.advance()
 
 	/* Run until reaching the end of the file or putting a stop */
+	// PSeInt strings cannot span lines: stop at the end of the line so a
+	// missing or mismatched quote is reported where the string starts,
+	// instead of swallowing the following lines.
+	otherQuote := false
 	for {
 		ch, err := l.getch()
 
 		if err != nil || ch == delimiter {
 			break
+		}
+		if ch == '\n' || ch == '\r' {
+			l.reportUnterminatedString(init_position, delimiter, otherQuote)
+			return NULL_TOKEN, ErrUnterminatedString
+		}
+		if ch == '"' || ch == '\'' {
+			otherQuote = true
 		}
 
 		l.advance()
@@ -169,12 +189,7 @@ func (l *Lexer) tokenize_string_literal() (Token, error) {
 	end_ch, err := l.at(end_position.Offset)
 
 	if err != nil {
-		l.Report(
-			models.Span{Start: init_position, End: init_position},
-			"%s",
-			ErrUnterminatedString.Error(),
-		)
-
+		l.reportUnterminatedString(init_position, delimiter, otherQuote)
 		return NULL_TOKEN, ErrUnterminatedString
 	}
 
