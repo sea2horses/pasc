@@ -51,6 +51,8 @@ Actualmente se soportan:
 - Selección con `Segun`, casos, `De Otro Modo` y `FinSegun`.
 - Operadores aritméticos, relacionales y lógicos, incluyendo módulo.
 - Paréntesis y precedencia de operadores.
+- Arreglos con `Dimensionar`, en base 0 o base 1 (ver [Base de los arreglos](#base-de-los-arreglos)).
+- Verificaciones en tiempo de compilación: conversiones de real a entero sin `Redon()`/`Trunc()` e índices fuera de rango.
 
 ## Requisitos
 
@@ -115,6 +117,24 @@ También puedes usar `--fast` para compilar sin las dependencias de terminal. En
 ```
 
 En los ejemplos anteriores, reemplaza `./pascc` por `pascc.exe` en Windows, o usa `go run .` para ejecutar desde el código fuente.
+
+### Base de los arreglos
+
+PSeInt permite que los arreglos empiecen en 0 o en 1 según el perfil. Tanto `build` como `run` aceptan `--index-base`:
+
+```bash
+./pascc run --index-base 1 programa.psc   # v[1] es el primer elemento
+./pascc run --index-base 0 programa.psc   # v[0] es el primer elemento
+./pascc run programa.psc                  # auto (predeterminado)
+```
+
+En modo `auto`, el analizador deduce la base a partir de cómo se indexan los arreglos: un índice que puede valer `0` o un ciclo que llega hasta `n - 1` indica base 0; un índice que alcanza el tamaño del arreglo (`v[n]` con `Dimensionar v[n]`) o un ciclo `Para i <- 1 Hasta n` indica base 1. Si no hay indicios, se usa base 0, y si los indicios se contradicen se muestra una advertencia.
+
+Con la base ya decidida, el compilador evalúa expresiones constantes y rangos de ciclos para detectar antes de ejecutar:
+
+- índices constantes fuera de rango (error) y ciclos que se salen del arreglo (advertencia);
+- dimensiones menores que 1 (error);
+- conversiones de real a entero: un valor constante con decimales es un error (`k = 7 / 2`), y un valor que no se puede demostrar entero genera una advertencia que sugiere usar `Redon()` (o su alias `Redondear()`) o `Trunc()`.
 
 ### Depuración
 
