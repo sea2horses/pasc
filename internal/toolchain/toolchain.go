@@ -44,6 +44,7 @@ type ToolchainConfig struct {
 	RuntimeMod     []byte
 	Vendor         fs.FS
 	Fast           bool
+	IndexBase      analyzer.IndexBase /* Array base; IndexBaseAuto lets the analyzer deduce it */
 }
 
 func RunToolchain(config *ToolchainConfig) (err error) {
@@ -98,7 +99,7 @@ func RunToolchain(config *ToolchainConfig) (err error) {
 	}
 
 	diagnostics.Dbg("analyzing... (5/7)")
-	t_tree, err := analyze(tree, config.Filename)
+	t_tree, err := analyze(tree, config.Filename, config.IndexBase)
 	if err != nil {
 		return err
 	}
@@ -178,8 +179,9 @@ func parse(tokens []lexer.Token, filename string) (ast.Node, error) {
 	return tree, diagnostics.SummaryAsError(ds)
 }
 
-func analyze(tree ast.Node, filename string) (tast.Node, error) {
+func analyze(tree ast.Node, filename string, indexBase analyzer.IndexBase) (tast.Node, error) {
 	analyzer := analyzer.New()
+	analyzer.IndexBase = indexBase
 	mf, ok := tree.(*ast.MainFunction)
 	if !ok {
 		return nil, errors.New("main function not found")

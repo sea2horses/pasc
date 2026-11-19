@@ -218,7 +218,8 @@ func FechaActual() int32 {
 }
 
 /* Arrays */
-const array_bias = 0
+// array_bias (the first valid array index) is emitted by the generator into
+// main.go, since it depends on the program's indexing base.
 
 type Tensor[T Value] struct {
 	shape   []int32

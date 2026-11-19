@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"pascc/internal/analyzer"
 	"pascc/internal/diagnostics"
 	"pascc/internal/runtime"
 	"pascc/internal/toolchain"
@@ -16,6 +17,7 @@ func init() {
 	buildCmd.Flags().BoolVar(&Debug, "debug", false, "Prints debug information about the compiling process")
 	buildCmd.Flags().BoolVar(&Fast, "fast", false, "Uses an Enter prompt for Esperar Tecla and skips terminal dependencies")
 	buildCmd.Flags().BoolVar(&Temp, "temp", false, "Builds the program temporarily and then discards the result (useful for testing)")
+	buildCmd.Flags().StringVar(&IndexBaseFlag, "index-base", "auto", "First array index: 0, 1, or auto (deduced from how the program indexes arrays)")
 	buildCmd.Flags().StringVarP(&OutputDir, "output", "o", defaultDir, "Specifies the directory to build the executable onto")
 }
 
@@ -32,6 +34,8 @@ var (
 	Temp      bool
 	OutputDir string
 	Fast      bool
+
+	IndexBaseFlag string
 )
 
 func compile(cmd *cobra.Command, args []string) error {
@@ -39,6 +43,11 @@ func compile(cmd *cobra.Command, args []string) error {
 
 	/* Get the debug option on board */
 	diagnostics.Debug = Debug
+
+	indexBase, err := analyzer.ParseIndexBase(IndexBaseFlag)
+	if err != nil {
+		return err
+	}
 
 	return toolchain.RunToolchain(
 		&toolchain.ToolchainConfig{
@@ -51,6 +60,7 @@ func compile(cmd *cobra.Command, args []string) error {
 			RuntimeMod:     runtime.EmbeddedRuntimeMod,
 			Vendor:         runtime.EmbeddedVendor,
 			Fast:           Fast,
+			IndexBase:      indexBase,
 		},
 	)
 }

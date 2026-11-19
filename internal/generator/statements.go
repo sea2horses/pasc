@@ -52,6 +52,8 @@ func (g *Generator) genMainFunction(mf *tast.MainFunction) {
 
 	body := slices.Concat(preload_statements, inner_statements)
 
+	f.Commentf("array indexing base: %d", mf.IndexBase)
+	f.Const().Id("array_bias").Op("=").Lit(mf.IndexBase)
 	f.Commentf("original pseint name: %s", mf.Name)
 	f.Func().Id("main").Params().Block(body...)
 }

@@ -292,6 +292,7 @@ type MainFunction struct {
 	Name      string
 	Stmts     []Stmt
 	Functions []*Function
+	IndexBase int /* First valid array index (0 or 1) */
 }
 
 type Function struct {

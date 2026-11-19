@@ -16,6 +16,8 @@ type Analyzer struct {
 	currentReturn   *semantic.Symbol
 	implicitScope   *semantic.Scope
 	functionSymbols map[string]*semantic.Symbol
+	// IndexBase is the requested array base; IndexBaseAuto deduces it.
+	IndexBase IndexBase
 	diagnostics.DiagnosticEmitter
 }
 
@@ -132,12 +134,15 @@ func (a *Analyzer) Analyze(program *ast.MainFunction) (*tast.MainFunction, []dia
 	implicitDeclarations := a.implicitDeclarations(mainImplicit, true)
 	statements = append(implicitDeclarations, statements...)
 
-	return &tast.MainFunction{
+	main := &tast.MainFunction{
 		NodeInfo:  program.NodeInfo,
 		Name:      program.Name,
 		Stmts:     statements,
 		Functions: typedFunctions,
-	}, a.Diagnostics()
+	}
+	main.IndexBase = a.resolveIndexBase(main).Offset()
+
+	return main, a.Diagnostics()
 }
 
 func (a *Analyzer) analyze_function(function *ast.Function) *tast.Function {

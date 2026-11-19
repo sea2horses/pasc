@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"pascc/internal/analyzer"
 	"pascc/internal/diagnostics"
 	"pascc/internal/runtime"
 	"pascc/internal/toolchain"
@@ -11,6 +12,7 @@ import (
 func init() {
 	rootCmd.AddCommand(runCmd)
 	runCmd.Flags().BoolVar(&Debug, "debug", false, "Prints debug information about the compiling process")
+	runCmd.Flags().StringVar(&IndexBaseFlag, "index-base", "auto", "First array index: 0, 1, or auto (deduced from how the program indexes arrays)")
 }
 
 var runCmd = &cobra.Command{
@@ -25,6 +27,11 @@ func run(cmd *cobra.Command, args []string) error {
 	filename := args[0]
 	diagnostics.Debug = Debug
 
+	indexBase, err := analyzer.ParseIndexBase(IndexBaseFlag)
+	if err != nil {
+		return err
+	}
+
 	return toolchain.RunToolchain(
 		&toolchain.ToolchainConfig{
 			Filename:       filename,
@@ -35,6 +42,7 @@ func run(cmd *cobra.Command, args []string) error {
 			ExtFastRuntime: runtime.EmbeddedExtFastRuntime,
 			RuntimeMod:     runtime.EmbeddedRuntimeMod,
 			Vendor:         runtime.EmbeddedVendor,
+			IndexBase:      indexBase,
 		},
 	)
 }
