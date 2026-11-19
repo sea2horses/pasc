@@ -27,6 +27,17 @@ type absval struct {
 	exact    bool    // a single compile-time constant (lo == hi)
 	integral bool    // always a whole number
 	ends     []linear
+	shifted  bool // ends were offset from a loop variable (e.g. i + 1)
+	// lower/upper are the first and last values of a loop variable (possibly
+	// offset), when they can be named. They drive the index-base evidence.
+	lower, upper *linear
+}
+
+func shiftBound(b *linear, by float64) *linear {
+	if b == nil {
+		return nil
+	}
+	return &linear{sym: b.sym, c: b.c + by}
 }
 
 func point(v float64) absval {
@@ -56,6 +67,9 @@ type indexAccess struct {
 	axis  int
 	value absval
 	dim   *absval
+	// guarded accesses sit under a condition that mentions one of the index's
+	// variables (Si i > 0 Entonces v[i-1]); their loop range is not reliable.
+	guarded bool
 }
 
 type evidence struct {
@@ -71,6 +85,7 @@ type staticPass struct {
 	accesses []indexAccess
 	zero     evidence
 	one      evidence
+	guards   []map[*semantic.Symbol]bool
 }
 
 func newStaticPass(a *Analyzer, main *tast.MainFunction) *staticPass {
@@ -153,25 +168,29 @@ func (p *staticPass) stmt(stmt tast.Stmt, topLevel bool) {
 		p.eval(node.Amount)
 	case *tast.If:
 		p.eval(node.Condition)
-		p.block(node.Stmts, false)
-		if node.Else != nil {
-			p.block(node.Else.Stmts, false)
-		}
+		p.guarded(func() {
+			p.block(node.Stmts, false)
+			if node.Else != nil {
+				p.block(node.Else.Stmts, false)
+			}
+		}, node.Condition)
 	case *tast.While:
 		p.eval(node.Condition)
-		p.block(node.Stmts, false)
+		p.guarded(func() { p.block(node.Stmts, false) }, node.Condition)
 	case *tast.DoWhile:
-		p.block(node.Stmts, false)
+		p.guarded(func() { p.block(node.Stmts, false) }, node.Condition)
 		p.eval(node.Condition)
 	case *tast.Switch:
 		p.eval(node.Base)
-		for _, c := range node.Cases {
-			for _, value := range c.Values {
-				p.eval(value)
+		p.guarded(func() {
+			for _, c := range node.Cases {
+				for _, value := range c.Values {
+					p.eval(value)
+				}
+				p.block(c.Stmts, false)
 			}
-			p.block(c.Stmts, false)
-		}
-		p.block(node.Default, false)
+			p.block(node.Default, false)
+		}, node.Base)
 	case *tast.For:
 		p.forLoop(node)
 	case *tast.Dimension:
@@ -214,13 +233,22 @@ func (p *staticPass) forLoop(f *tast.For) {
 		loop.known = true
 		loop.lo, loop.hi = math.Min(s, last), math.Max(s, last)
 		loop.ends = []linear{{c: s}, {c: last}}
+		loop.lower, loop.upper = &linear{c: loop.lo}, &linear{c: loop.hi}
 	default:
+		var first, final *linear
 		if end, ok := start.pointEnd(); ok {
 			loop.ends = append(loop.ends, end)
+			first = &end
 		}
 		// The last value only matches the bound when every value is visited.
 		if end, ok := until.pointEnd(); ok && unitStep {
 			loop.ends = append(loop.ends, end)
+			final = &end
+		}
+		if step != nil && step.exact && step.lo < 0 {
+			loop.lower, loop.upper = final, first
+		} else {
+			loop.lower, loop.upper = first, final
 		}
 	}
 
@@ -323,8 +351,12 @@ func (p *staticPass) binary(node *tast.BinaryOperation) absval {
 			out.ends = []linear{{c: out.lo}}
 		case r.exact:
 			out.ends = shiftEnds(l.ends, sign*r.lo)
+			out.shifted = l.shifted || r.lo != 0
+			out.lower, out.upper = shiftBound(l.lower, sign*r.lo), shiftBound(l.upper, sign*r.lo)
 		case l.exact && sign > 0:
 			out.ends = shiftEnds(r.ends, l.lo)
+			out.shifted = r.shifted || l.lo != 0
+			out.lower, out.upper = shiftBound(r.lower, l.lo), shiftBound(r.upper, l.lo)
 		}
 		return out
 	case semantic.MULTIPLY:
@@ -390,12 +422,41 @@ func (p *staticPass) index(node *tast.Index) {
 	}
 	dims := p.dims[array]
 	for axis, idx := range node.Indexes {
-		access := indexAccess{span: spanOf(idx), array: array, axis: axis, value: p.eval(idx)}
+		access := indexAccess{span: spanOf(idx), array: array, axis: axis, value: p.eval(idx), guarded: p.isGuarded(idx)}
 		if array != nil && axis < len(dims) {
 			access.dim = &dims[axis]
 		}
 		p.accesses = append(p.accesses, access)
 	}
+}
+
+// guarded runs body with the variables of condition marked as guards.
+func (p *staticPass) guarded(body func(), condition tast.TypedExpr) {
+	vars := map[*semantic.Symbol]bool{}
+	walkExpr(condition, func(e tast.TypedExpr) {
+		if v, ok := e.(*tast.VariableExpr); ok {
+			vars[v.Symbol] = true
+		}
+	})
+	p.guards = append(p.guards, vars)
+	defer func() { p.guards = p.guards[:len(p.guards)-1] }()
+	body()
+}
+
+func (p *staticPass) isGuarded(index tast.TypedExpr) bool {
+	guarded := false
+	walkExpr(index, func(e tast.TypedExpr) {
+		v, ok := e.(*tast.VariableExpr)
+		if !ok {
+			return
+		}
+		for _, guard := range p.guards {
+			if guard[v.Symbol] {
+				guarded = true
+			}
+		}
+	})
+	return guarded
 }
 
 /* Compile-time safety checks */
@@ -427,6 +488,9 @@ func (p *staticPass) checkBounds(base IndexBase) {
 			continue
 		}
 		name := access.array.Name
+		if !value.exact && access.guarded {
+			continue
+		}
 		if value.exact {
 			p.a.Report(access.span, "index %s is out of bounds for '%s' (valid indexes are %s to %s with %s-based arrays)",
 				formatNumber(value.lo), name, formatNumber(first), formatNumber(last), base)
@@ -461,29 +525,54 @@ func (e *evidence) add(score int, span models.Span) {
 // collectEvidence scores how each subscript reads under both bases:
 //   - an index that can be 0 only makes sense 0-based;
 //   - an index that reaches the dimension size only makes sense 1-based;
-//   - a loop that runs to "size - 1" points to 0-based, one from 1 to 1-based.
+//   - a loop whose last index is "size - 1" points to 0-based, and a loop
+//     whose first index is 1 weakly points to 1-based.
 func (p *staticPass) collectEvidence() {
 	for _, access := range p.accesses {
-		fromLoop := !access.value.exact
-		for _, end := range access.value.ends {
-			if end.sym == nil && end.c == 0 {
-				p.zero.add(2, access.span)
-			}
-			if fromLoop && end.sym == nil && end.c == 1 {
-				p.one.add(1, access.span)
-			}
+		value := access.value
+		matchesSize := func(b linear, offset float64) bool {
 			if access.dim == nil {
-				continue
+				return false
 			}
 			for _, size := range access.dim.ends {
-				if size.sym != end.sym {
-					continue
+				if size.sym == b.sym && b.c == size.c+offset {
+					return true
 				}
-				switch {
-				case end.c == size.c:
-					p.one.add(2, access.span)
-				case fromLoop && end.c == size.c-1:
+			}
+			return false
+		}
+		switch {
+		case value.exact:
+			if value.lo == 0 {
+				p.zero.add(2, access.span)
+			}
+			if matchesSize(linear{c: value.lo}, 0) {
+				p.one.add(2, access.span)
+			}
+		case value.lower != nil || value.upper != nil:
+			if access.guarded {
+				continue
+			}
+			if lower := value.lower; lower != nil && lower.sym == nil {
+				if lower.c == 0 {
 					p.zero.add(2, access.span)
+				}
+				if lower.c == 1 && !value.shifted {
+					p.one.add(1, access.span)
+				}
+			}
+			if upper := value.upper; upper != nil {
+				if matchesSize(*upper, 0) {
+					p.one.add(2, access.span)
+				} else if matchesSize(*upper, -1) {
+					p.zero.add(2, access.span)
+				}
+			}
+		default:
+			// A plain variable equal to the size, as in v[n] after Dimensionar v[n].
+			for _, end := range value.ends {
+				if matchesSize(end, 0) {
+					p.one.add(2, access.span)
 				}
 			}
 		}

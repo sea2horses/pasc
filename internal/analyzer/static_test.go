@@ -237,3 +237,70 @@ FinAlgoritmo`
 		t.Fatalf("declared Entero must keep its type and warn: %v", ds)
 	}
 }
+
+func TestGuardedLoopAccessDoesNotWarn(t *testing.T) {
+	source := `Algoritmo A
+	Definir i Como Entero
+	Dimensionar v[5]
+	Para i <- 0 Hasta 4 Hacer
+		Si i > 0 Entonces
+			v[i - 1] = v[i]
+		FinSi
+	FinPara
+FinAlgoritmo`
+	_, ds := analyzeSource(t, source, IndexBaseAuto)
+	if n := diagnosticsAt(ds, diagnostics.WARNING, "out of bounds") + diagnosticsAt(ds, diagnostics.WARNING, "--index-base"); n != 0 {
+		t.Fatalf("guarded access should not warn: %v", ds)
+	}
+}
+
+func TestShiftedLoopIndexIsNotOneBasedEvidence(t *testing.T) {
+	source := `Algoritmo A
+	Definir i Como Entero
+	Dimensionar v[5]
+	v[0] = 1
+	Para i <- 0 Hasta 3 Hacer
+		Escribir v[i + 1]
+	FinPara
+FinAlgoritmo`
+	main, ds := analyzeSource(t, source, IndexBaseAuto)
+	if main.IndexBase != 0 || diagnosticsAt(ds, diagnostics.WARNING, "--index-base") != 0 {
+		t.Fatalf("v[i + 1] should not look 1-based: base=%d %v", main.IndexBase, ds)
+	}
+}
+
+func TestLoopEvidenceUsesTheMatchingEnd(t *testing.T) {
+	cases := []struct {
+		name   string
+		source string
+		want   int
+	}{
+		// The upper end equal to 1 is not "starting at 1".
+		{"zero-based loop ending at one", `Algoritmo A
+	Definir j Como Entero
+	Dimensionar v[2]
+	Para j <- 0 Hasta 1 Hacer
+		v[j] = j
+	FinPara
+FinAlgoritmo`, 0},
+		// The lower end equal to size - 1 is not "running to size - 1".
+		{"one-based loop over size two", `Algoritmo A
+	Definir i Como Entero
+	Dimensionar v[2]
+	Para i <- 1 Hasta 2 Hacer
+		v[i] = i
+	FinPara
+FinAlgoritmo`, 1},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			main, ds := analyzeSource(t, tc.source, IndexBaseAuto)
+			if main.IndexBase != tc.want {
+				t.Fatalf("deduced base %d, want %d", main.IndexBase, tc.want)
+			}
+			if diagnosticsAt(ds, diagnostics.WARNING, "--index-base") != 0 {
+				t.Fatalf("unexpected mixed-base warning: %v", ds)
+			}
+		})
+	}
+}
