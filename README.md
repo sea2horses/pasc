@@ -194,9 +194,9 @@ Para medir la compatibilidad, `pascc` se probó contra los **18 repositorios má
 
 Los 11 programas rechazados tienen errores reales que PSeInt también rechaza: archivos incompletos, plantillas sin rellenar, comillas que no cierran, `Definir a, b, Como Entero`, etc. En todos los casos `pascc` señala el archivo, la línea y la columna del problema.
 
-**Ejecución.** Cada ejecutable se corrió respondiendo `3` a todas las lecturas. Además de los programas que terminan normalmente, se revisaron a mano todos los que no lo hicieron. Solo **2 de los 519** fallan por una limitación del compilador: variables sin declarar que empiezan como enteras y después acumulan reales. El resto de los casos se explica por la entrada sintética (menús que nunca reciben la opción de salida, esperas con `Esperar`) o por errores del propio programa: leer fuera de una cadena con `Subcadena`, guardar decimales en una variable `Entero` o ciclos infinitos.
+**Ejecución.** Cada ejecutable se corrió respondiendo `3` a todas las lecturas. Además de los programas que terminan normalmente, se revisaron a mano todos los que no lo hicieron: **ninguno de los 519 falla por una limitación del compilador**. Todos esos casos se explican por la entrada sintética (menús que nunca reciben la opción de salida, esperas con `Esperar`) o por errores del propio programa: leer fuera de una cadena con `Subcadena`, guardar decimales en una variable `Entero` o ciclos infinitos.
 
-**Deducción de la base de arreglos.** Con la detección automática de base 0 o base 1, **35 programas que antes fallaban en tiempo de ejecución ahora funcionan** y ninguno empeoró. Esos programas recorren arreglos con `Para i <- 1 Hasta n`.
+**Deducción de la base de arreglos.** Con la detección automática de base 0 o base 1, **35 programas que antes fallaban en tiempo de ejecución ahora funcionan** y ninguno empeoró. Esos programas recorren arreglos con `Para i <- 1 Hasta n`. Además, las variables sin declarar que empiezan en `0` y después reciben decimales se amplían automáticamente a reales, como en PSeInt.
 
 ## Estado del proyecto
 
@@ -205,7 +205,6 @@ PSeInt tiene muchos comportamientos particulares y todavía quedan algunos por r
 - `Redimensionar`.
 - El ciclo `Para Cada`.
 - Expresiones coloquiales (`x es par`, `x es mayor que y`, …).
-- Ampliar una variable sin declarar de entero a real cuando más adelante recibe decimales.
 - Modo no-scope.
 - Opciones de perfil distintas de la base de los arreglos.
 
