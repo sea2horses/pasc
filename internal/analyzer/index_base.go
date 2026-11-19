@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tast "pascc/internal/ast_typed"
+	"pascc/internal/diagnostics"
 )
 
 // IndexBase selects the first valid array index of a program. PSeInt lets the
@@ -50,9 +51,18 @@ func ParseIndexBase(value string) (IndexBase, error) {
 }
 
 // resolveIndexBase settles the base used for code generation.
+// Without a requested base it is deduced from the program's subscripts;
+// programs with no evidence either way keep the 0-based default.
 func (a *Analyzer) resolveIndexBase(main *tast.MainFunction) IndexBase {
-	if a.IndexBase != IndexBaseAuto {
+	// A program with errors is never generated, and its tree may hold holes.
+	if a.Checkpoint().AnyError() {
 		return a.IndexBase
 	}
-	return IndexBaseZero
+	pass := newStaticPass(a, main)
+	base := a.IndexBase
+	if base == IndexBaseAuto {
+		base = pass.deduceBase()
+		diagnostics.Dbgfmt("deduced %s-based arrays (evidence: 0-based=%d, 1-based=%d)\n", base, pass.zero.score, pass.one.score)
+	}
+	return base
 }
