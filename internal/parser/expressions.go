@@ -66,6 +66,8 @@ func Expression() Pattern[ast.Expr] {
 	return PatternFunc[ast.Expr](func(ctx *Context) Match[ast.Expr] {
 		operandStack := []ast.Expr{}
 		operatorStack := []ast.Operator{}
+		// colloquial runs parallel to operatorStack and marks "es ..." forms.
+		colloquial := []colloquialKind{}
 
 		start := ctx.Pos
 
@@ -79,6 +81,23 @@ func Expression() Pattern[ast.Expr] {
 			n = len(operatorStack)
 			op := operatorStack[n-1]
 			operatorStack = operatorStack[:n-1]
+			kind := colloquial[n-1]
+			colloquial = colloquial[:n-1]
+
+			if kind != colloquialNone {
+				// Like comparisons, NO applies to the colloquial test as a whole.
+				if unary, ok := lhs.(*ast.UnaryOperation); ok && unary.Op.Type == semantic.NOT {
+					test := buildColloquial(kind, op, unary.Expr, rhs)
+					operandStack = append(operandStack, &ast.UnaryOperation{
+						NodeInfo: ast.NodeInfo{Span: models.JoinSpans(unary.NodeSpan(), test.NodeSpan())},
+						Op:       unary.Op,
+						Expr:     test,
+					})
+					return
+				}
+				operandStack = append(operandStack, buildColloquial(kind, op, lhs, rhs))
+				return
+			}
 
 			binary := &ast.BinaryOperation{
 				NodeInfo: ast.NodeInfo{
@@ -128,7 +147,47 @@ func Expression() Pattern[ast.Expr] {
 
 		operandStack = append(operandStack, first.Value)
 
+		reduceFor := func(current *ast.Operator) {
+			currentPrec := current.Precedence()
+			for len(operatorStack) > 0 {
+				top := operatorStack[len(operatorStack)-1]
+				topPrec := top.Precedence()
+				shouldReduce := topPrec > currentPrec ||
+					(topPrec == currentPrec &&
+						current.Type.Associativity() == semantic.LeftAssociative)
+				if !shouldReduce {
+					break
+				}
+				execute()
+			}
+		}
+
 		for {
+			checkpoint := ctx.Checkpoint()
+			if op, kind, ok := matchColloquial(ctx); ok {
+				reduceFor(op)
+				if kind.unary() {
+					// The test is complete: reduce it now so nothing can bind
+					// to a missing right-hand operand.
+					operatorStack = append(operatorStack, *op)
+					colloquial = append(colloquial, kind)
+					operandStack = append(operandStack, nil)
+					execute()
+					continue
+				}
+				operand := Operand().Match(ctx)
+				if !operand.OK() {
+					// Not a colloquial test after all (e.g. a variable named
+					// "es" in a space-separated Escribir list).
+					ctx.Restore(checkpoint)
+					break
+				}
+				operatorStack = append(operatorStack, *op)
+				colloquial = append(colloquial, kind)
+				operandStack = append(operandStack, operand.Value)
+				continue
+			}
+
 			operator := BinaryOperator().Match(ctx)
 
 			if !operator.OK() {
@@ -165,6 +224,7 @@ func Expression() Pattern[ast.Expr] {
 			}
 
 			operatorStack = append(operatorStack, *current)
+			colloquial = append(colloquial, colloquialNone)
 
 			// Once an operator matches, its RHS is mandatory
 			operand := Expected(Operand(), ExpectedExpression).Match(ctx)
