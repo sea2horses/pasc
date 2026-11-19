@@ -167,6 +167,7 @@ type Dimension struct {
 	NodeInfo
 	Name       string
 	Dimensions []Expr
+	Resize     bool /* Redimensionar: resize an existing array */
 }
 
 // DimensionGroup declares one or more arrays in a single Dimensionar statement.

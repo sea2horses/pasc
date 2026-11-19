@@ -255,6 +255,37 @@ func NewTensor[T Value](shape ...int32) *Tensor[T] {
 	}
 }
 
+// ResizeTensor implements Redimensionar: it changes t's shape in place, so
+// every reference to the array sees it, and keeps each element whose
+// position exists in both the old and the new shape.
+func ResizeTensor[T Value](t *Tensor[T], shape ...int32) {
+	if len(shape) != len(t.shape) {
+		RuntimeError(ErrWrongIndexCount)
+	}
+	resized := NewTensor[T](shape...)
+	position := make([]int32, len(shape))
+	for offset := range t.data {
+		rest := int32(offset)
+		fits := true
+		for axis := range t.shape {
+			position[axis] = rest / t.strides[axis]
+			rest %= t.strides[axis]
+			if position[axis] >= shape[axis] {
+				fits = false
+			}
+		}
+		if !fits {
+			continue
+		}
+		var target int32
+		for axis, index := range position {
+			target += index * resized.strides[axis]
+		}
+		resized.data[target] = t.data[offset]
+	}
+	*t = *resized
+}
+
 func DimensionSize[T Value](t *Tensor[T], dim int32) int32 {
 	return int32(t.shape[dim])
 }

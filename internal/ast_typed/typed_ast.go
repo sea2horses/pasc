@@ -262,6 +262,7 @@ type Dimension struct {
 	ast.NodeInfo
 	Symbol     *semantic.Symbol
 	Dimensions []TypedExpr
+	Resize     bool /* Redimensionar: keeps the elements that still fit */
 }
 
 /* Although multiple semantically, in the TAST reads are treated as individual */

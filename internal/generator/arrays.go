@@ -9,6 +9,11 @@ import (
 )
 
 func (g *Generator) genDimension(d *tast.Dimension) *jen.Statement {
+	if d.Resize {
+		args := []jen.Code{g.genVariable(&tast.VariableExpr{Symbol: d.Symbol})}
+		args = append(args, utils.Map(d.Dimensions, func(i tast.TypedExpr) jen.Code { return g.generate(i) })...)
+		return jen.Id("ResizeTensor").Call(args...)
+	}
 	_underlying := d.Symbol.Type.(semantic.ArrayType)
 	_type := semantic.Resolve(_underlying.Elem)
 

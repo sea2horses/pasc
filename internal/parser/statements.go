@@ -22,6 +22,7 @@ func Statement() Pattern[ast.Stmt] {
 		For(),
 		Switch(),
 		Dimension(),
+		Redimension(),
 		WaitKey(),
 		Timeout(),
 		ClearScreen(),
@@ -451,6 +452,25 @@ func Dimension() Pattern[ast.Stmt] {
 				NodeInfo: ast.NodeInfo{
 					Span: span,
 				},
+				Declarations: declarations,
+			}
+		},
+	)
+}
+
+// Redimension parses "Redimensionar v[n]", which resizes an existing array.
+func Redimension() Pattern[ast.Stmt] {
+	return MapWithLocation(
+		After(
+			Kw(lexer.REDIMENSIONAR),
+			SepBy1(DimensionDeclaration(), Tok(lexer.COMMA)),
+		),
+		func(declarations []*ast.Dimension, span models.Span) ast.Stmt {
+			for _, declaration := range declarations {
+				declaration.Resize = true
+			}
+			return &ast.DimensionGroup{
+				NodeInfo:     ast.NodeInfo{Span: span},
 				Declarations: declarations,
 			}
 		},

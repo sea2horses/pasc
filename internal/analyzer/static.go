@@ -86,6 +86,9 @@ type staticPass struct {
 	zero     evidence
 	one      evidence
 	guards   []map[*semantic.Symbol]bool
+	// resizes is set when the program uses Redimensionar anywhere; arrays
+	// passed to user functions may then come back with a different size.
+	resizes bool
 }
 
 func newStaticPass(a *Analyzer, main *tast.MainFunction) *staticPass {
@@ -118,6 +121,10 @@ func (p *staticPass) countAssignments(stmts []tast.Stmt) {
 			p.countWrite(node.Target)
 		case *tast.Read:
 			p.countWrite(node.Into)
+		case *tast.Dimension:
+			if node.Resize {
+				p.resizes = true
+			}
 		}
 	}, func(expr tast.TypedExpr) {
 		call, ok := expr.(*tast.Call)
@@ -199,7 +206,13 @@ func (p *staticPass) stmt(stmt tast.Stmt, topLevel bool) {
 			dims[i] = p.eval(dim)
 		}
 		p.checkDimension(node, dims)
-		p.dims[node.Symbol] = dims
+		switch {
+		case !node.Resize || topLevel:
+			p.dims[node.Symbol] = dims
+		default:
+			// A conditional resize leaves the size unknown from here on.
+			delete(p.dims, node.Symbol)
+		}
 	}
 }
 
@@ -321,6 +334,13 @@ func (p *staticPass) evalNode(expr tast.TypedExpr) absval {
 		for i, arg := range node.Arguments {
 			args[i] = p.eval(arg)
 		}
+		if p.resizes && !isBuiltinCall(node) {
+			for _, arg := range node.Arguments {
+				if variable, ok := arg.(*tast.VariableExpr); ok {
+					delete(p.dims, variable.Symbol)
+				}
+			}
+		}
 		return builtinValue(node, args)
 	}
 	return absval{}
@@ -385,6 +405,11 @@ func (p *staticPass) binary(node *tast.BinaryOperation) absval {
 		}
 	}
 	return absval{}
+}
+
+func isBuiltinCall(call *tast.Call) bool {
+	variable, ok := call.Callable.(*tast.VariableExpr)
+	return ok && variable.Symbol.Builtin != nil
 }
 
 func builtinValue(call *tast.Call, args []absval) absval {

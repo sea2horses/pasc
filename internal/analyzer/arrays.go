@@ -7,6 +7,9 @@ import (
 )
 
 func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
+	if d.Resize {
+		return a.analyze_redimension(d)
+	}
 	ok := true
 
 	symbol, declared := a.scope.Lookup(d.Name)
@@ -70,6 +73,57 @@ func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
 		Symbol:     symbol,
 		Dimensions: dims,
 	}
+}
+
+// analyze_redimension checks "Redimensionar v[...]": v must already be an
+// array, and its rank cannot change.
+func (a *Analyzer) analyze_redimension(d *ast.Dimension) *tast.Dimension {
+	symbol, declared := a.scope.Lookup(d.Name)
+	if !declared || symbol.Kind == semantic.SymbolFunction {
+		a.Report(d.NodeSpan(), "'%s' cannot be redimensioned because it has not been dimensioned", d.Name)
+		return nil
+	}
+	array, isArray := semantic.Resolve(symbol.Type).(semantic.ArrayType)
+	if !isArray {
+		a.Report(d.NodeSpan(), "'%s' cannot be redimensioned because it is not an array", d.Name)
+		a.Info(symbol.Declared, "declared here")
+		return nil
+	}
+	if array.Rank != len(d.Dimensions) {
+		a.Report(d.NodeSpan(), "cannot redimension '%s' from %d to %d dimensions", d.Name, array.Rank, len(d.Dimensions))
+		return nil
+	}
+
+	dims, ok := a.analyze_dimension_sizes(d)
+	if !ok {
+		return nil
+	}
+	return &tast.Dimension{
+		NodeInfo:   d.NodeInfo,
+		Symbol:     symbol,
+		Dimensions: dims,
+		Resize:     true,
+	}
+}
+
+func (a *Analyzer) analyze_dimension_sizes(d *ast.Dimension) ([]tast.TypedExpr, bool) {
+	ok := true
+	var dims []tast.TypedExpr
+	for _, dim := range d.Dimensions {
+		expr := a.analyze_expression(dim)
+		if expr == nil {
+			ok = false
+			continue
+		}
+		coerced, coercedOK := coerce_to(expr, semantic.Integer_T{})
+		if !coercedOK {
+			a.Report(dim.NodeSpan(), "dimension must be an integer")
+			ok = false
+			continue
+		}
+		dims = append(dims, coerced)
+	}
+	return dims, ok
 }
 
 func (a *Analyzer) analyze_indexing(d *ast.Postfix, typed_expr tast.TypedExpr) tast.TypedExpr {

@@ -304,3 +304,37 @@ FinAlgoritmo`, 1},
 		})
 	}
 }
+
+func TestRedimensionar(t *testing.T) {
+	cases := []struct {
+		name, body, wantError string
+	}{
+		{"bounds follow the new size", "Dimensionar v[3]\n\tRedimensionar v[5]\n\tv[4] = 1", ""},
+		{"out of bounds after shrinking", "Dimensionar v[5]\n\tRedimensionar v[2]\n\tv[3] = 1", "out of bounds"},
+		{"must already be an array", "Definir k Como Entero\n\tRedimensionar k[3]", "not an array"},
+		{"must exist", "Redimensionar w[3]", "has not been dimensioned"},
+		{"rank cannot change", "Dimensionar v[3]\n\tRedimensionar v[3, 3]", "from 1 to 2 dimensions"},
+		{"size after a conditional resize is unknown", "Dimensionar v[3]\n\tSi Verdadero Entonces\n\t\tRedimensionar v[9]\n\tFinSi\n\tv[8] = 1", ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			main, ds := analyzeSource(t, "Algoritmo A\n\t"+tc.body+"\nFinAlgoritmo", IndexBaseZero)
+			if tc.wantError == "" {
+				if diagnosticsAt(ds, diagnostics.ERROR, "") != 0 {
+					t.Fatalf("unexpected errors: %v", ds)
+				}
+				code, err := generator.NewGenerator().Gen(main)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !strings.Contains(string(code), "ResizeTensor(v, ") {
+					t.Fatalf("missing ResizeTensor call:\n%s", code)
+				}
+				return
+			}
+			if diagnosticsAt(ds, diagnostics.ERROR, tc.wantError) != 1 {
+				t.Fatalf("expected error %q, got %v", tc.wantError, ds)
+			}
+		})
+	}
+}
