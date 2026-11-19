@@ -179,6 +179,7 @@ func (p *staticPass) stmt(stmt tast.Stmt, topLevel bool) {
 		for i, dim := range node.Dimensions {
 			dims[i] = p.eval(dim)
 		}
+		p.checkDimension(node, dims)
 		p.dims[node.Symbol] = dims
 	}
 }
@@ -397,8 +398,56 @@ func (p *staticPass) index(node *tast.Index) {
 	}
 }
 
-// checkRealToInteger is the hook for compile-time conversion checks.
-func (p *staticPass) checkRealToInteger(cast *tast.Cast, value absval) {}
+/* Compile-time safety checks */
+
+// checkRealToInteger validates an implicit real -> integer conversion. The
+// runtime rejects non-whole values, so a constant fraction is an error and a
+// value that cannot be proven whole is a warning pointing at Redon()/Trunc().
+func (p *staticPass) checkRealToInteger(cast *tast.Cast, value absval) {
+	span := spanOf(cast)
+	switch {
+	case value.exact && !value.integral:
+		p.a.Report(span, "real value %s cannot be converted to an integer; use Redon() or Trunc()", formatNumber(value.lo))
+	case !value.integral:
+		p.a.Warn(span, "implicit conversion from real to integer fails at runtime if the value is not whole; use Redon() or Trunc()")
+	}
+}
+
+// checkBounds validates dimensions and subscripts whose values are known at
+// compile time against the array base the program uses.
+func (p *staticPass) checkBounds(base IndexBase) {
+	for _, access := range p.accesses {
+		if access.dim == nil || !access.dim.exact || !access.value.known || access.dim.lo < 1 {
+			continue
+		}
+		first := float64(base.Offset())
+		last := access.dim.lo - 1 + first
+		value := access.value
+		if value.lo >= first && value.hi <= last {
+			continue
+		}
+		name := access.array.Name
+		if value.exact {
+			p.a.Report(access.span, "index %s is out of bounds for '%s' (valid indexes are %s to %s with %s-based arrays)",
+				formatNumber(value.lo), name, formatNumber(first), formatNumber(last), base)
+			continue
+		}
+		p.a.Warn(access.span, "index ranges from %s to %s, which goes out of bounds for '%s' (valid indexes are %s to %s with %s-based arrays)",
+			formatNumber(value.lo), formatNumber(value.hi), name, formatNumber(first), formatNumber(last), base)
+	}
+}
+
+func (p *staticPass) checkDimension(node *tast.Dimension, dims []absval) {
+	for i, dim := range dims {
+		if dim.exact && dim.lo < 1 {
+			p.a.Report(spanOf(node.Dimensions[i]), "array dimension must be at least 1, got %s", formatNumber(dim.lo))
+		}
+	}
+}
+
+func formatNumber(v float64) string {
+	return strconv.FormatFloat(v, 'f', -1, 64)
+}
 
 /* Index base deduction */
 

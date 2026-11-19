@@ -27,6 +27,7 @@ func (a *Analyzer) declare_builtins() {
 		{"ATan", []semantic.Type{real}, real, semantic.BuiltinATan},
 		{"Trunc", []semantic.Type{real}, integer, semantic.BuiltinTrunc},
 		{"Redon", []semantic.Type{real}, integer, semantic.BuiltinRound},
+		{"Redondear", []semantic.Type{real}, integer, semantic.BuiltinRound},
 		{"Azar", []semantic.Type{integer}, integer, semantic.BuiltinRandom},
 		{"Aleatorio", []semantic.Type{integer, integer}, integer, semantic.BuiltinRandomRange},
 		{"Longitud", []semantic.Type{str}, integer, semantic.BuiltinLength},

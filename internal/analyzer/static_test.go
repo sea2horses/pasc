@@ -124,3 +124,73 @@ FinAlgoritmo`
 		t.Fatalf("expected one mixed-base warning, got %v", ds)
 	}
 }
+
+func TestRealToIntegerConversionChecks(t *testing.T) {
+	cases := []struct {
+		name             string
+		body             string
+		errors, warnings int
+	}{
+		{"constant fraction is an error", "k = 7 / 2", 1, 0},
+		{"constant whole quotient is fine", "k = 8 / 2", 0, 0},
+		{"unknown real warns", "Leer x\n\tk = x", 0, 1},
+		{"Redon is safe", "Leer x\n\tk = Redon(x)", 0, 0},
+		{"Redondear alias is safe", "Leer x\n\tk = Redondear(x)", 0, 0},
+		{"Trunc is safe", "Leer x\n\tk = Trunc(x * 2)", 0, 0},
+		{"integral loop variable is safe", "Dimensionar v[3]\n\tPara i <- 0 Hasta 2 Hacer\n\t\tv[i] = 1\n\tFinPara", 0, 0},
+		{"fractional loop step warns", "Dimensionar v[3]\n\tPara i <- 0 Hasta 2 Con Paso 0.5 Hacer\n\t\tv[i] = 1\n\tFinPara", 0, 1},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			source := "Algoritmo A\n\tDefinir k Como Entero\n\tDefinir x Como Real\n\t" + tc.body + "\nFinAlgoritmo"
+			_, ds := analyzeSource(t, source, IndexBaseZero)
+			if got := diagnosticsAt(ds, diagnostics.ERROR, "Redon()"); got != tc.errors {
+				t.Errorf("errors = %d, want %d: %v", got, tc.errors, ds)
+			}
+			if got := diagnosticsAt(ds, diagnostics.WARNING, "Redon()"); got != tc.warnings {
+				t.Errorf("warnings = %d, want %d: %v", got, tc.warnings, ds)
+			}
+		})
+	}
+}
+
+func TestCompileTimeBoundsChecks(t *testing.T) {
+	cases := []struct {
+		name             string
+		base             IndexBase
+		body             string
+		errors, warnings int
+	}{
+		{"zero-based last index", IndexBaseZero, "v[4] = 1", 0, 0},
+		{"zero-based size index", IndexBaseZero, "v[5] = 1", 1, 0},
+		{"one-based zero index", IndexBaseOne, "v[0] = 1", 1, 0},
+		{"one-based size index", IndexBaseOne, "v[5] = 1", 0, 0},
+		{"negative constant", IndexBaseZero, "v[-1] = 1", 1, 0},
+		{"folded expression", IndexBaseZero, "v[n] = 1", 1, 0},
+		{"loop overruns", IndexBaseZero, "Para i <- 0 Hasta n Hacer\n\t\tv[i] = 1\n\tFinPara", 0, 1},
+		{"loop fits", IndexBaseZero, "Para i <- 0 Hasta n - 1 Hacer\n\t\tv[i] = 1\n\tFinPara", 0, 0},
+		{"shifted loop fits", IndexBaseZero, "Para i <- 1 Hasta n Hacer\n\t\tv[i - 1] = 1\n\tFinPara", 0, 0},
+		{"empty loop is ignored", IndexBaseZero, "Para i <- 10 Hasta 20 Con Paso -1 Hacer\n\t\tv[i] = 1\n\tFinPara", 0, 0},
+		{"reassigned size is not folded", IndexBaseZero, "n = 9\n\tv[n] = 1", 0, 0},
+		{"unknown index is not checked", IndexBaseZero, "Leer k\n\tv[k] = 1", 0, 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			source := "Algoritmo A\n\tDefinir n, k Como Entero\n\tn = 5\n\tDimensionar v[n]\n\t" + tc.body + "\nFinAlgoritmo"
+			_, ds := analyzeSource(t, source, tc.base)
+			if got := diagnosticsAt(ds, diagnostics.ERROR, "out of bounds"); got != tc.errors {
+				t.Errorf("errors = %d, want %d: %v", got, tc.errors, ds)
+			}
+			if got := diagnosticsAt(ds, diagnostics.WARNING, "out of bounds"); got != tc.warnings {
+				t.Errorf("warnings = %d, want %d: %v", got, tc.warnings, ds)
+			}
+		})
+	}
+}
+
+func TestNonPositiveDimensionIsAnError(t *testing.T) {
+	_, ds := analyzeSource(t, "Algoritmo A\n\tDimensionar v[0]\nFinAlgoritmo", IndexBaseAuto)
+	if diagnosticsAt(ds, diagnostics.ERROR, "at least 1") != 1 {
+		t.Fatalf("expected dimension error, got %v", ds)
+	}
+}

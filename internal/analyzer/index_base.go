@@ -50,7 +50,8 @@ func ParseIndexBase(value string) (IndexBase, error) {
 	return IndexBaseAuto, fmt.Errorf("invalid index base %q (expected auto, 0 or 1)", value)
 }
 
-// resolveIndexBase settles the base used for code generation.
+// resolveIndexBase settles the base used for code generation and runs the
+// compile-time checks that depend on it.
 // Without a requested base it is deduced from the program's subscripts;
 // programs with no evidence either way keep the 0-based default.
 func (a *Analyzer) resolveIndexBase(main *tast.MainFunction) IndexBase {
@@ -64,5 +65,6 @@ func (a *Analyzer) resolveIndexBase(main *tast.MainFunction) IndexBase {
 		base = pass.deduceBase()
 		diagnostics.Dbgfmt("deduced %s-based arrays (evidence: 0-based=%d, 1-based=%d)\n", base, pass.zero.score, pass.one.score)
 	}
+	pass.checkBounds(base)
 	return base
 }
