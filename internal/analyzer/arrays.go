@@ -23,7 +23,7 @@ func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
 		}
 		elemType = symbol.Type
 	} else {
-		elemType = a.type_table.MakeInference()
+		elemType = a.widenedType(d.Name, a.type_table.MakeInference())
 		symbol = &semantic.Symbol{
 			Type:     semantic.ArrayType{Elem: elemType, Rank: len(d.Dimensions)},
 			Declared: d.NodeSpan(),
@@ -31,6 +31,7 @@ func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
 			Mutable:  true,
 			Name:     d.Name,
 		}
+		a.markImplicit(symbol)
 		a.scope.Declare(symbol)
 	}
 	a.dimensioned = append(a.dimensioned, symbol)

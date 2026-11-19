@@ -19,10 +19,11 @@ func (a *Analyzer) analyze_variable(variable *ast.Variable) tast.TypedExpr {
 		symbol = &semantic.Symbol{
 			Name:     variable.Name,
 			Kind:     semantic.SymbolVariable,
-			Type:     infer,
+			Type:     a.widenedType(variable.Name, infer),
 			Declared: variable.NodeSpan(),
 			Mutable:  true,
 		}
+		a.markImplicit(symbol)
 		a.implicitDeclarationScope().Declare(symbol)
 		a.implicit = append(a.implicit, symbol)
 		a.Warn(variable.NodeSpan(), "Variable '%s' is not declared; implicitly declaring it", variable.Name)
@@ -125,10 +126,11 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 			symbol := &semantic.Symbol{
 				Name:     variable.Name,
 				Kind:     semantic.SymbolVariable,
-				Type:     typed_expr.Type(),
+				Type:     a.widenedType(variable.Name, typed_expr.Type()),
 				Declared: ass.Target.NodeSpan(),
 				Mutable:  true,
 			}
+			a.markImplicit(symbol)
 			a.implicitDeclarationScope().Declare(symbol)
 			a.implicit = append(a.implicit, symbol)
 			a.Warn(ass.Target.NodeSpan(), "Variable '%s' is not declared; implicitly declaring it", variable.Name)

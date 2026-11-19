@@ -7,6 +7,7 @@ import (
 	"pascc/internal/ast"
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/diagnostics"
+	"pascc/internal/generator"
 	"pascc/internal/lexer"
 	"pascc/internal/parser"
 )
@@ -192,5 +193,47 @@ func TestNonPositiveDimensionIsAnError(t *testing.T) {
 	_, ds := analyzeSource(t, "Algoritmo A\n\tDimensionar v[0]\nFinAlgoritmo", IndexBaseAuto)
 	if diagnosticsAt(ds, diagnostics.ERROR, "at least 1") != 1 {
 		t.Fatalf("expected dimension error, got %v", ds)
+	}
+}
+
+func TestImplicitIntegerWidensToReal(t *testing.T) {
+	source := `Algoritmo W
+	Definir x Como Real
+	Definir k Como Entero
+	acum = 0
+	total = 0
+	Leer x
+	acum = acum + x
+	total = total + acum
+	Dimensionar z[3]
+	z[0] = 0
+	z[1] = x / 3
+	k = 1
+FinAlgoritmo`
+	main, ds := analyzeSource(t, source, IndexBaseZero)
+	if n := diagnosticsAt(ds, diagnostics.WARNING, "Redon()"); n != 0 {
+		t.Fatalf("widened variables should not need conversions, got %d warnings: %v", n, ds)
+	}
+	code, err := generator.NewGenerator().Gen(main)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"var acum float64", "var total float64", "NewTensor[float64]", "var k int32"} {
+		if !strings.Contains(string(code), want) {
+			t.Errorf("generated code is missing %q:\n%s", want, code)
+		}
+	}
+}
+
+func TestDeclaredIntegerIsNotWidened(t *testing.T) {
+	source := `Algoritmo W
+	Definir k Como Entero
+	Definir x Como Real
+	Leer x
+	k = x
+FinAlgoritmo`
+	_, ds := analyzeSource(t, source, IndexBaseZero)
+	if diagnosticsAt(ds, diagnostics.WARNING, "Redon()") != 1 {
+		t.Fatalf("declared Entero must keep its type and warn: %v", ds)
 	}
 }

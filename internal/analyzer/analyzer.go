@@ -18,6 +18,12 @@ type Analyzer struct {
 	functionSymbols map[string]*semantic.Symbol
 	// IndexBase is the requested array base; IndexBaseAuto deduces it.
 	IndexBase IndexBase
+	// Implicit numeric variables are typed by their first assignment. When a
+	// later assignment stores a real into one, it is widened to real and the
+	// program is analyzed again (see widen.go).
+	widened         map[string]bool
+	implicitKeys    map[*semantic.Symbol]string
+	currentFunction string
 	diagnostics.DiagnosticEmitter
 }
 
@@ -26,7 +32,9 @@ func New() *Analyzer {
 	return &Analyzer{scope: semantic.NewScope(nil), DiagnosticEmitter: diagnostics.NewDiagnosticEmitter()}
 }
 
-func (a *Analyzer) Analyze(program *ast.MainFunction) (*tast.MainFunction, []diagnostics.Diagnostic) {
+func (a *Analyzer) analyzeOnce(program *ast.MainFunction) (*tast.MainFunction, []diagnostics.Diagnostic) {
+	a.implicitKeys = map[*semantic.Symbol]string{}
+	a.currentFunction = ""
 	a.scope = semantic.NewScope(nil)
 	a.type_table = semantic.NewTypeTable()
 	a.readInferences = nil
@@ -151,6 +159,9 @@ func (a *Analyzer) analyze_function(function *ast.Function) *tast.Function {
 	previousScope := a.scope
 	previousImplicitScope := a.implicitScope
 	previousReturn := a.currentReturn
+	previousFunction := a.currentFunction
+	a.currentFunction = semantic.NormalizeName(function.Name)
+	defer func() { a.currentFunction = previousFunction }()
 	functionScope := semantic.NewScope(previousScope)
 	a.scope = functionScope
 	a.implicitScope = functionScope
