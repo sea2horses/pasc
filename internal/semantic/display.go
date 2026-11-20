@@ -13,7 +13,7 @@ func DisplayType(t Type) string {
 	case Real_T:
 		return "Real"
 	case UntypedNumber_T:
-		return "Numero"
+		return i18n.T(i18n.TypeInferredReal)
 	case String_T:
 		return "Cadena"
 	case Bool_T:

@@ -3,6 +3,7 @@ package analyzer
 import (
 	"math"
 	"pascc/internal/i18n"
+	"reflect"
 	"strconv"
 
 	tast "pascc/internal/ast_typed"
@@ -155,6 +156,9 @@ func (p *staticPass) block(stmts []tast.Stmt, topLevel bool) {
 }
 
 func (p *staticPass) stmt(stmt tast.Stmt, topLevel bool) {
+	if isNil(stmt) {
+		return
+	}
 	switch node := stmt.(type) {
 	case *tast.Assignment:
 		value := p.eval(node.Value)
@@ -269,8 +273,11 @@ func (p *staticPass) forLoop(f *tast.For) {
 		}
 	}
 
-	symbol := f.Var.Symbol
-	if p.assigns[symbol] == 0 {
+	var symbol *semantic.Symbol
+	if f.Var != nil {
+		symbol = f.Var.Symbol
+	}
+	if symbol != nil && p.assigns[symbol] == 0 {
 		p.env[symbol] = loop
 		defer delete(p.env, symbol)
 	}
@@ -280,7 +287,7 @@ func (p *staticPass) forLoop(f *tast.For) {
 /* Expressions */
 
 func (p *staticPass) eval(expr tast.TypedExpr) absval {
-	if expr == nil {
+	if isNil(expr) {
 		return absval{}
 	}
 	v := p.evalNode(expr)
@@ -303,6 +310,9 @@ func (p *staticPass) evalNode(expr tast.TypedExpr) absval {
 		}
 		return point(value)
 	case *tast.VariableExpr:
+		if node.Symbol == nil {
+			return absval{}
+		}
 		if value, ok := p.env[node.Symbol]; ok {
 			return value
 		}
@@ -444,7 +454,7 @@ func builtinValue(call *tast.Call, args []absval) absval {
 
 func (p *staticPass) index(node *tast.Index) {
 	var array *semantic.Symbol
-	if variable, ok := node.Target.(*tast.VariableExpr); ok {
+	if variable, ok := node.Target.(*tast.VariableExpr); ok && variable != nil {
 		array = variable.Symbol
 	} else {
 		p.eval(node.Target)
@@ -663,7 +673,7 @@ func walkStmts(stmts []tast.Stmt, onStmt func(tast.Stmt), onExpr func(tast.Typed
 }
 
 func walkStmt(stmt tast.Stmt, onStmt func(tast.Stmt), onExpr func(tast.TypedExpr)) {
-	if stmt == nil {
+	if isNil(stmt) {
 		return
 	}
 	onStmt(stmt)
@@ -719,7 +729,7 @@ func walkStmt(stmt tast.Stmt, onStmt func(tast.Stmt), onExpr func(tast.TypedExpr
 }
 
 func walkExpr(expr tast.TypedExpr, onExpr func(tast.TypedExpr)) {
-	if expr == nil {
+	if isNil(expr) {
 		return
 	}
 	onExpr(expr)
@@ -742,4 +752,15 @@ func walkExpr(expr tast.TypedExpr, onExpr func(tast.TypedExpr)) {
 			walkExpr(e, onExpr)
 		}
 	}
+}
+
+// isNil reports nil interfaces and typed nil pointers. Programs with errors
+// keep holes in their typed tree (e.g. a (*tast.For)(nil) statement), and the
+// static pass still walks them to report every problem in one run.
+func isNil(v any) bool {
+	if v == nil {
+		return true
+	}
+	rv := reflect.ValueOf(v)
+	return rv.Kind() == reflect.Pointer && rv.IsNil()
 }

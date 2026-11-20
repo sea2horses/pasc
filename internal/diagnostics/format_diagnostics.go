@@ -168,7 +168,7 @@ func PrintDiagnostics(ds []Diagnostic, filename string) {
 	for i, d := range ds {
 		err := PrintFileDiagnostic(filename, d)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "<err #%d could not be shown (%s)>", i+1, err.Error())
+			fmt.Fprintf(os.Stderr, "<err #%d could not be shown (%s)>\n", i+1, err.Error())
 		}
 	}
 	PrintSummary(Summary(ds))

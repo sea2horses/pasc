@@ -56,9 +56,12 @@ func ParseIndexBase(value string) (IndexBase, error) {
 // Without a requested base it is deduced from the program's subscripts;
 // programs with no evidence either way keep the 0-based default.
 func (a *Analyzer) resolveIndexBase(main *tast.MainFunction) IndexBase {
-	// A program with errors is never generated, and its tree may hold holes.
+	// A program with errors is never generated, but checking it anyway lets
+	// bounds and dimension errors show up next to the type errors instead of
+	// only after those are fixed. The pass tolerates holes in the tree; the
+	// recover is a last resort so a missed hole costs diagnostics, not a crash.
 	if a.Checkpoint().AnyError() {
-		return a.IndexBase
+		defer func() { _ = recover() }()
 	}
 	pass := newStaticPass(a, main)
 	base := a.IndexBase

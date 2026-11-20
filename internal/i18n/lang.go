@@ -55,6 +55,7 @@ const (
 	IncorrectType
 	VariableDoesntExist
 	TypeArray
+	TypeInferredReal
 	TypeArrayND
 	TypeVoid
 	TypeFunction
@@ -67,6 +68,8 @@ const (
 	UnexpectedVoid
 	NotAssignable
 	Immutable
+	ImmutableConstant
+	ImmutableFunction
 	DeclaredHere
 	DeclaredHereWithType
 	ImplicitDeclaration
@@ -150,6 +153,7 @@ var catalog = map[Lang]map[Msg]string{
 		IncorrectType:           "tipo incorrecto: se esperaba '%[1]s', pero se obtuvo '%[2]s'",
 		VariableDoesntExist:     "la variable '%[1]s' no existe",
 		TypeArray:               "arreglo de %[1]s",
+		TypeInferredReal:        "Real (inferido)",
 		TypeArrayND:             "arreglo de %[1]s de %[2]d dimensiones",
 		TypeVoid:                "nada",
 		TypeFunction:            "Funcion",
@@ -162,6 +166,8 @@ var catalog = map[Lang]map[Msg]string{
 		UnexpectedVoid:          "esta expresión no devuelve ningún valor (¿es una llamada a un SubProceso?)",
 		NotAssignable:           "aquí no se puede guardar un valor (solo en variables o posiciones de un arreglo)",
 		Immutable:               "este valor no se puede modificar (es una constante o el nombre de una función)",
+		ImmutableConstant:       "'%[1]s' es una constante y no se puede modificar",
+		ImmutableFunction:       "'%[1]s' es el nombre de una función y no se puede usar como variable",
 		DeclaredHere:            "declarado aquí",
 		DeclaredHereWithType:    "'%[1]s' se declaró aquí con tipo '%[2]s'",
 		ImplicitDeclaration:     "la variable '%[1]s' no fue declarada con Definir; se declarará automáticamente",
@@ -241,6 +247,7 @@ var catalog = map[Lang]map[Msg]string{
 		IncorrectType:           "incorrect type: expected '%[1]s', but got '%[2]s'",
 		VariableDoesntExist:     "variable '%[1]s' doesn't exist",
 		TypeArray:               "array of %[1]s",
+		TypeInferredReal:        "Real (inferred)",
 		TypeArrayND:             "%[2]d-dimensional array of %[1]s",
 		TypeVoid:                "nothing",
 		TypeFunction:            "Funcion",
@@ -253,6 +260,8 @@ var catalog = map[Lang]map[Msg]string{
 		UnexpectedVoid:          "this expression doesn't return a value (is it a call to a SubProceso?)",
 		NotAssignable:           "a value can't be stored here (only in variables or array elements)",
 		Immutable:               "this value can't be changed (it's a constant or a function name)",
+		ImmutableConstant:       "'%[1]s' is a constant and can't be changed",
+		ImmutableFunction:       "'%[1]s' is a function name and can't be used as a variable",
 		DeclaredHere:            "declared here",
 		DeclaredHereWithType:    "'%[1]s' was declared here with type '%[2]s'",
 		ImplicitDeclaration:     "variable '%[1]s' wasn't declared with Definir; declaring it automatically",

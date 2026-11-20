@@ -19,7 +19,9 @@ func (a *Analyzer) Analyze(program *ast.MainFunction) (*tast.MainFunction, []dia
 	a.widened = map[string]bool{}
 	for pass := 1; ; pass++ {
 		main, ds := a.analyzeOnce(program)
-		if pass == maxWideningPasses || a.Checkpoint().AnyError() {
+		// Widening continues past errors so the static checks don't warn about
+		// real -> integer conversions that widening would have removed.
+		if pass == maxWideningPasses {
 			return main, ds
 		}
 		widened := a.collectWidening(main)

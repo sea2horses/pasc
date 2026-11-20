@@ -147,8 +147,7 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 	}
 
 	if !lvalue.IsMutable() {
-		a.reportErr(ass.NodeSpan(), ErrImmutable)
-		a.Info(lvalue.AssignmentOrigin().Span, "%s", lvalue.AssignmentOrigin().Message)
+		a.reportImmutable(ass.NodeSpan(), lvalue)
 		return nil
 	}
 
@@ -157,7 +156,7 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 	typed_expr, ok = coerce_to(typed_expr, target.Type())
 	if !ok {
 		a.reportErr(ass.NodeSpan(), ErrIncorrectType{Expected: target.Type(), Got: originalType})
-		a.Info(lvalue.AssignmentOrigin().Span, "%s", lvalue.AssignmentOrigin().Message)
+		a.noteOrigin(lvalue)
 		return nil
 	}
 

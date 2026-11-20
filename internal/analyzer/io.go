@@ -91,8 +91,7 @@ func (a *Analyzer) analyze_read(read *ast.Read) []*tast.Read {
 
 		/* Check that it is mutable */
 		if !lvalue.IsMutable() {
-			a.reportErr(typed.NodeSpan(), ErrImmutable)
-			a.Info(lvalue.AssignmentOrigin().Span, "%s", lvalue.AssignmentOrigin().Message)
+			a.reportImmutable(typed.NodeSpan(), lvalue)
 			continue
 		}
 

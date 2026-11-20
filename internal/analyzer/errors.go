@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	tast "pascc/internal/ast_typed"
 	"pascc/internal/i18n"
 	"pascc/internal/models"
 	"pascc/internal/semantic"
@@ -87,8 +88,36 @@ func (a *Analyzer) warnf(span models.Span, m i18n.Msg, args ...any) {
 	a.Warn(span, "%s", i18n.T(m, args...))
 }
 
+// infof drops notes without a source location (e.g. about builtins like PI),
+// since there is nothing to point at.
 func (a *Analyzer) infof(span models.Span, m i18n.Msg, args ...any) {
+	if span.Start.Line == 0 {
+		return
+	}
 	a.Info(span, "%s", i18n.T(m, args...))
+}
+
+// noteOrigin points at where an assignment target was declared.
+func (a *Analyzer) noteOrigin(lvalue tast.LValue) {
+	origin := lvalue.AssignmentOrigin()
+	if origin == nil || origin.Span.Start.Line == 0 {
+		return
+	}
+	a.Info(origin.Span, "%s", origin.Message)
+}
+
+// reportImmutable names the constant or function being written to.
+func (a *Analyzer) reportImmutable(span models.Span, lvalue tast.LValue) {
+	if v, ok := lvalue.(*tast.VariableExpr); ok && v.Symbol != nil {
+		m := i18n.ImmutableConstant
+		if v.Symbol.Kind == semantic.SymbolFunction {
+			m = i18n.ImmutableFunction
+		}
+		a.errorf(span, m, v.Symbol.Name)
+	} else {
+		a.reportErr(span, ErrImmutable)
+	}
+	a.noteOrigin(lvalue)
 }
 
 func (a *Analyzer) reportErr(span models.Span, err error) {

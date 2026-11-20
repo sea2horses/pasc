@@ -232,7 +232,11 @@ func build(codegen []byte, output_dir string, target string, _runtime, extRuntim
 		return "", err
 	}
 
-	err = os.WriteFile(code_path, codegen, 0644)
+	// Like runtime.go and ext.go, the inspectable copy is excluded from Go
+	// package builds: an output directory inside a module (the default
+	// ./build) would otherwise put one main package per program into
+	// `go build ./...`. Naming the file explicitly (go run x.go) still works.
+	err = os.WriteFile(code_path, append([]byte("//go:build ignore\n\n"), codegen...), 0644)
 	if err != nil {
 		return "", err
 	}

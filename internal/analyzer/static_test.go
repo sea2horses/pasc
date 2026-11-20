@@ -376,3 +376,32 @@ func TestParaCadaNeedsAnArray(t *testing.T) {
 		t.Fatalf("expected a non-array error, got %v", ds)
 	}
 }
+
+// Static checks run even when earlier passes found errors, so a program shows
+// all of its problems at once, and holes in the typed tree must not crash them.
+func TestStaticChecksRunAlongsideTypeErrors(t *testing.T) {
+	source := "Algoritmo A\n" +
+		"\tDefinir n Como Entero\n" +
+		"\tn <- \"x\"\n" +
+		"\tPI <- 3\n" +
+		"\tPara Cada x De n Hacer\n\t\tEscribir x\n\tFinPara\n" +
+		"\tPara 1 <- 0 Hasta 3 Hacer\n\tFinPara\n" +
+		"\tDimensionar v[3]\n" +
+		"\tv[7] <- 1\n" +
+		"FinAlgoritmo"
+	_, ds := analyzeSource(t, source, IndexBaseZero)
+	if diagnosticsAt(ds, diagnostics.ERROR, "incorrect type") != 1 {
+		t.Fatalf("missing type error: %v", ds)
+	}
+	if diagnosticsAt(ds, diagnostics.ERROR, "'PI' is a constant") != 1 {
+		t.Fatalf("missing named immutable error: %v", ds)
+	}
+	if diagnosticsAt(ds, diagnostics.ERROR, "out of bounds") != 1 {
+		t.Fatalf("bounds check skipped after other errors: %v", ds)
+	}
+	for _, d := range ds {
+		if d.Span.Start.Line == 0 {
+			t.Fatalf("diagnostic without a location: %+v", d)
+		}
+	}
+}
