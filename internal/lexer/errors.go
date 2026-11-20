@@ -1,6 +1,8 @@
 package lexer
 
-import "fmt"
+import (
+	"pascc/internal/i18n"
+)
 
 type ErrOutOfBounds struct {
 	Max   uint32
@@ -8,7 +10,7 @@ type ErrOutOfBounds struct {
 }
 
 func (e ErrOutOfBounds) Error() string {
-	return fmt.Sprintf("value %d is out of bounds (%d)", e.Value, e.Max)
+	return i18n.T(i18n.CharOutOfBounds, e.Value, e.Max)
 }
 
 type ErrUnexpectedChar struct {
@@ -16,19 +18,19 @@ type ErrUnexpectedChar struct {
 }
 
 func (e ErrUnexpectedChar) Error() string {
-	return fmt.Sprintf("unexpected char: %c", e.Char)
+	return i18n.T(i18n.UnexpectedChar, e.Char)
 }
 
-type LexerErr string
+type LexerErr func() string
 
 func (e LexerErr) Error() string {
-	return string(e)
+	return e()
 }
 
-const (
-	ErrExpectedIdentifier  = LexerErr("expected identifier")
-	ErrExpectedString      = LexerErr("expected string")
-	ErrExpectedNumber      = LexerErr("expected number")
-	ErrUnterminatedString  = LexerErr("unterminated string")
-	ErrUnterminatedComment = LexerErr("unterminated block comment")
+var (
+	ErrExpectedIdentifier  = LexerErr(i18n.TFunc(i18n.ExpectedIdentifier))
+	ErrExpectedString      = LexerErr(i18n.TFunc(i18n.ExpectedString))
+	ErrExpectedNumber      = LexerErr(i18n.TFunc(i18n.ExpectedNumber))
+	ErrUnterminatedString  = LexerErr(i18n.TFunc(i18n.UnterminatedString))
+	ErrUnterminatedComment = LexerErr(i18n.TFunc(i18n.UnterminatedBlockComment))
 )
