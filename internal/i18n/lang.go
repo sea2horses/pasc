@@ -181,6 +181,21 @@ const (
 	ArgsExactlyOneFile
 	InvalidLang
 
+	// Go toolchain setup
+	GoSetupMissing
+	GoSetupTooOld
+	GoSetupOnce
+	GoSetupDownloading
+	GoSetupVerifying
+	GoSetupExtracting
+	GoSetupDone
+	GoSetupInstalled
+	GoSetupFirstBuild
+	GoDownloadFailed
+	GoChecksumMismatch
+	GoExtractFailed
+	GoManualHint
+
 	msgCount // sentinel, keep last
 )
 
@@ -349,6 +364,21 @@ var catalog = map[Lang]map[Msg]string{
 		UsageMoreInfo:           "Usa \"%[1]s --help\" para más información sobre un comando.",
 		ArgsExactlyOneFile:      "se esperaba exactamente un archivo .psc, pero se recibieron %[1]d argumento(s)",
 		InvalidLang:             "idioma desconocido %[1]q (usa es o en)",
+
+		// Go toolchain setup
+		GoSetupMissing:     "pascc necesita Go para convertir tus programas en ejecutables, y no lo encontró en este equipo.",
+		GoSetupTooOld:      "pascc necesita Go %[2]s o más reciente para convertir tus programas en ejecutables, pero este equipo tiene Go %[1]s.",
+		GoSetupOnce:        "Se descargará Go %[1]s (%[2]s) una sola vez. Las próximas compilaciones lo reutilizarán sin descargar nada.",
+		GoSetupDownloading: "Descargando",
+		GoSetupVerifying:   "Verificando la descarga...",
+		GoSetupExtracting:  "Instalando...",
+		GoSetupDone:        "listo",
+		GoSetupInstalled:   "Go %[1]s quedó instalado en %[2]s",
+		GoSetupFirstBuild:  "La primera compilación tarda un poco más mientras Go prepara su caché; las siguientes serán rápidas.",
+		GoDownloadFailed:   "no se pudo descargar Go %[1]s: %[2]v",
+		GoChecksumMismatch: "la descarga de Go está dañada (la suma SHA-256 no coincide); vuelve a intentarlo",
+		GoExtractFailed:    "no se pudo instalar Go: %[1]v",
+		GoManualHint:       "Si no tienes conexión a internet, instala Go manualmente desde https://go.dev/dl y vuelve a intentarlo.",
 	},
 	EN: {
 		// Lexer
@@ -514,6 +544,21 @@ var catalog = map[Lang]map[Msg]string{
 		UsageMoreInfo:           "Use \"%[1]s --help\" for more information about a command.",
 		ArgsExactlyOneFile:      "expected exactly one .psc file, but got %[1]d argument(s)",
 		InvalidLang:             "unknown language %[1]q (use es or en)",
+
+		// Go toolchain setup
+		GoSetupMissing:     "pascc needs Go to turn your programs into executables, and it isn't installed on this computer.",
+		GoSetupTooOld:      "pascc needs Go %[2]s or newer to turn your programs into executables, but this computer has Go %[1]s.",
+		GoSetupOnce:        "Go %[1]s (%[2]s) will be downloaded just this once. Future builds reuse it without downloading anything.",
+		GoSetupDownloading: "Downloading",
+		GoSetupVerifying:   "Verifying the download...",
+		GoSetupExtracting:  "Installing...",
+		GoSetupDone:        "done",
+		GoSetupInstalled:   "Go %[1]s was installed in %[2]s",
+		GoSetupFirstBuild:  "The first build takes a bit longer while Go warms up its cache; later builds are fast.",
+		GoDownloadFailed:   "could not download Go %[1]s: %[2]v",
+		GoChecksumMismatch: "the Go download is corrupted (SHA-256 mismatch); please try again",
+		GoExtractFailed:    "could not install Go: %[1]v",
+		GoManualHint:       "If you have no internet connection, install Go manually from https://go.dev/dl and try again.",
 	},
 }
 

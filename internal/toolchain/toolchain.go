@@ -290,8 +290,13 @@ func build(codegen []byte, output_dir string, target string, _runtime, extRuntim
 		}
 		args = append(args, "-mod=vendor", ".")
 	}
-	cmd := exec.Command("go", args...)
+	goCmd, err := findGo(requiredGoVersion(runtimeMod))
+	if err != nil {
+		return "", err
+	}
+	cmd := exec.Command(goCmd.path, args...)
 	cmd.Dir = module_dir
+	cmd.Env = append(os.Environ(), goCmd.env...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
