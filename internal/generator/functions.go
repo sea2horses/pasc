@@ -2,6 +2,7 @@ package generator
 
 import (
 	tast "pascc/internal/ast_typed"
+	"pascc/internal/i18n"
 	"pascc/internal/semantic"
 	"pascc/internal/utils"
 
@@ -37,7 +38,7 @@ var builtinMap map[semantic.BuiltinKind]func() *jen.Statement = map[semantic.Bui
 func (g *Generator) genBuiltinCall(bi *semantic.BuiltinInfo, args []tast.TypedExpr) *jen.Statement {
 	f, ok := builtinMap[bi.Kind]
 	if !ok {
-		panic("BuiltinKind does not have a mapped representation")
+		panic(i18n.T(i18n.CodegenUnmapped, "BuiltinKind", bi.Kind))
 	}
 	return f().Call(
 		utils.Map(args, func(expr tast.TypedExpr) jen.Code { return g.generate(expr) })...,

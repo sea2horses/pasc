@@ -109,6 +109,42 @@ const (
 	ForNeedsVariable
 	ForEachNeedsArray
 
+	// Diagnostics, code generation & toolchain
+	LevelError
+	LevelWarning
+	LevelInfo
+	SummaryError
+	SummaryErrors
+	SummaryWarning
+	SummaryWarnings
+	SummaryNote
+	SummaryNotes
+	CompilationFailed
+	CompilationFailedMany
+	DiagnosticNotShown
+	ReadSourceFailed
+	FormatDiagnosticFailed
+	WriteDiagnosticFailed
+	SpanStartNotOneBased
+	SpanEndNotOneBased
+	SpanStartAfterEnd
+	SpanStartOutsideFile
+	SpanEndOutsideFile
+	SpanColumnTooLarge
+	CodegenUnsupportedNode
+	CodegenUnmapped
+	CodegenNonIntegralInteger
+	CodegenNonNumericLiteral
+	InternalCompilerError
+	InvalidPath
+	NotPscFile
+	OpenFileFailed
+	FileNotFound
+	MainNotFound
+	RuntimeExtMissing
+	RuntimeModuleMissing
+	RuntimeVendorBroken
+
 	msgCount // sentinel, keep last
 )
 
@@ -206,6 +242,42 @@ var catalog = map[Lang]map[Msg]string{
 		WaitAmountNumeric:       "el tiempo de espera debe ser un número",
 		ForNeedsVariable:        "el contador de un Para debe ser una variable",
 		ForEachNeedsArray:       "'Para Cada' necesita un arreglo, pero se obtuvo '%[1]s'",
+
+		// Diagnostics, code generation & toolchain
+		LevelError:                "error",
+		LevelWarning:              "advertencia",
+		LevelInfo:                 "nota",
+		SummaryError:              "%[1]d error",
+		SummaryErrors:             "%[1]d errores",
+		SummaryWarning:            "%[1]d advertencia",
+		SummaryWarnings:           "%[1]d advertencias",
+		SummaryNote:               "%[1]d nota",
+		SummaryNotes:              "%[1]d notas",
+		CompilationFailed:         "no se pudo compilar el programa por %[1]d error",
+		CompilationFailedMany:     "no se pudo compilar el programa por %[1]d errores",
+		DiagnosticNotShown:        "<no se pudo mostrar el diagnóstico #%[1]d: %[2]s>",
+		ReadSourceFailed:          "no se pudo leer el archivo fuente",
+		FormatDiagnosticFailed:    "no se pudo dar formato al diagnóstico",
+		WriteDiagnosticFailed:     "no se pudo escribir el diagnóstico",
+		SpanStartNotOneBased:      "el inicio del rango debe empezar en 1 (se recibió línea %[1]d, columna %[2]d)",
+		SpanEndNotOneBased:        "el final del rango debe empezar en 1 (se recibió línea %[1]d, columna %[2]d)",
+		SpanStartAfterEnd:         "el inicio del rango está después de su final",
+		SpanStartOutsideFile:      "la línea inicial %[1]d del rango está fuera del archivo",
+		SpanEndOutsideFile:        "la línea final %[1]d del rango está fuera del archivo",
+		SpanColumnTooLarge:        "la columna %[1]d excede el máximo de la línea %[2]d (%[3]d)",
+		CodegenUnsupportedNode:    "nodo no soportado por el generador de código: %[1]T",
+		CodegenUnmapped:           "%[1]s %[2]v no tiene representación en Go",
+		CodegenNonIntegralInteger: "un literal con decimales se resolvió como Entero",
+		CodegenNonNumericLiteral:  "un literal numérico tiene el tipo no numérico '%[1]s'",
+		InternalCompilerError:     "error interno del compilador (esto es un bug de pascc, por favor repórtalo): %[1]v\n%[2]s",
+		InvalidPath:               "la ruta está vacía o no es válida",
+		NotPscFile:                "'%[1]s' no es un programa de PSeInt (el archivo debe terminar en .psc)",
+		OpenFileFailed:            "no se pudo abrir '%[1]s'",
+		FileNotFound:              "no existe el archivo '%[1]s'",
+		MainNotFound:              "no se encontró el algoritmo principal",
+		RuntimeExtMissing:         "falta la extensión embebida del runtime (pascc se compiló incorrectamente)",
+		RuntimeModuleMissing:      "falta el módulo Go o las dependencias embebidas del runtime (pascc se compiló incorrectamente)",
+		RuntimeVendorBroken:       "a las dependencias embebidas del runtime les falta vendor/modules.txt (pascc se compiló incorrectamente)",
 	},
 	EN: {
 		// Lexer
@@ -300,6 +372,42 @@ var catalog = map[Lang]map[Msg]string{
 		WaitAmountNumeric:       "the wait time must be a number",
 		ForNeedsVariable:        "the counter of a Para loop must be a variable",
 		ForEachNeedsArray:       "'Para Cada' needs an array, but got '%[1]s'",
+
+		// Diagnostics, code generation & toolchain
+		LevelError:                "error",
+		LevelWarning:              "warning",
+		LevelInfo:                 "note",
+		SummaryError:              "%[1]d error",
+		SummaryErrors:             "%[1]d errors",
+		SummaryWarning:            "%[1]d warning",
+		SummaryWarnings:           "%[1]d warnings",
+		SummaryNote:               "%[1]d note",
+		SummaryNotes:              "%[1]d notes",
+		CompilationFailed:         "the program could not be compiled because of %[1]d error",
+		CompilationFailedMany:     "the program could not be compiled because of %[1]d errors",
+		DiagnosticNotShown:        "<diagnostic #%[1]d could not be shown: %[2]s>",
+		ReadSourceFailed:          "could not read the source file",
+		FormatDiagnosticFailed:    "could not format the diagnostic",
+		WriteDiagnosticFailed:     "could not write the diagnostic",
+		SpanStartNotOneBased:      "span start must be 1-based (received line %[1]d, column %[2]d)",
+		SpanEndNotOneBased:        "span end must be 1-based (received line %[1]d, column %[2]d)",
+		SpanStartAfterEnd:         "span start comes after span end",
+		SpanStartOutsideFile:      "span start line %[1]d is outside the source file",
+		SpanEndOutsideFile:        "span end line %[1]d is outside the source file",
+		SpanColumnTooLarge:        "column %[1]d exceeds the maximum of line %[2]d (%[3]d)",
+		CodegenUnsupportedNode:    "node not supported by the code generator: %[1]T",
+		CodegenUnmapped:           "%[1]s %[2]v has no Go representation",
+		CodegenNonIntegralInteger: "a literal with decimals was resolved as Entero",
+		CodegenNonNumericLiteral:  "a number literal has the non-numeric type '%[1]s'",
+		InternalCompilerError:     "internal compiler error (this is a pascc bug, please report it): %[1]v\n%[2]s",
+		InvalidPath:               "the path is empty or invalid",
+		NotPscFile:                "'%[1]s' is not a PSeInt program (the file must end in .psc)",
+		OpenFileFailed:            "could not open '%[1]s'",
+		FileNotFound:              "the file '%[1]s' doesn't exist",
+		MainNotFound:              "the main algorithm was not found",
+		RuntimeExtMissing:         "the embedded runtime extension is missing (pascc was built incorrectly)",
+		RuntimeModuleMissing:      "the runtime Go module or its embedded dependencies are missing (pascc was built incorrectly)",
+		RuntimeVendorBroken:       "the embedded runtime dependencies are missing vendor/modules.txt (pascc was built incorrectly)",
 	},
 }
 

@@ -1,7 +1,7 @@
 package generator
 
 import (
-	"fmt"
+	"pascc/internal/i18n"
 	"strconv"
 	"strings"
 
@@ -15,7 +15,7 @@ func (g *Generator) genNumberLiteral(nl *tast.NumberLiteral) *jen.Statement {
 	switch semantic.Resolve(nl.Type()).(type) {
 	case semantic.Integer_T:
 		if strings.Trim(nl.Frac, "0") != "" {
-			panic("non-integral number literal resolved as integer")
+			panic(i18n.T(i18n.CodegenNonIntegralInteger))
 		}
 		return genInt(nl)
 
@@ -31,7 +31,7 @@ func (g *Generator) genNumberLiteral(nl *tast.NumberLiteral) *jen.Statement {
 		return genRealLiteral(nl)
 
 	default:
-		panic(fmt.Sprintf("number literal has non-numeric type %s", nl.Type()))
+		panic(i18n.T(i18n.CodegenNonNumericLiteral, semantic.DisplayType(nl.Type())))
 	}
 }
 

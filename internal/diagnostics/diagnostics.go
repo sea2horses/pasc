@@ -3,8 +3,8 @@ package diagnostics
 import (
 	"errors"
 	"fmt"
+	"pascc/internal/i18n"
 	"pascc/internal/models"
-	"strings"
 
 	"github.com/fatih/color"
 )
@@ -33,11 +33,11 @@ func (dl DiagnosticLevel) Color() color.Attribute {
 func (dl DiagnosticLevel) String() string {
 	switch dl {
 	case ERROR:
-		return "error"
+		return i18n.T(i18n.LevelError)
 	case WARNING:
-		return "warning"
+		return i18n.T(i18n.LevelWarning)
 	case INFO:
-		return "info"
+		return i18n.T(i18n.LevelInfo)
 	}
 	return "unknown"
 }
@@ -61,27 +61,17 @@ func (d *Diagnostics) Errorf(s models.Span, level DiagnosticLevel, f string, a .
 	})
 }
 
+// SummaryAsError returns nil when ds has no errors. The diagnostics themselves
+// are printed separately, so the error only states that compilation failed.
 func SummaryAsError(ds []Diagnostic) error {
-	var builder strings.Builder
-	firstError := true
-
-	for _, d := range ds {
-		if d.Level != ERROR {
-			continue
-		}
-		if !firstError {
-			builder.WriteString(", ")
-		}
-		builder.WriteString(d.Msg)
-		firstError = false
-	}
-
-	msg := builder.String()
-	if len(msg) == 0 {
+	count := Summary(ds).ErrorCount
+	switch count {
+	case 0:
 		return nil
+	case 1:
+		return errors.New(i18n.T(i18n.CompilationFailed, count))
 	}
-
-	return errors.New(builder.String())
+	return errors.New(i18n.T(i18n.CompilationFailedMany, count))
 }
 
 /* Summarizes all diagnostics in the format (errors, warnings, info) */

@@ -2,6 +2,7 @@ package generator
 
 import (
 	tast "pascc/internal/ast_typed"
+	"pascc/internal/i18n"
 	"pascc/internal/semantic"
 
 	"github.com/dave/jennifer/jen"
@@ -15,7 +16,7 @@ var timeMap map[semantic.TimeUnit]*jen.Statement = map[semantic.TimeUnit]*jen.St
 func (g *Generator) genTimeUnit(t semantic.TimeUnit) *jen.Statement {
 	code, ok := timeMap[t]
 	if !ok {
-		panic("Timeunit does not have a mapped representation")
+		panic(i18n.T(i18n.CodegenUnmapped, "TimeUnit", t))
 	}
 	return code
 }

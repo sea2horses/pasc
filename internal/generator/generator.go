@@ -2,8 +2,8 @@ package generator
 
 import (
 	"bytes"
-	"fmt"
 	tast "pascc/internal/ast_typed"
+	"pascc/internal/i18n"
 
 	"github.com/dave/jennifer/jen"
 )
@@ -87,6 +87,6 @@ func (g *Generator) generate(tree tast.Node) *jen.Statement {
 	case *tast.DoWhile:
 		return g.genDoWhile(node)
 	default:
-		panic(fmt.Sprintf("unsupported typed AST node %T", tree))
+		panic(i18n.T(i18n.CodegenUnsupportedNode, tree))
 	}
 }

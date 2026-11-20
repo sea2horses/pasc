@@ -13,6 +13,7 @@ import (
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/diagnostics"
 	"pascc/internal/generator"
+	"pascc/internal/i18n"
 	"pascc/internal/lexer"
 	"pascc/internal/parser"
 	"path/filepath"
@@ -50,7 +51,7 @@ type ToolchainConfig struct {
 func RunToolchain(config *ToolchainConfig) (err error) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
-			err = fmt.Errorf("internal compiler error: %v\n%s", recovered, debug.Stack())
+			err = errors.New(i18n.T(i18n.InternalCompilerError, recovered, debug.Stack()))
 		}
 	}()
 
@@ -137,7 +138,7 @@ func validate_filename(filename string) (string, error) {
 	base := filepath.Base(filename)
 
 	if base == "." {
-		return "", errors.New("path is empty or invalid!")
+		return "", errors.New(i18n.T(i18n.InvalidPath))
 	}
 
 	diagnostics.Dbg("Base: " + base)
@@ -146,7 +147,7 @@ func validate_filename(filename string) (string, error) {
 	diagnostics.Dbg("Base (no suffix): " + base)
 
 	if !ok {
-		return "", errors.New("path does not point to a valid .psc file!")
+		return "", errors.New(i18n.T(i18n.NotPscFile, filename))
 	}
 
 	return base, nil
@@ -154,8 +155,11 @@ func validate_filename(filename string) (string, error) {
 
 func open_file(filename string) ([]byte, error) {
 	bytes, err := os.ReadFile(filename)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, errors.New(i18n.T(i18n.FileNotFound, filename))
+	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", i18n.T(i18n.OpenFileFailed, filename), err)
 	}
 
 	return bytes, nil
@@ -184,7 +188,7 @@ func analyze(tree ast.Node, filename string, indexBase analyzer.IndexBase) (tast
 	analyzer.IndexBase = indexBase
 	mf, ok := tree.(*ast.MainFunction)
 	if !ok {
-		return nil, errors.New("main function not found")
+		return nil, errors.New(i18n.T(i18n.MainNotFound))
 	}
 	t_tree, ds := analyzer.Analyze(mf)
 
@@ -244,14 +248,14 @@ func build(codegen []byte, output_dir string, target string, _runtime, extRuntim
 		extRuntime = extFastRuntime
 	}
 	if len(extRuntime) == 0 {
-		return "", errors.New("embedded runtime extension is missing")
+		return "", errors.New(i18n.T(i18n.RuntimeExtMissing))
 	}
 	if err := os.WriteFile(ext_path, extRuntime, 0644); err != nil {
 		return "", err
 	}
 
 	if !fast && (len(runtimeMod) == 0 || vendor == nil) {
-		return "", errors.New("runtime Go module or embedded vendor tree is missing")
+		return "", errors.New(i18n.T(i18n.RuntimeModuleMissing))
 	}
 
 	module_dir, err := os.MkdirTemp("", "pascc-generated-*")
@@ -303,7 +307,7 @@ func build(codegen []byte, output_dir string, target string, _runtime, extRuntim
 func copyEmbeddedVendor(vendor fs.FS, moduleDir string) error {
 	const sourceRoot = "vendor_clean"
 	if _, err := fs.Stat(vendor, sourceRoot+"/modules.txt"); err != nil {
-		return errors.New("embedded runtime vendor tree is missing vendor/modules.txt")
+		return errors.New(i18n.T(i18n.RuntimeVendorBroken))
 	}
 
 	return fs.WalkDir(vendor, sourceRoot, func(path string, entry fs.DirEntry, walkErr error) error {

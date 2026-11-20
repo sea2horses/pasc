@@ -1,9 +1,11 @@
 package diagnostics
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"pascc/internal/i18n"
 	"pascc/internal/models"
 	"strconv"
 	"strings"
@@ -144,12 +146,12 @@ func PrintFileDiagnostic(
 ) error {
 	source, err := os.ReadFile(filename)
 	if err != nil {
-		return fmt.Errorf("read source file: %w", err)
+		return fmt.Errorf("%s: %w", i18n.T(i18n.ReadSourceFailed), err)
 	}
 
 	f, err := FormatDiagnostic(filename, source, diagnostic)
 	if err != nil {
-		return fmt.Errorf("format diagnostic: %w", err)
+		return fmt.Errorf("%s: %w", i18n.T(i18n.FormatDiagnosticFailed), err)
 	}
 
 	// Set color
@@ -158,7 +160,7 @@ func PrintFileDiagnostic(
 
 	_, err = io.WriteString(os.Stderr, f)
 	if err != nil {
-		return fmt.Errorf("write diagnostic: %w", err)
+		return fmt.Errorf("%s: %w", i18n.T(i18n.WriteDiagnosticFailed), err)
 	}
 
 	return nil
@@ -168,88 +170,65 @@ func PrintDiagnostics(ds []Diagnostic, filename string) {
 	for i, d := range ds {
 		err := PrintFileDiagnostic(filename, d)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "<err #%d could not be shown (%s)>\n", i+1, err.Error())
+			fmt.Fprintln(os.Stderr, i18n.T(i18n.DiagnosticNotShown, i+1, err.Error()))
 		}
 	}
 	PrintSummary(Summary(ds))
 }
 
 func PrintSummary(d DiagnosticInfo) {
-	if d.ErrorCount > 0 {
-		color.Set(ERROR.Color())
-		fmt.Printf("%d error", d.ErrorCount)
-		if d.ErrorCount != 1 {
-			fmt.Printf("s")
+	parts := []struct {
+		count     uint8
+		one, many i18n.Msg
+		level     DiagnosticLevel
+	}{
+		{d.ErrorCount, i18n.SummaryError, i18n.SummaryErrors, ERROR},
+		{d.WarningCount, i18n.SummaryWarning, i18n.SummaryWarnings, WARNING},
+		{d.InfoCount, i18n.SummaryNote, i18n.SummaryNotes, INFO},
+	}
+	printed := false
+	for _, part := range parts {
+		if part.count == 0 {
+			continue
 		}
-
-		if d.WarningCount > 0 || d.InfoCount > 0 {
-			color.Unset()
+		if printed {
 			fmt.Print(" | ")
 		}
-	}
-
-	if d.WarningCount > 0 {
-		color.Set(WARNING.Color())
-		fmt.Printf("%d warning", d.WarningCount)
-		if d.ErrorCount != 1 {
-			fmt.Printf("s")
+		msg := part.many
+		if part.count == 1 {
+			msg = part.one
 		}
-
-		if d.InfoCount > 0 {
-			color.Unset()
-			fmt.Print(" | ")
-		}
+		color.Set(part.level.Color())
+		fmt.Print(i18n.T(msg, part.count))
+		color.Unset()
+		printed = true
 	}
-
-	if d.InfoCount > 0 {
-		color.Set(INFO.Color())
-		fmt.Printf("%d info message", d.InfoCount)
-		if d.ErrorCount != 1 {
-			fmt.Printf("s")
-		}
-	}
-
-	color.Unset()
-	if d.ErrorCount > 0 || d.WarningCount > 0 || d.InfoCount > 0 {
+	if printed {
 		fmt.Println()
 	}
 }
 
 func validateSpan(lines []string, span models.Span) error {
 	if span.Start.Line == 0 || span.Start.Column == 0 {
-		return fmt.Errorf(
-			"span start must be 1-based, received line %d, column %d",
-			span.Start.Line,
-			span.Start.Column,
-		)
+		return errors.New(i18n.T(i18n.SpanStartNotOneBased, span.Start.Line, span.Start.Column))
 	}
 
 	if span.End.Line == 0 || span.End.Column == 0 {
-		return fmt.Errorf(
-			"span end must be 1-based, received line %d, column %d",
-			span.End.Line,
-			span.End.Column,
-		)
+		return errors.New(i18n.T(i18n.SpanEndNotOneBased, span.End.Line, span.End.Column))
 	}
 
 	if span.Start.Line > span.End.Line ||
 		(span.Start.Line == span.End.Line &&
 			span.Start.Column > span.End.Column) {
-		return fmt.Errorf("span start occurs after span end")
+		return errors.New(i18n.T(i18n.SpanStartAfterEnd))
 	}
 
 	if int(span.Start.Line) > len(lines) {
-		return fmt.Errorf(
-			"span start line %d is outside the source file",
-			span.Start.Line,
-		)
+		return errors.New(i18n.T(i18n.SpanStartOutsideFile, span.Start.Line))
 	}
 
 	if int(span.End.Line) > len(lines) {
-		return fmt.Errorf(
-			"span end line %d is outside the source file",
-			span.End.Line,
-		)
+		return errors.New(i18n.T(i18n.SpanEndOutsideFile, span.End.Line))
 	}
 
 	if err := validatePositionColumn(lines, span.Start, "start"); err != nil {
@@ -272,13 +251,7 @@ func validatePositionColumn(
 	maxColumn := uint32(utf8.RuneCountInString(line) + 1)
 
 	if position.Column > maxColumn {
-		return fmt.Errorf(
-			"span %s column %d exceeds line %d maximum column %d",
-			name,
-			position.Column,
-			position.Line,
-			maxColumn,
-		)
+		return errors.New(i18n.T(i18n.SpanColumnTooLarge, position.Column, position.Line, maxColumn))
 	}
 
 	return nil

@@ -2,6 +2,7 @@ package generator
 
 import (
 	tast "pascc/internal/ast_typed"
+	"pascc/internal/i18n"
 	"pascc/internal/semantic"
 
 	"github.com/dave/jennifer/jen"
@@ -31,7 +32,7 @@ func (g *Generator) genType(t semantic.Type) *jen.Statement {
 	}
 	code, ok := typeMap[t]
 	if !ok {
-		panic("Type " + t.Signature().String() + " does not have a mapped representation")
+		panic(i18n.T(i18n.CodegenUnmapped, "Type", t.Signature()))
 	}
 	return code()
 }
@@ -39,7 +40,7 @@ func (g *Generator) genType(t semantic.Type) *jen.Statement {
 func (g *Generator) genCast(c *tast.Cast) *jen.Statement {
 	code, ok := conversionMap[*c.ConversionKind]
 	if !ok {
-		panic("ConversionKind does not have a mapped representation")
+		panic(i18n.T(i18n.CodegenUnmapped, "ConversionKind", *c.ConversionKind))
 	}
 	return code().Call(g.generate(c.Expr))
 }
