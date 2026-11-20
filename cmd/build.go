@@ -14,19 +14,18 @@ const defaultDir = "build"
 func init() {
 	rootCmd.AddCommand(buildCmd)
 
-	buildCmd.Flags().BoolVar(&Debug, "debug", false, "Prints debug information about the compiling process")
-	buildCmd.Flags().BoolVar(&Fast, "fast", false, "Uses an Enter prompt for Esperar Tecla and skips terminal dependencies")
-	buildCmd.Flags().BoolVar(&Temp, "temp", false, "Builds the program temporarily and then discards the result (useful for testing)")
-	buildCmd.Flags().StringVar(&IndexBaseFlag, "index-base", "auto", "First array index: 0, 1, or auto (deduced from how the program indexes arrays)")
-	buildCmd.Flags().StringVarP(&OutputDir, "output", "o", defaultDir, "Specifies the directory to build the executable onto")
+	// Flag help text is set per language by localize().
+	buildCmd.Flags().BoolVar(&Debug, "debug", false, "")
+	buildCmd.Flags().BoolVar(&Fast, "fast", false, "")
+	buildCmd.Flags().BoolVar(&Temp, "temp", false, "")
+	buildCmd.Flags().StringVar(&IndexBaseFlag, "index-base", "auto", "")
+	buildCmd.Flags().StringVarP(&OutputDir, "output", "o", defaultDir, "")
 }
 
 var buildCmd = &cobra.Command{
-	Use:   "build [file: *.psc]",
-	Short: "Builds a .psc file into a native executable",
-	Long:  "The compiler analyzes the program's code for compile-time errors and then uses Go's toolchain to convert it into a native executable",
-	Args:  cobra.ExactArgs(1),
-	RunE:  compile,
+	Use:  "build",
+	Args: exactlyOneFile,
+	RunE: compile,
 }
 
 var (

@@ -11,16 +11,14 @@ import (
 
 func init() {
 	rootCmd.AddCommand(runCmd)
-	runCmd.Flags().BoolVar(&Debug, "debug", false, "Prints debug information about the compiling process")
-	runCmd.Flags().StringVar(&IndexBaseFlag, "index-base", "auto", "First array index: 0, 1, or auto (deduced from how the program indexes arrays)")
+	runCmd.Flags().BoolVar(&Debug, "debug", false, "")
+	runCmd.Flags().StringVar(&IndexBaseFlag, "index-base", "auto", "")
 }
 
 var runCmd = &cobra.Command{
-	Use:   "run [file: *.psc]",
-	Short: "Runs a .psc file, no fuss",
-	Long:  "Unlike the build command, this just runs the program by building and then disposing the result",
-	Args:  cobra.ExactArgs(1),
-	RunE:  run,
+	Use:  "run",
+	Args: exactlyOneFile,
+	RunE: run,
 }
 
 func run(cmd *cobra.Command, args []string) error {

@@ -2,6 +2,7 @@ package i18n
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Lang uint8
@@ -145,6 +146,41 @@ const (
 	RuntimeModuleMissing
 	RuntimeVendorBroken
 
+	// CLI
+	CmdRootShort
+	CmdRootLong
+	CmdBuildShort
+	CmdBuildLong
+	CmdRunShort
+	CmdRunLong
+	CmdHelpShort
+	CmdHelpLong
+	CmdCompletionShort
+	CmdFileArg
+	FlagDebug
+	FlagFast
+	FlagTemp
+	FlagIndexBase
+	FlagOutput
+	FlagLang
+	FlagHelp
+	FlagVersion
+	VersionWord
+	UsageUsage
+	UsageAliases
+	UsageExamples
+	UsageCommands
+	UsageAdditionalCommands
+	UsageFlags
+	UsageGlobalFlags
+	UsageHelpTopics
+	UsageCommandPlaceholder
+	UsageFlagsPlaceholder
+	UsageDefault
+	UsageMoreInfo
+	ArgsExactlyOneFile
+	InvalidLang
+
 	msgCount // sentinel, keep last
 )
 
@@ -278,6 +314,41 @@ var catalog = map[Lang]map[Msg]string{
 		RuntimeExtMissing:         "falta la extensión embebida del runtime (pascc se compiló incorrectamente)",
 		RuntimeModuleMissing:      "falta el módulo Go o las dependencias embebidas del runtime (pascc se compiló incorrectamente)",
 		RuntimeVendorBroken:       "a las dependencias embebidas del runtime les falta vendor/modules.txt (pascc se compiló incorrectamente)",
+
+		// CLI
+		CmdRootShort:            "Compilador y analizador para el lenguaje PSeInt",
+		CmdRootLong:             "Pasc analiza programas de PSeInt y los compila a ejecutables nativos usando el toolchain de Go.",
+		CmdBuildShort:           "Compila un archivo .psc a un ejecutable nativo",
+		CmdBuildLong:            "Analiza el programa en busca de errores y luego usa el toolchain de Go para convertirlo en un ejecutable nativo",
+		CmdRunShort:             "Ejecuta un archivo .psc directamente",
+		CmdRunLong:              "A diferencia de build, compila el programa, lo ejecuta y luego descarta el resultado",
+		CmdHelpShort:            "Ayuda sobre cualquier comando",
+		CmdHelpLong:             "Muestra la ayuda de cualquier comando.\nEscribe %[1]s help [comando] para ver todos los detalles.",
+		CmdCompletionShort:      "Genera el script de autocompletado para la shell indicada",
+		CmdFileArg:              "[archivo: *.psc]",
+		FlagDebug:               "Muestra información de depuración sobre el proceso de compilación",
+		FlagFast:                "Usa Enter para Esperar Tecla y omite las dependencias de terminal",
+		FlagTemp:                "Compila el programa temporalmente y descarta el resultado (útil para pruebas)",
+		FlagIndexBase:           "Primer índice de los arreglos: 0, 1 o auto (se deduce de cómo el programa indexa los arreglos)",
+		FlagOutput:              "Carpeta donde se guarda el ejecutable",
+		FlagLang:                "Idioma de los mensajes: es o en (por defecto se usa PASCC_LANG o el idioma del sistema)",
+		FlagHelp:                "ayuda para %[1]s",
+		FlagVersion:             "versión de %[1]s",
+		VersionWord:             "versión",
+		UsageUsage:              "Uso:",
+		UsageAliases:            "Alias:",
+		UsageExamples:           "Ejemplos:",
+		UsageCommands:           "Comandos disponibles:",
+		UsageAdditionalCommands: "Comandos adicionales:",
+		UsageFlags:              "Opciones:",
+		UsageGlobalFlags:        "Opciones globales:",
+		UsageHelpTopics:         "Temas de ayuda adicionales:",
+		UsageCommandPlaceholder: "[comando]",
+		UsageFlagsPlaceholder:   "[opciones]",
+		UsageDefault:            "por defecto",
+		UsageMoreInfo:           "Usa \"%[1]s --help\" para más información sobre un comando.",
+		ArgsExactlyOneFile:      "se esperaba exactamente un archivo .psc, pero se recibieron %[1]d argumento(s)",
+		InvalidLang:             "idioma desconocido %[1]q (usa es o en)",
 	},
 	EN: {
 		// Lexer
@@ -408,12 +479,62 @@ var catalog = map[Lang]map[Msg]string{
 		RuntimeExtMissing:         "the embedded runtime extension is missing (pascc was built incorrectly)",
 		RuntimeModuleMissing:      "the runtime Go module or its embedded dependencies are missing (pascc was built incorrectly)",
 		RuntimeVendorBroken:       "the embedded runtime dependencies are missing vendor/modules.txt (pascc was built incorrectly)",
+
+		// CLI
+		CmdRootShort:            "Compiler & analyzer tool for the PSeInt language",
+		CmdRootLong:             "Pasc analyzes PSeInt programs and compiles them into native executables using the Go toolchain.",
+		CmdBuildShort:           "Builds a .psc file into a native executable",
+		CmdBuildLong:            "Analyzes the program for compile-time errors and then uses Go's toolchain to turn it into a native executable",
+		CmdRunShort:             "Runs a .psc file, no fuss",
+		CmdRunLong:              "Unlike build, this compiles the program, runs it and then discards the result",
+		CmdHelpShort:            "Help about any command",
+		CmdHelpLong:             "Help provides help for any command in the application.\nSimply type %[1]s help [command] for full details.",
+		CmdCompletionShort:      "Generate the autocompletion script for the specified shell",
+		CmdFileArg:              "[file: *.psc]",
+		FlagDebug:               "Prints debug information about the compiling process",
+		FlagFast:                "Uses an Enter prompt for Esperar Tecla and skips terminal dependencies",
+		FlagTemp:                "Builds the program temporarily and then discards the result (useful for testing)",
+		FlagIndexBase:           "First array index: 0, 1, or auto (deduced from how the program indexes arrays)",
+		FlagOutput:              "Directory to write the executable to",
+		FlagLang:                "Message language: es or en (defaults to PASCC_LANG or the system language)",
+		FlagHelp:                "help for %[1]s",
+		FlagVersion:             "version for %[1]s",
+		VersionWord:             "version",
+		UsageUsage:              "Usage:",
+		UsageAliases:            "Aliases:",
+		UsageExamples:           "Examples:",
+		UsageCommands:           "Available Commands:",
+		UsageAdditionalCommands: "Additional Commands:",
+		UsageFlags:              "Flags:",
+		UsageGlobalFlags:        "Global Flags:",
+		UsageHelpTopics:         "Additional help topics:",
+		UsageCommandPlaceholder: "[command]",
+		UsageFlagsPlaceholder:   "[flags]",
+		UsageDefault:            "default",
+		UsageMoreInfo:           "Use \"%[1]s --help\" for more information about a command.",
+		ArgsExactlyOneFile:      "expected exactly one .psc file, but got %[1]d argument(s)",
+		InvalidLang:             "unknown language %[1]q (use es or en)",
 	},
 }
 
 var current = ES
 
 func Set(l Lang) { current = l }
+
+// Parse reads a language code or a POSIX locale ("es", "en", "es_NI.UTF-8").
+func Parse(s string) (Lang, bool) {
+	code := strings.ToLower(s)
+	if i := strings.IndexAny(code, "_-.@"); i >= 0 {
+		code = code[:i]
+	}
+	switch code {
+	case "es":
+		return ES, true
+	case "en":
+		return EN, true
+	}
+	return ES, false
+}
 
 func T(m Msg, args ...any) string {
 	f, ok := catalog[current][m]
