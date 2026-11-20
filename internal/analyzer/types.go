@@ -16,18 +16,18 @@ func (a *Analyzer) assert_type(target semantic.Type, exprs ...tast.TypedExpr) bo
 	ok := true
 	for _, expr := range exprs {
 		if expr.Type() != target {
-			a.Report(expr.NodeSpan(), "%s", ErrExpectedType{Type: target}.Error())
+			a.reportErr(expr.NodeSpan(), ErrExpectedType{Type: target})
 			ok = false
 		}
 	}
 	return ok
 }
 
-func (a *Analyzer) assert_nontype(target semantic.Type, msg string, exprs ...tast.TypedExpr) bool {
+func (a *Analyzer) assert_nontype(target semantic.Type, msg error, exprs ...tast.TypedExpr) bool {
 	ok := true
 	for _, expr := range exprs {
 		if expr.Type() == target {
-			a.Report(expr.NodeSpan(), "%s", msg)
+			a.reportErr(expr.NodeSpan(), msg)
 			ok = false
 		}
 	}

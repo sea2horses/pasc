@@ -4,6 +4,7 @@ import (
 	"pascc/internal/ast"
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/diagnostics"
+	"pascc/internal/i18n"
 	"pascc/internal/semantic"
 )
 
@@ -47,7 +48,7 @@ func (a *Analyzer) analyze_dowhile(dw *ast.DoWhile) *tast.DoWhile {
 func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 	variable, ok := f.Start.Target.(*ast.Variable)
 	if !ok {
-		a.Report(f.Start.NodeSpan(), "expected variable")
+		a.errorf(f.Start.NodeSpan(), i18n.ForNeedsVariable)
 		return nil
 	}
 
@@ -66,7 +67,7 @@ func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 		if start != nil {
 			got = start.Type()
 		}
-		a.Report(f.Start.Content.NodeSpan(), "%s", ErrIncorrectType{Expected: targetType, Got: got})
+		a.reportErr(f.Start.Content.NodeSpan(), ErrIncorrectType{Expected: targetType, Got: got})
 		valid = false
 	}
 	end, ok = coerce_to(end, targetType)
@@ -75,7 +76,7 @@ func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 		if end != nil {
 			got = end.Type()
 		}
-		a.Report(f.Until.NodeSpan(), "%s", ErrIncorrectType{Expected: targetType, Got: got})
+		a.reportErr(f.Until.NodeSpan(), ErrIncorrectType{Expected: targetType, Got: got})
 		valid = false
 	}
 
@@ -92,7 +93,7 @@ func (a *Analyzer) analyze_for(f *ast.For) *tast.For {
 			if step != nil {
 				got = step.Type()
 			}
-			a.Report(f.Step.NodeSpan(), "%s", ErrIncorrectType{Expected: targetType, Got: got})
+			a.reportErr(f.Step.NodeSpan(), ErrIncorrectType{Expected: targetType, Got: got})
 			valid = false
 		}
 	}
@@ -133,7 +134,7 @@ func (a *Analyzer) analyze_foreach(f *ast.ForEach) *tast.ForEach {
 	}
 	arrayType, ok := semantic.Resolve(array.Type()).(semantic.ArrayType)
 	if !ok {
-		a.Report(f.Array.NodeSpan(), "'Para Cada' needs an array, got '%s'", array.Type())
+		a.errorf(f.Array.NodeSpan(), i18n.ForEachNeedsArray, semantic.DisplayType(array.Type()))
 		return nil
 	}
 

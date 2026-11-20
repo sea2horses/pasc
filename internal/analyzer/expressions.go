@@ -4,6 +4,7 @@ import (
 	"pascc/internal/ast"
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/diagnostics"
+	"pascc/internal/i18n"
 	"pascc/internal/semantic"
 )
 
@@ -46,7 +47,7 @@ func (a *Analyzer) analyze_expression(expr ast.Expr) tast.TypedExpr {
 
 	diagnostics.Dbg("Could not find the expression type")
 	diagnostics.Dbgfmt("%T\n", expr)
-	a.Report(expr.NodeSpan(), "expression is not valid or implemented")
+	a.errorf(expr.NodeSpan(), i18n.UnsupportedExpression)
 	return tast.ErrorExpr{NodeInfo: expr.Info()}
 }
 
@@ -101,7 +102,7 @@ func (a *Analyzer) analyze_postfix(postfix *ast.Postfix) tast.TypedExpr {
 		return a.analyze_call(postfix, target)
 	}
 
-	a.Report(postfix.Target.NodeSpan(), "expression of type '%s' is neither callable nor indexable", target.Type())
+	a.errorf(postfix.Target.NodeSpan(), i18n.NotCallableOrIndexable, semantic.DisplayType(target.Type()))
 	return tast.ErrorExpr{NodeInfo: postfix.NodeInfo}
 }
 
@@ -157,7 +158,7 @@ func (a *Analyzer) analyze_binary_operation(bo *ast.BinaryOperation) tast.TypedE
 			}
 			resolved_type = rule.Result
 		} else {
-			a.Report(bo.NodeInfo.Span, "%s", ErrBiOperationNotAllowed{LHS: LHS.Type(), RHS: RHS.Type(), Operation: bo.Op.Type}.Error())
+			a.reportErr(bo.NodeInfo.Span, ErrBiOperationNotAllowed{LHS: LHS.Type(), RHS: RHS.Type(), Operation: bo.Op.Type})
 			return tast.ErrorExpr{
 				NodeInfo: bo.NodeInfo,
 			}
@@ -204,7 +205,7 @@ func (a *Analyzer) analyze_unary_operation(uo *ast.UnaryOperation) tast.TypedExp
 			/* First attach the resolved type */
 			resolved_type = rule.Result
 		} else {
-			a.Report(uo.NodeInfo.Span, "%s", ErrUnOperationNotAllowed{Type: typed_expr.Type(), Operation: uo.Op.Type}.Error())
+			a.reportErr(uo.NodeInfo.Span, ErrUnOperationNotAllowed{Type: typed_expr.Type(), Operation: uo.Op.Type})
 			return tast.ErrorExpr{
 				NodeInfo: uo.NodeInfo,
 			}

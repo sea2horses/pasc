@@ -4,6 +4,7 @@ import (
 	"pascc/internal/ast"
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/diagnostics"
+	"pascc/internal/i18n"
 	"pascc/internal/semantic"
 )
 
@@ -58,7 +59,7 @@ func (a *Analyzer) analyze_switch(s *ast.Switch) *tast.Switch {
 				original := typed_value
 				typed_value, ok = coerce_to(typed_value, typed_base.Type())
 				if !ok {
-					a.Report(original.NodeSpan(), "expression of type %s cannot be assigned to %s", original.Type(), typed_base.Type())
+					a.errorf(original.NodeSpan(), i18n.CaseTypeMismatch, semantic.DisplayType(original.Type()), semantic.DisplayType(typed_base.Type()))
 					valid = false
 					continue
 				}

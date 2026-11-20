@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"math"
+	"pascc/internal/i18n"
 	"strconv"
 
 	tast "pascc/internal/ast_typed"
@@ -496,9 +497,9 @@ func (p *staticPass) checkRealToInteger(cast *tast.Cast, value absval) {
 	span := spanOf(cast)
 	switch {
 	case value.exact && !value.integral:
-		p.a.Report(span, "real value %s cannot be converted to an integer; use Redon() or Trunc()", formatNumber(value.lo))
+		p.a.errorf(span, i18n.RealToInteger, formatNumber(value.lo))
 	case !value.integral:
-		p.a.Warn(span, "implicit conversion from real to integer fails at runtime if the value is not whole; use Redon() or Trunc()")
+		p.a.warnf(span, i18n.RealToIntegerRuntime)
 	}
 }
 
@@ -520,11 +521,11 @@ func (p *staticPass) checkBounds(base IndexBase) {
 			continue
 		}
 		if value.exact {
-			p.a.Report(access.span, "index %s is out of bounds for '%s' (valid indexes are %s to %s with %s-based arrays)",
+			p.a.errorf(access.span, i18n.IndexOutOfBounds,
 				formatNumber(value.lo), name, formatNumber(first), formatNumber(last), base)
 			continue
 		}
-		p.a.Warn(access.span, "index ranges from %s to %s, which goes out of bounds for '%s' (valid indexes are %s to %s with %s-based arrays)",
+		p.a.warnf(access.span, i18n.IndexMaybeOutOfBounds,
 			formatNumber(value.lo), formatNumber(value.hi), name, formatNumber(first), formatNumber(last), base)
 	}
 }
@@ -532,7 +533,7 @@ func (p *staticPass) checkBounds(base IndexBase) {
 func (p *staticPass) checkDimension(node *tast.Dimension, dims []absval) {
 	for i, dim := range dims {
 		if dim.exact && dim.lo < 1 {
-			p.a.Report(spanOf(node.Dimensions[i]), "array dimension must be at least 1, got %s", formatNumber(dim.lo))
+			p.a.errorf(spanOf(node.Dimensions[i]), i18n.DimensionAtLeastOne, formatNumber(dim.lo))
 		}
 	}
 }
@@ -614,8 +615,7 @@ func (p *staticPass) deduceBase() IndexBase {
 		base, other = IndexBaseOne, p.zero
 	}
 	if other.score > 0 && other.span != nil {
-		p.a.Warn(*other.span, "this access looks %s-based, but most of the program indexes arrays %s-based; assuming %s-based (pass --index-base to choose)",
-			base.flip(), base, base)
+		p.a.warnf(*other.span, i18n.MixedIndexBase, base.flip(), base)
 	}
 	return base
 }

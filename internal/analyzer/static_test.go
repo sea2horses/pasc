@@ -311,9 +311,9 @@ func TestRedimensionar(t *testing.T) {
 	}{
 		{"bounds follow the new size", "Dimensionar v[3]\n\tRedimensionar v[5]\n\tv[4] = 1", ""},
 		{"out of bounds after shrinking", "Dimensionar v[5]\n\tRedimensionar v[2]\n\tv[3] = 1", "out of bounds"},
-		{"must already be an array", "Definir k Como Entero\n\tRedimensionar k[3]", "not an array"},
-		{"must exist", "Redimensionar w[3]", "has not been dimensioned"},
-		{"rank cannot change", "Dimensionar v[3]\n\tRedimensionar v[3, 3]", "from 1 to 2 dimensions"},
+		{"must already be an array", "Definir k Como Entero\n\tRedimensionar k[3]", "isn't an array"},
+		{"must exist", "Redimensionar w[3]", "hasn't been dimensioned"},
+		{"rank cannot change", "Dimensionar v[3]\n\tRedimensionar v[3, 3]", "from 1 to 2"},
 		{"size after a conditional resize is unknown", "Dimensionar v[3]\n\tSi Verdadero Entonces\n\t\tRedimensionar v[9]\n\tFinSi\n\tv[8] = 1", ""},
 	}
 	for _, tc := range cases {

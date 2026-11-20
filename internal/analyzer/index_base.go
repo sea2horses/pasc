@@ -1,7 +1,8 @@
 package analyzer
 
 import (
-	"fmt"
+	"errors"
+	"pascc/internal/i18n"
 	"strings"
 
 	tast "pascc/internal/ast_typed"
@@ -47,7 +48,7 @@ func ParseIndexBase(value string) (IndexBase, error) {
 	case "1", "one":
 		return IndexBaseOne, nil
 	}
-	return IndexBaseAuto, fmt.Errorf("invalid index base %q (expected auto, 0 or 1)", value)
+	return IndexBaseAuto, errors.New(i18n.T(i18n.InvalidIndexBase, value))
 }
 
 // resolveIndexBase settles the base used for code generation and runs the

@@ -4,6 +4,7 @@ import (
 	"pascc/internal/ast"
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/diagnostics"
+	"pascc/internal/i18n"
 	"pascc/internal/semantic"
 )
 
@@ -34,7 +35,7 @@ func (a *Analyzer) analyze_statement(stmt ast.Stmt) []tast.Stmt {
 			return nil
 		}
 		if _, ok := expression.(*tast.Call); !ok {
-			a.Report(s.NodeSpan(), "only function calls can be used as standalone expression statements")
+			a.errorf(s.NodeSpan(), i18n.ExpressionStatement)
 			return nil
 		}
 		return []tast.Stmt{&tast.ExprStmt{NodeInfo: s.NodeInfo, Expr: expression}}
@@ -81,6 +82,6 @@ func (a *Analyzer) analyze_statement(stmt ast.Stmt) []tast.Stmt {
 		return []tast.Stmt{a.analyze_dowhile(s)}
 	}
 
-	a.Report(stmt.NodeSpan(), "analyzer does not implement this statement: %+v", stmt)
+	a.errorf(stmt.NodeSpan(), i18n.UnsupportedStatement, stmt)
 	return nil
 }

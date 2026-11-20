@@ -1,8 +1,8 @@
 package tast
 
 import (
-	"fmt"
 	"pascc/internal/ast"
+	"pascc/internal/i18n"
 	"pascc/internal/models"
 	"pascc/internal/semantic"
 )
@@ -102,7 +102,7 @@ func (v VariableExpr) Type() semantic.Type {
 func (v VariableExpr) AssignmentOrigin() *AssignmentOrigin {
 	return &AssignmentOrigin{
 		Span:    v.Symbol.Declared,
-		Message: fmt.Sprintf("%q declared here with type %s", v.Symbol.Name, v.Symbol.Type),
+		Message: i18n.T(i18n.DeclaredHereWithType, v.Symbol.Name, semantic.DisplayType(v.Symbol.Type)),
 	}
 }
 

@@ -88,7 +88,7 @@ FinAlgoritmo
 	}
 	_, analyzerDiagnostics := New().Analyze(tree.(*ast.MainFunction))
 	for _, diagnostic := range analyzerDiagnostics {
-		if strings.Contains(diagnostic.Msg, "index must be an integer") {
+		if strings.Contains(diagnostic.Msg, "indexes must be integers") {
 			return
 		}
 	}

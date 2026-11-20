@@ -3,6 +3,7 @@ package analyzer
 import (
 	"pascc/internal/ast"
 	tast "pascc/internal/ast_typed"
+	"pascc/internal/i18n"
 	"pascc/internal/semantic"
 )
 
@@ -16,12 +17,12 @@ func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
 	var elemType semantic.Type
 	if declared {
 		if symbol.Kind != semantic.SymbolVariable {
-			a.Report(d.NodeSpan(), "'%s' cannot be dimensioned because it is not a variable", d.Name)
+			a.errorf(d.NodeSpan(), i18n.DimensionNotVariable, d.Name)
 			return nil
 		}
 		if semantic.IsArray(symbol.Type) {
-			a.Report(d.NodeSpan(), "'%s' is already dimensioned", d.Name)
-			a.Info(symbol.Declared, "declared here")
+			a.errorf(d.NodeSpan(), i18n.AlreadyDimensioned, d.Name)
+			a.infof(symbol.Declared, i18n.DeclaredHere)
 			return nil
 		}
 		elemType = symbol.Type
@@ -52,7 +53,7 @@ func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
 		/* Try coercing */
 		expr, ok = coerce_to(expr, semantic.Integer_T{})
 		if !ok {
-			a.Report(dim.NodeSpan(), "dimension must be an integer")
+			a.errorf(dim.NodeSpan(), i18n.DimensionMustBeInteger)
 			ok = false
 			continue
 		}
@@ -80,17 +81,17 @@ func (a *Analyzer) analyze_dimension(d *ast.Dimension) *tast.Dimension {
 func (a *Analyzer) analyze_redimension(d *ast.Dimension) *tast.Dimension {
 	symbol, declared := a.scope.Lookup(d.Name)
 	if !declared || symbol.Kind == semantic.SymbolFunction {
-		a.Report(d.NodeSpan(), "'%s' cannot be redimensioned because it has not been dimensioned", d.Name)
+		a.errorf(d.NodeSpan(), i18n.RedimNotDimensioned, d.Name)
 		return nil
 	}
 	array, isArray := semantic.Resolve(symbol.Type).(semantic.ArrayType)
 	if !isArray {
-		a.Report(d.NodeSpan(), "'%s' cannot be redimensioned because it is not an array", d.Name)
-		a.Info(symbol.Declared, "declared here")
+		a.errorf(d.NodeSpan(), i18n.RedimNotArray, d.Name)
+		a.infof(symbol.Declared, i18n.DeclaredHere)
 		return nil
 	}
 	if array.Rank != len(d.Dimensions) {
-		a.Report(d.NodeSpan(), "cannot redimension '%s' from %d to %d dimensions", d.Name, array.Rank, len(d.Dimensions))
+		a.errorf(d.NodeSpan(), i18n.RedimRankChange, d.Name, array.Rank, len(d.Dimensions))
 		return nil
 	}
 
@@ -117,7 +118,7 @@ func (a *Analyzer) analyze_dimension_sizes(d *ast.Dimension) ([]tast.TypedExpr, 
 		}
 		coerced, coercedOK := coerce_to(expr, semantic.Integer_T{})
 		if !coercedOK {
-			a.Report(dim.NodeSpan(), "dimension must be an integer")
+			a.errorf(dim.NodeSpan(), i18n.DimensionMustBeInteger)
 			ok = false
 			continue
 		}
@@ -137,7 +138,7 @@ func (a *Analyzer) analyze_indexing(d *ast.Postfix, typed_expr tast.TypedExpr) t
 
 	lv, ok := typed_expr.(tast.LValue)
 	if !ok {
-		a.Report(d.NodeSpan(), "cannot index non-lvalue")
+		a.errorf(d.NodeSpan(), i18n.IndexNotVariable)
 		return &tast.ErrorExpr{
 			NodeInfo: d.NodeInfo,
 		}
@@ -155,7 +156,7 @@ func (a *Analyzer) analyze_indexing(d *ast.Postfix, typed_expr tast.TypedExpr) t
 	}
 	arrayType, isArray := resolvedType.(semantic.ArrayType)
 	if !isArray {
-		a.Report(d.NodeSpan(), "cannot index non-array type '%s'", typed_expr.Type())
+		a.errorf(d.NodeSpan(), i18n.IndexNotArray, semantic.DisplayType(typed_expr.Type()))
 		return &tast.ErrorExpr{
 			NodeInfo: d.NodeInfo,
 		}
@@ -165,7 +166,7 @@ func (a *Analyzer) analyze_indexing(d *ast.Postfix, typed_expr tast.TypedExpr) t
 	array_rank := arrayType.Rank
 
 	if len(d.Arguments) != array_rank {
-		a.Report(d.NodeSpan(), "index count mismatch: expected %d, got %d", array_rank, len(d.Arguments))
+		a.errorf(d.NodeSpan(), i18n.IndexCountMismatch, array_rank, len(d.Arguments))
 		return &tast.ErrorExpr{
 			NodeInfo: d.NodeInfo,
 		}
@@ -182,7 +183,7 @@ func (a *Analyzer) analyze_indexing(d *ast.Postfix, typed_expr tast.TypedExpr) t
 
 		coerced, indexOK := coerce_to(curr, semantic.Integer_T{})
 		if !indexOK {
-			a.Report(index.NodeSpan(), "index must be an integer")
+			a.errorf(index.NodeSpan(), i18n.IndexMustBeInteger)
 			ok = false
 			continue
 		}

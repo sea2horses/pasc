@@ -1,7 +1,8 @@
 package analyzer
 
 import (
-	"fmt"
+	"pascc/internal/i18n"
+	"pascc/internal/models"
 	"pascc/internal/semantic"
 )
 
@@ -11,7 +12,7 @@ type ErrIncorrectType struct {
 }
 
 func (e ErrIncorrectType) Error() string {
-	return fmt.Sprintf("Incorrect type, expected %s, got: %s", e.Expected, e.Got)
+	return i18n.T(i18n.IncorrectType, semantic.DisplayType(e.Expected), semantic.DisplayType(e.Got))
 }
 
 type ErrUnOperationNotAllowed struct {
@@ -20,7 +21,7 @@ type ErrUnOperationNotAllowed struct {
 }
 
 func (e ErrUnOperationNotAllowed) Error() string {
-	return fmt.Sprintf("Unary operation %s is not allowed on type %s", e.Operation, e.Type)
+	return i18n.T(i18n.UnaryOpNotAllowed, e.Operation.Display(), semantic.DisplayType(e.Type))
 }
 
 type ErrBiOperationNotAllowed struct {
@@ -30,7 +31,7 @@ type ErrBiOperationNotAllowed struct {
 }
 
 func (e ErrBiOperationNotAllowed) Error() string {
-	return fmt.Sprintf("Binary operation %s is not allowed on types %s & %s", e.Operation, e.LHS, e.RHS)
+	return i18n.T(i18n.BinaryOpNotAllowed, e.Operation.Display(), semantic.DisplayType(e.LHS), semantic.DisplayType(e.RHS))
 }
 
 type ErrVariableDoesntExist struct {
@@ -38,7 +39,7 @@ type ErrVariableDoesntExist struct {
 }
 
 func (e ErrVariableDoesntExist) Error() string {
-	return fmt.Sprintf("Variable '%s' doesn't exist", e.Name)
+	return i18n.T(i18n.VariableDoesntExist, e.Name)
 }
 
 type ErrSymbolAlreadyExists struct {
@@ -46,15 +47,16 @@ type ErrSymbolAlreadyExists struct {
 }
 
 func (e ErrSymbolAlreadyExists) Error() string {
-	return fmt.Sprintf("'%s' already exists!", e.Name)
+	return i18n.T(i18n.SymbolAlreadyExists, e.Name)
 }
 
+// ErrUnsupportedType is a value that Escribir cannot display.
 type ErrUnsupportedType struct {
 	Type semantic.Type
 }
 
 func (e ErrUnsupportedType) Error() string {
-	return fmt.Sprintf("Unsupported Type: %s", e.Type)
+	return i18n.T(i18n.UnsupportedWriteType, semantic.DisplayType(e.Type))
 }
 
 type ErrExpectedType struct {
@@ -62,17 +64,33 @@ type ErrExpectedType struct {
 }
 
 func (e ErrExpectedType) Error() string {
-	return fmt.Sprintf("Expected Type: %s", e.Type)
+	return i18n.T(i18n.ExpectedValueOfType, semantic.DisplayType(e.Type))
 }
 
-type AnalyzerError string
+// AnalyzerError is an argument-less error backed by a catalog message.
+type AnalyzerError i18n.Msg
 
-func (pe AnalyzerError) Error() string {
-	return string(pe)
-}
+func (e AnalyzerError) Error() string { return i18n.T(i18n.Msg(e)) }
 
 const (
-	ErrUnexpectedVoid = "Expression doesn't return anything"
-	ErrLValueError    = "This expression is not assignable"
-	ErrImmutable      = "Expression is immutable"
+	ErrUnexpectedVoid = AnalyzerError(i18n.UnexpectedVoid)
+	ErrLValueError    = AnalyzerError(i18n.NotAssignable)
+	ErrImmutable      = AnalyzerError(i18n.Immutable)
 )
+
+// errorf, warnf and infof report a translated catalog message.
+func (a *Analyzer) errorf(span models.Span, m i18n.Msg, args ...any) {
+	a.Report(span, "%s", i18n.T(m, args...))
+}
+
+func (a *Analyzer) warnf(span models.Span, m i18n.Msg, args ...any) {
+	a.Warn(span, "%s", i18n.T(m, args...))
+}
+
+func (a *Analyzer) infof(span models.Span, m i18n.Msg, args ...any) {
+	a.Info(span, "%s", i18n.T(m, args...))
+}
+
+func (a *Analyzer) reportErr(span models.Span, err error) {
+	a.Report(span, "%s", err.Error())
+}

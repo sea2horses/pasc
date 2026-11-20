@@ -4,6 +4,7 @@ import (
 	"pascc/internal/ast"
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/diagnostics"
+	"pascc/internal/i18n"
 	"pascc/internal/semantic"
 )
 
@@ -72,7 +73,7 @@ func (a *Analyzer) analyzeOnce(program *ast.MainFunction) (*tast.MainFunction, [
 			Type: semantic.FunctionType{Params: params, ByReference: byReference, Return: result},
 		}
 		if !a.scope.Declare(symbol) {
-			a.Report(function.NodeSpan(), "function '%s' is already declared", function.Name)
+			a.errorf(function.NodeSpan(), i18n.FunctionAlreadyDeclared, function.Name)
 			continue
 		}
 		a.functionSymbols[semantic.NormalizeName(function.Name)] = symbol
@@ -115,13 +116,13 @@ func (a *Analyzer) analyzeOnce(program *ast.MainFunction) (*tast.MainFunction, [
 				if i < len(function.Arguments) {
 					name = function.Arguments[i]
 				}
-				a.Warn(function.NodeSpan(), "cannot infer type of function argument '%s'; using string", name)
+				a.warnf(function.NodeSpan(), i18n.CannotInferParameter, name)
 			}
 		}
 		if function.HasReturn {
 			if infer, ok := semantic.Resolve(fnType.Return).(*semantic.InferType); ok && infer.Resolved == nil {
 				infer.Resolved = semantic.String_T{}
-				a.Warn(function.NodeSpan(), "cannot infer return type of function '%s'; using string", function.Name)
+				a.warnf(function.NodeSpan(), i18n.CannotInferReturn, function.Name)
 			}
 		}
 	}
@@ -192,7 +193,7 @@ func (a *Analyzer) analyze_function(function *ast.Function) *tast.Function {
 			ByReference: i < len(function.ByReference) && function.ByReference[i],
 		}
 		if !functionScope.Declare(parameter) {
-			a.Report(function.NodeSpan(), "duplicate function argument '%s'", name)
+			a.errorf(function.NodeSpan(), i18n.DuplicateParameter, name)
 		}
 		parameters[i] = parameter
 	}
@@ -211,7 +212,7 @@ func (a *Analyzer) analyze_function(function *ast.Function) *tast.Function {
 		var ok bool
 		returnValue, ok = coerce_to(returnValue, fnType.Return)
 		if !ok {
-			a.Report(function.NodeSpan(), "function '%s' returns an incompatible value", function.Name)
+			a.errorf(function.NodeSpan(), i18n.IncompatibleReturn, function.Name)
 			returnValue = &tast.ErrorExpr{NodeInfo: function.NodeInfo}
 		}
 	}

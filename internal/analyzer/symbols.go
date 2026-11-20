@@ -4,6 +4,7 @@ import (
 	"pascc/internal/ast"
 	tast "pascc/internal/ast_typed"
 	"pascc/internal/diagnostics"
+	"pascc/internal/i18n"
 	"pascc/internal/semantic"
 	"reflect"
 )
@@ -26,7 +27,7 @@ func (a *Analyzer) analyze_variable(variable *ast.Variable) tast.TypedExpr {
 		a.markImplicit(symbol)
 		a.implicitDeclarationScope().Declare(symbol)
 		a.implicit = append(a.implicit, symbol)
-		a.Warn(variable.NodeSpan(), "Variable '%s' is not declared; implicitly declaring it", variable.Name)
+		a.warnf(variable.NodeSpan(), i18n.ImplicitDeclaration, variable.Name)
 	}
 
 	diagnostics.Dbg("Found! Symbol: ", symbol)
@@ -49,7 +50,7 @@ func (a *Analyzer) analyze_single_decl(decl *ast.Declaration, name string, t sem
 		if existing.Kind == semantic.SymbolVariable && unify(existing.Type, t) {
 			return existing, false
 		}
-		a.Report(decl.Span, "%s", ErrSymbolAlreadyExists{Name: name}.Error())
+		a.reportErr(decl.Span, ErrSymbolAlreadyExists{Name: name})
 		return nil, false
 	}
 
@@ -73,7 +74,7 @@ func (a *Analyzer) analyze_declaration(decl *ast.Declaration) *tast.Declaration 
 	t := a.analyze_type_ref(decl.Type)
 
 	if t == nil {
-		a.Report(decl.Type.Span, "%s", "unknown type")
+		a.errorf(decl.Type.Span, i18n.UnknownType, decl.Type.Name)
 		ok = false
 	}
 
@@ -133,7 +134,7 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 			a.markImplicit(symbol)
 			a.implicitDeclarationScope().Declare(symbol)
 			a.implicit = append(a.implicit, symbol)
-			a.Warn(ass.Target.NodeSpan(), "Variable '%s' is not declared; implicitly declaring it", variable.Name)
+			a.warnf(ass.Target.NodeSpan(), i18n.ImplicitDeclaration, variable.Name)
 		}
 	}
 	target := a.analyze_expression(ass.Target)
@@ -141,12 +142,12 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 
 	lvalue, ok := target.(tast.LValue)
 	if !ok {
-		a.Report(ass.Target.NodeSpan(), ErrLValueError)
+		a.reportErr(ass.Target.NodeSpan(), ErrLValueError)
 		return nil
 	}
 
 	if !lvalue.IsMutable() {
-		a.Report(ass.NodeSpan(), ErrImmutable)
+		a.reportErr(ass.NodeSpan(), ErrImmutable)
 		a.Info(lvalue.AssignmentOrigin().Span, "%s", lvalue.AssignmentOrigin().Message)
 		return nil
 	}
@@ -155,7 +156,7 @@ func (a *Analyzer) analyze_assignment(ass *ast.Assignment) *tast.Assignment {
 	originalType := typed_expr.Type()
 	typed_expr, ok = coerce_to(typed_expr, target.Type())
 	if !ok {
-		a.Report(ass.NodeSpan(), "%s", ErrIncorrectType{Expected: target.Type(), Got: originalType}.Error())
+		a.reportErr(ass.NodeSpan(), ErrIncorrectType{Expected: target.Type(), Got: originalType})
 		a.Info(lvalue.AssignmentOrigin().Span, "%s", lvalue.AssignmentOrigin().Message)
 		return nil
 	}

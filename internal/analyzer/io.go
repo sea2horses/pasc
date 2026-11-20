@@ -35,7 +35,7 @@ func (a *Analyzer) analyze_write(write *ast.Write) *tast.Write {
 		}
 		/* Check that the type is supported */
 		if !slices.Contains(allowed_write_types, semantic.Resolve(typed.Type())) && !isUnresolvedInference(typed.Type()) {
-			a.Report(typed.NodeSpan(), "%s", ErrUnsupportedType{Type: typed.Type()}.Error())
+			a.reportErr(typed.NodeSpan(), ErrUnsupportedType{Type: typed.Type()})
 			ok = false
 			continue
 		}
@@ -84,14 +84,14 @@ func (a *Analyzer) analyze_read(read *ast.Read) []*tast.Read {
 		/* Assert it to lvalue */
 		lvalue, good /* Im running out of names */ := typed.(tast.LValue)
 		if !good {
-			a.Report(typed.NodeSpan(), ErrLValueError)
+			a.reportErr(typed.NodeSpan(), ErrLValueError)
 			ok = false
 			continue
 		}
 
 		/* Check that it is mutable */
 		if !lvalue.IsMutable() {
-			a.Report(typed.NodeSpan(), ErrImmutable)
+			a.reportErr(typed.NodeSpan(), ErrImmutable)
 			a.Info(lvalue.AssignmentOrigin().Span, "%s", lvalue.AssignmentOrigin().Message)
 			continue
 		}
