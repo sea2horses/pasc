@@ -50,7 +50,7 @@ func RecoverWith[T any](p Pattern[T], strategy RecoveryStrategy, fallback func(P
 		}
 		err := result.Err
 		if err == nil {
-			err = failureAt(ctx, max(ctx.Pos, result.End), "invalid syntax")
+			err = failureAt(ctx, max(ctx.Pos, result.End), InvalidSyntax)
 		}
 		ctx.Diagnostics = append(ctx.Diagnostics, err)
 		// A child can report a furthest error position after restoring its cursor.
@@ -66,7 +66,7 @@ func Recover[T any](p Pattern[T], strategy RecoveryStrategy) Pattern[T] {
 		result := p.Match(ctx)
 		if result.Kind == Failed {
 			if result.Err == nil {
-				result.Err = failureAt(ctx, max(ctx.Pos, result.End), "invalid syntax")
+				result.Err = failureAt(ctx, max(ctx.Pos, result.End), InvalidSyntax)
 			}
 			ctx.Diagnostics = append(ctx.Diagnostics, result.Err)
 			if ctx.Pos < result.End {

@@ -150,7 +150,7 @@ func statementBlockWithPostTestWhile(cases, postTestWhile bool) Pattern[[]ast.St
 			} else if Newline().Match(ctx).OK() {
 				skipNewlines(ctx)
 			} else if result.OK() {
-				ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, ExpectedNewline.Expected()))
+				ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, ExpectedNewline))
 				recovery.Recover(ctx)
 			}
 			if ctx.Pos == before {
@@ -180,7 +180,7 @@ func MainFunction() Pattern[*ast.MainFunction] {
 						EndKeyword(lexer.FINALGORITMO, lexer.ALGORITMO),
 						EndKeyword(lexer.FINPROCESO, lexer.PROCESO),
 					),
-					ExpectedKeyword{Keyword: lexer.FINALGORITMO},
+					ExpectedClosingKeyword{Close: lexer.FINALGORITMO, Open: lexer.ALGORITMO},
 				),
 			),
 		),
@@ -313,7 +313,7 @@ func FunctionDeclaration() Pattern[*ast.Function] {
 				StatementBlock(),
 				Expected(
 					EndKeyword(header.Value.endKeyword, header.Value.endTail),
-					ExpectedKeyword{Keyword: header.Value.endKeyword},
+					ExpectedClosingKeyword{Close: header.Value.endKeyword, Open: header.Value.endTail},
 				),
 			),
 			func(body Pair[[]ast.Stmt, lexer.Keyword]) *ast.Function {
@@ -515,7 +515,7 @@ func Timeout() Pattern[ast.Stmt] {
 			Kw(lexer.ESPERAR),
 			Seq2(
 				Expected(Expression(), ExpectedExpression),
-				Expected(TimeUnit(), LiteralExpectations("expected time unit")),
+				Expected(TimeUnit(), ExpectedTimeUnit),
 			),
 		),
 		func(p Pair[ast.Expr, semantic.TimeUnit], span models.Span) ast.Stmt {

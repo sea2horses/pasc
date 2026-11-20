@@ -94,7 +94,7 @@ func TestErrorLocationSurvivesRollbackAndRecovery(t *testing.T) {
 		pattern := PatternFunc[string](func(ctx *Context) Match[string] {
 			checkpoint := ctx.Checkpoint()
 			ctx.Advance()
-			err := failureAt(ctx, ctx.Pos, "expected something else")
+			err := failureAt(ctx, ctx.Pos, ExpectedStatement)
 			ctx.Restore(checkpoint)
 			return Match[string]{Kind: Failed, Start: checkpoint.Pos, End: err.TokenPosition(), Err: err}
 		})

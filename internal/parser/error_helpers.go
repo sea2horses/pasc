@@ -1,6 +1,6 @@
 package parser
 
-func ensureError[T any](ctx *Context, result Match[T], expected string) ParseError {
+func ensureError[T any](ctx *Context, result Match[T], expected Expectation) ParseError {
 	if result.Err != nil {
 		return result.Err
 	}

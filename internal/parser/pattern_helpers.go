@@ -257,7 +257,7 @@ func SepBy[T, S any](
 					Kind:  Failed,
 					Start: start.Pos,
 					End:   max(ctx.Pos, next.End),
-					Err:   failureAt(ctx, max(ctx.Pos, next.End), ItemAfterSeparator.Error()),
+					Err:   failureAt(ctx, max(ctx.Pos, next.End), ExpectedItemAfterSeparator{Separator: ctx.Tokens[beforeSeparator.Pos].Value}),
 				}
 			}
 
@@ -328,7 +328,7 @@ func Between[L, T, R any](
 				Kind:  Failed,
 				Start: start.Pos,
 				End:   value.End,
-				Err:   ensureError(ctx, value, "expected delimited content"),
+				Err:   ensureError(ctx, value, ExpectedDelimitedContent),
 			}
 		}
 
@@ -338,7 +338,7 @@ func Between[L, T, R any](
 				Kind:  Failed,
 				Start: start.Pos,
 				End:   r.End,
-				Err:   ensureError(ctx, r, "expected closing delimiter"),
+				Err:   ensureError(ctx, r, ExpectedClosingDelimiter),
 			}
 		}
 

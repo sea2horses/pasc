@@ -82,14 +82,14 @@ func TestParseDiagnostics(t *testing.T) {
 		count           int
 		eof             bool
 	}{
-		{"", "expected keyword", 1, true},
-		{"escribir 1", "expected keyword", 1, false},
-		{"algoritmo", "expected token", 1, true},
-		{"algoritmo demo\nfoo()\n", "FINALGORITMO", 1, true},
-		{"algoritmo demo\nfinalgoritmo\nfoo()", "expected end of input", 1, false},
-		{"algoritmo demo\nx =\nfoo()\nfinalgoritmo", "expected expression", 1, false},
-		{"algoritmo demo\nfoo(1,)\nbar()\nfinalgoritmo", "expected item after separator", 1, false},
-		{"algoritmo demo\nescribir\nleer\nfinalgoritmo", "expected expression", 2, false},
+		{"", "expected the keyword 'Algoritmo', but the file ended", 1, true},
+		{"escribir 1", "expected the keyword 'Algoritmo', but found the keyword 'escribir'", 1, false},
+		{"algoritmo", "expected an identifier", 1, true},
+		{"algoritmo demo\nfoo()\n", "expected 'FinAlgoritmo' to close the 'Algoritmo' block, but the file ended", 1, true},
+		{"algoritmo demo\nfinalgoritmo\nfoo()", "expected no more code after the end of the program", 1, false},
+		{"algoritmo demo\nx =\nfoo()\nfinalgoritmo", "expected an expression (a value, a variable or an operation), but found a line break", 1, false},
+		{"algoritmo demo\nfoo(1,)\nbar()\nfinalgoritmo", "expected another item after ',', but found ')'", 1, false},
+		{"algoritmo demo\nescribir\nleer\nfinalgoritmo", "expected an expression", 2, false},
 	} {
 		t.Run(tc.source, func(t *testing.T) {
 			ctx := parseContext(t, tc.source)

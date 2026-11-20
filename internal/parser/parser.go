@@ -22,11 +22,11 @@ func (p *Parser) Parse() (ast.Node, []diagnostics.Diagnostic) {
 	skipNewlines(ctx)
 	result := Expected(Program(), ExpectedKeyword{Keyword: lexer.ALGORITMO}).Match(ctx)
 	if !result.OK() {
-		ctx.Diagnostics = append(ctx.Diagnostics, ensureError(ctx, result, "expected algorithm"))
+		ctx.Diagnostics = append(ctx.Diagnostics, ensureError(ctx, result, ExpectedKeyword{Keyword: lexer.ALGORITMO}))
 	} else {
 		skipNewlines(ctx)
 		if !ctx.EOF() {
-			ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, "expected end of input"))
+			ctx.Diagnostics = append(ctx.Diagnostics, failureAt(ctx, ctx.Pos, ExpectedEndOfProgram))
 		}
 	}
 	for _, err := range ctx.Diagnostics {

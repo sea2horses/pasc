@@ -25,7 +25,7 @@ func IfStmt() Pattern[ast.Stmt] {
 					Optional(
 						ElseStmt(),
 					),
-					Expected(EndKeyword(lexer.FINSI, lexer.SI), ExpectedKeyword{Keyword: lexer.FINSI}),
+					Expected(EndKeyword(lexer.FINSI, lexer.SI), ExpectedClosingKeyword{Close: lexer.FINSI, Open: lexer.SI}),
 				),
 			),
 		),
@@ -58,7 +58,7 @@ func elseStmtPattern() Pattern[*ast.Else] {
 					StatementBlock(),
 					Optional(ElseStmt()),
 				),
-				Expected(EndKeyword(lexer.FINSI, lexer.SI), ExpectedKeyword{Keyword: lexer.FINSI}),
+				Expected(EndKeyword(lexer.FINSI, lexer.SI), ExpectedClosingKeyword{Close: lexer.FINSI, Open: lexer.SI}),
 			),
 		),
 		func(branch Trio[Located[ast.Expr], []ast.Stmt, OptionalValue[*ast.Else]]) []ast.Stmt {
@@ -101,7 +101,7 @@ func While() Pattern[ast.Stmt] {
 			),
 			Left(
 				StatementBlock(),
-				Expected(EndKeyword(lexer.FINMIENTRAS, lexer.MIENTRAS), ExpectedKeyword{Keyword: lexer.FINMIENTRAS}),
+				Expected(EndKeyword(lexer.FINMIENTRAS, lexer.MIENTRAS), ExpectedClosingKeyword{Close: lexer.FINMIENTRAS, Open: lexer.MIENTRAS}),
 			),
 		),
 		func(p Pair[Located[ast.Expr], []ast.Stmt]) ast.Stmt {
@@ -122,7 +122,7 @@ func For() Pattern[ast.Stmt] {
 			Locate(Left(ForHeader(), Optional(Kw(lexer.HACER)))),
 			Left(
 				StatementBlock(),
-				Expected(EndKeyword(lexer.FINPARA, lexer.PARA), ExpectedKeyword{Keyword: lexer.FINPARA}),
+				Expected(EndKeyword(lexer.FINPARA, lexer.PARA), ExpectedClosingKeyword{Close: lexer.FINPARA, Open: lexer.PARA}),
 			),
 		),
 		func(t Pair[Located[Trio[ast.Stmt, ast.Expr, OptionalValue[ast.Expr]]], []ast.Stmt]) ast.Stmt {
@@ -149,7 +149,7 @@ func ForEach() Pattern[ast.Stmt] {
 		Left(Expected(Expression(), ExpectedExpression), Optional(Kw(lexer.HACER))),
 		Left(
 			StatementBlock(),
-			Expected(EndKeyword(lexer.FINPARA, lexer.PARA), ExpectedKeyword{Keyword: lexer.FINPARA}),
+			Expected(EndKeyword(lexer.FINPARA, lexer.PARA), ExpectedClosingKeyword{Close: lexer.FINPARA, Open: lexer.PARA}),
 		),
 	)
 	return PatternFunc[ast.Stmt](func(ctx *Context) Match[ast.Stmt] {
@@ -244,7 +244,7 @@ func Switch() Pattern[ast.Stmt] {
 					),
 				),
 			),
-			Expected(EndKeyword(lexer.FINSEGUN, lexer.SEGUN), ExpectedKeyword{Keyword: lexer.FINSEGUN}),
+			Expected(EndKeyword(lexer.FINSEGUN, lexer.SEGUN), ExpectedClosingKeyword{Close: lexer.FINSEGUN, Open: lexer.SEGUN}),
 		),
 		func(t Trio[Located[ast.Expr], []*ast.Case, OptionalValue[[]ast.Stmt]]) ast.Stmt {
 			return &ast.Switch{
@@ -331,7 +331,7 @@ func switchCases() Pattern[[]*ast.Case] {
 		recovery := Synchronize{Tokens: []lexer.TokenType{lexer.NEWLINE}, Keywords: blockBoundaries}
 		for !atBlockBoundary(ctx, false, false) {
 			before := ctx.Pos
-			result := Recover(Expected(SwitchCase(), LiteralExpectations("expected switch case")), recovery).Match(ctx)
+			result := Recover(Expected(SwitchCase(), ExpectedSwitchCase), recovery).Match(ctx)
 			if result.OK() {
 				cases = append(cases, result.Value)
 			}

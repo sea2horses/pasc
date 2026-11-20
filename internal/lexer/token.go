@@ -78,3 +78,16 @@ var charMap map[rune]TokenType = map[rune]TokenType{
 	'^':  UPTICK,
 	'\n': NEWLINE,
 }
+
+// Symbol returns the source character of a punctuation/operator token type.
+func (t TokenType) Symbol() (string, bool) {
+	if t == NEWLINE {
+		return "", false
+	}
+	for r, kind := range charMap {
+		if kind == t {
+			return string(r), true
+		}
+	}
+	return "", false
+}
