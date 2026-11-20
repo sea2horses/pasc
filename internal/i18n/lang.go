@@ -24,6 +24,8 @@ const (
 	ExpectedNumber
 	UnterminatedString
 	UnterminatedBlockComment
+	UnterminatedStringMismatch
+	UnterminatedStringMissingClose
 
 	// Parser
 	SyntaxErrorFound
@@ -58,13 +60,15 @@ const (
 var catalog = map[Lang]map[Msg]string{
 	ES: {
 		// Lexer
-		UnexpectedChar:           "carácter inesperado: '%[1]s'",
-		CharOutOfBounds:          "carácter (%[1]s) fuera de rango (máximo. %[2]s)",
-		ExpectedIdentifier:       "se esperaba un identificador (nombre de variable, función, etc.)",
-		ExpectedString:           "se esperaba una cadena/string",
-		ExpectedNumber:           "se esperaba un número",
-		UnterminatedString:       "string sin terminar (todos los strings deben tener un \" de apertura y de cierre)",
-		UnterminatedBlockComment: "comentario multi-linea sin terminar (cerrar con */)",
+		UnexpectedChar:                 "carácter inesperado: '%[1]c'",
+		CharOutOfBounds:                "carácter (%[1]d) fuera de rango (máximo %[2]d)",
+		ExpectedIdentifier:             "se esperaba un identificador (nombre de variable, función, etc.)",
+		ExpectedString:                 "se esperaba una cadena/string",
+		ExpectedNumber:                 "se esperaba un número",
+		UnterminatedString:             "string sin terminar (todos los strings deben tener un \" de apertura y de cierre)",
+		UnterminatedBlockComment:       "comentario multi-linea sin terminar (cerrar con */)",
+		UnterminatedStringMismatch:     "string sin terminar: se abrió con %[1]c pero la línea lo cierra con una comilla distinta (usa la misma comilla para abrir y cerrar)",
+		UnterminatedStringMissingClose: "string sin terminar: falta el %[1]c de cierre en esta línea",
 
 		// Parser
 		SyntaxErrorFound:           "%[1]s, pero se encontró %[2]s",
@@ -95,13 +99,15 @@ var catalog = map[Lang]map[Msg]string{
 	},
 	EN: {
 		// Lexer
-		UnexpectedChar:           "unexpected character: '%[1]s'",
-		CharOutOfBounds:          "char (%[1]s) out of bounds (max. %[2]s)",
-		ExpectedIdentifier:       "expected an identifier (name of a variable, function, etc.)",
-		ExpectedString:           "expected a string",
-		ExpectedNumber:           "expected a number",
-		UnterminatedString:       "unterminated string (all strings must have a \" character at both their start and end",
-		UnterminatedBlockComment: "unterminated multi-line comment (close with */)",
+		UnexpectedChar:                 "unexpected character: '%[1]c'",
+		CharOutOfBounds:                "character (%[1]d) out of bounds (max. %[2]d)",
+		ExpectedIdentifier:             "expected an identifier (name of a variable, function, etc.)",
+		ExpectedString:                 "expected a string",
+		ExpectedNumber:                 "expected a number",
+		UnterminatedString:             "unterminated string (all strings must have a \" character at both their start and end)",
+		UnterminatedBlockComment:       "unterminated multi-line comment (close with */)",
+		UnterminatedStringMismatch:     "unterminated string: opened with %[1]c but the line closes it with a different quote (use the same quote to open and close)",
+		UnterminatedStringMissingClose: "unterminated string: missing closing %[1]c on this line",
 
 		// Parser
 		SyntaxErrorFound:           "%[1]s, but found %[2]s",

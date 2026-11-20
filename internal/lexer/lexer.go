@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"pascc/internal/diagnostics"
+	"pascc/internal/i18n"
 	"pascc/internal/models"
 	"unicode"
 )
@@ -138,10 +139,10 @@ func (l *Lexer) tokenize_identifier() (Token, error) {
 func (l *Lexer) reportUnterminatedString(start models.Position, delimiter rune, otherQuote bool) {
 	span := models.Span{Start: start, End: l.position}
 	if otherQuote {
-		l.Report(span, "%s: opened with %c but the line closes it with a different quote", ErrUnterminatedString.Error(), delimiter)
+		l.Report(span, "%s", i18n.T(i18n.UnterminatedStringMismatch, delimiter))
 		return
 	}
-	l.Report(span, "%s: missing closing %c on this line", ErrUnterminatedString.Error(), delimiter)
+	l.Report(span, "%s", i18n.T(i18n.UnterminatedStringMissingClose, delimiter))
 }
 
 /* Parse string literal */
