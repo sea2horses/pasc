@@ -13,7 +13,7 @@
 
 </div>
 
-`pascc` es un compilador y analizador experimental para el lenguaje de PSeInt. Analiza un archivo `.psc`, genera código Go y utiliza la herramienta de Go para crear un ejecutable nativo. La interfaz de línea de comandos está organizada con Cobra y ofrece dos comandos: `run` para compilar y ejecutar temporalmente, y `build` para conservar el ejecutable.
+`pascc` es un compilador y analizador experimental para el lenguaje de PSeInt. Analiza un archivo `.psc`, genera código Go y utiliza la herramienta de Go para crear un ejecutable nativo. La interfaz de línea de comandos está organizada con Cobra y ofrece tres comandos: `run` para compilar y ejecutar temporalmente, `build` para conservar el ejecutable y `fmt` para dar formato al código.
 
 > [!IMPORTANT]
 > El proyecto sigue en desarrollo. Ya puede ejecutar programas útiles, pero todavía no implementa todo el lenguaje de PSeInt ni debe considerarse compatible al 100 %.
@@ -121,6 +121,19 @@ También puedes usar `--fast` para compilar sin las dependencias de terminal. En
 
 En los ejemplos anteriores, reemplaza `./pascc` por `pascc.exe` en Windows, o usa `go run .` para ejecutar desde el código fuente.
 
+### Dar formato al código
+
+`fmt` corrige la sangría, los espacios entre operadores y las mayúsculas de las palabras clave (`finsi` pasa a `FinSi`) sin cambiar el significado del programa. Conserva los comentarios, las líneas y la forma en que escribiste cada instrucción (`Fin Funcion` o `FinFuncion`, `<-` o `=`):
+
+```bash
+./pascc fmt programa.psc               # muestra el resultado sin modificar el archivo
+./pascc fmt -w programa.psc demos/     # sobrescribe los archivos (las carpetas se recorren)
+./pascc fmt --check demos/             # lista los archivos sin formato y falla si hay alguno
+./pascc fmt -w --indent 4 programa.psc # sangría de 4 espacios en lugar de tabuladores
+```
+
+Los archivos con errores de sintaxis no se modifican: se muestran sus diagnósticos. Se respeta la codificación del archivo (UTF-8 o Windows-1252) y sus saltos de línea.
+
 ### Base de los arreglos
 
 PSeInt permite que los arreglos empiecen en 0 o en 1 según el perfil. Tanto `build` como `run` aceptan `--index-base`:
@@ -154,6 +167,7 @@ Consulta la ayuda integrada para ver opciones y comandos:
 pascc --help
 pascc run --help
 pascc build --help
+pascc fmt --help
 ```
 
 ### Ejemplo
