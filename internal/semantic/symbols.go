@@ -94,6 +94,12 @@ var default_table map[string]Type = map[string]Type{
 	"numerico": Real_T{},
 }
 
+// IsBuiltinTypeName reports whether name (in any casing) names a built-in type.
+func IsBuiltinTypeName(name string) bool {
+	_, ok := default_table[NormalizeName(name)]
+	return ok
+}
+
 func NewTypeTable() *TypeTable {
 	return &TypeTable{
 		table: default_table,
