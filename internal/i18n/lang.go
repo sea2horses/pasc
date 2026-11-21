@@ -181,6 +181,21 @@ const (
 	ArgsExactlyOneFile
 	InvalidLang
 
+	// Formatter
+	CmdFmtShort
+	CmdFmtLong
+	CmdFilesArg
+	FlagWrite
+	FlagCheck
+	FlagIndent
+	ArgsAtLeastOneFile
+	InvalidIndent
+	FmtSyntaxError
+	FmtUnstable
+	FmtNotFormatted
+	FmtNotFormattedMany
+	WriteFileFailed
+
 	// Go toolchain setup
 	GoSetupMissing
 	GoSetupTooOld
@@ -365,6 +380,21 @@ var catalog = map[Lang]map[Msg]string{
 		ArgsExactlyOneFile:      "se esperaba exactamente un archivo .psc, pero se recibieron %[1]d argumento(s)",
 		InvalidLang:             "idioma desconocido %[1]q (usa es o en)",
 
+		// Formatter
+		CmdFmtShort:         "Da formato a archivos .psc",
+		CmdFmtLong:          "Reorganiza la sangría, los espacios y las mayúsculas de las palabras clave de programas PSeInt sin cambiar su significado. Conserva los comentarios y la estructura de líneas.\nSin opciones, muestra el resultado en la salida estándar. Las carpetas se recorren buscando archivos .psc.",
+		CmdFilesArg:         "[archivos o carpetas...]",
+		FlagWrite:           "Sobrescribe los archivos con el resultado en lugar de mostrarlo",
+		FlagCheck:           "No modifica nada: lista los archivos sin formato y termina con error si hay alguno",
+		FlagIndent:          "Sangría por nivel: tab o un número de espacios (1-8)",
+		ArgsAtLeastOneFile:  "se esperaba al menos un archivo .psc o una carpeta",
+		InvalidIndent:       "sangría no válida %[1]q (usa tab o un número de espacios entre 1 y 8)",
+		FmtSyntaxError:      "no se dio formato a '%[1]s' porque tiene errores de sintaxis",
+		FmtUnstable:         "el formateador generó un resultado distinto al programa original en '%[1]s' (esto es un bug de pascc, por favor repórtalo); el archivo no se modificó",
+		FmtNotFormatted:     "%[1]d archivo necesita formato",
+		FmtNotFormattedMany: "%[1]d archivos necesitan formato",
+		WriteFileFailed:     "no se pudo escribir '%[1]s'",
+
 		// Go toolchain setup
 		GoSetupMissing:     "pascc necesita Go para convertir tus programas en ejecutables, y no lo encontró en este equipo.",
 		GoSetupTooOld:      "pascc necesita Go %[2]s o más reciente para convertir tus programas en ejecutables, pero este equipo tiene Go %[1]s.",
@@ -544,6 +574,21 @@ var catalog = map[Lang]map[Msg]string{
 		UsageMoreInfo:           "Use \"%[1]s --help\" for more information about a command.",
 		ArgsExactlyOneFile:      "expected exactly one .psc file, but got %[1]d argument(s)",
 		InvalidLang:             "unknown language %[1]q (use es or en)",
+
+		// Formatter
+		CmdFmtShort:         "Formats .psc files",
+		CmdFmtLong:          "Rewrites the indentation, spacing and keyword casing of PSeInt programs without changing their meaning. Comments and the line structure are kept.\nWithout flags, the result is printed to standard output. Directories are searched for .psc files.",
+		CmdFilesArg:         "[files or directories...]",
+		FlagWrite:           "Overwrite the files with the result instead of printing it",
+		FlagCheck:           "Change nothing: list unformatted files and fail if there are any",
+		FlagIndent:          "Indentation per level: tab or a number of spaces (1-8)",
+		ArgsAtLeastOneFile:  "expected at least one .psc file or directory",
+		InvalidIndent:       "invalid indentation %[1]q (use tab or a number of spaces between 1 and 8)",
+		FmtSyntaxError:      "'%[1]s' was not formatted because it has syntax errors",
+		FmtUnstable:         "the formatter produced output that differs from the original program in '%[1]s' (this is a pascc bug, please report it); the file was not modified",
+		FmtNotFormatted:     "%[1]d file needs formatting",
+		FmtNotFormattedMany: "%[1]d files need formatting",
+		WriteFileFailed:     "could not write '%[1]s'",
 
 		// Go toolchain setup
 		GoSetupMissing:     "pascc needs Go to turn your programs into executables, and it isn't installed on this computer.",
