@@ -11,6 +11,11 @@ import (
 type Lexer struct {
 	Src      []rune /* Loaded source code */
 	position models.Position
+
+	// KeepComments emits comments as COMMENT tokens instead of discarding
+	// them. A block comment then becomes a single token, and the newlines
+	// inside it are not emitted separately.
+	KeepComments bool
 	diagnostics.DiagnosticEmitter
 }
 
@@ -295,7 +300,11 @@ func (l *Lexer) tokenize_character() (Token, error) {
 
 // skipLineComment consumes a // comment but leaves its newline for Tokenize,
 // which emits it as a statement separator.
-func (l *Lexer) skipLineComment() {
+func (l *Lexer) skipLineComment(tokens *[]Token) {
+	start := l.position
+	defer l.emitComment(tokens, start)
+	_ = l.advance() // /
+	_ = l.advance() // /
 	for {
 		ch, err := l.getch()
 		if err != nil || ch == '\n' {
@@ -311,6 +320,7 @@ func (l *Lexer) skipBlockComment(tokens *[]Token) {
 	start := l.position
 	_ = l.advance() // /
 	_ = l.advance() // *
+	defer l.emitComment(tokens, start)
 
 	for {
 		ch, err := l.getch()
@@ -328,7 +338,7 @@ func (l *Lexer) skipBlockComment(tokens *[]Token) {
 			}
 		}
 
-		if ch == '\n' {
+		if ch == '\n' && !l.KeepComments {
 			position := l.position
 			_ = l.advance()
 			*tokens = append(*tokens, Token{
@@ -339,6 +349,19 @@ func (l *Lexer) skipBlockComment(tokens *[]Token) {
 		}
 		_ = l.advance()
 	}
+}
+
+// emitComment appends the comment that runs from start to the current
+// position, when comments are being kept.
+func (l *Lexer) emitComment(tokens *[]Token, start models.Position) {
+	if !l.KeepComments {
+		return
+	}
+	*tokens = append(*tokens, Token{
+		Type:  COMMENT,
+		Value: string(l.Src[start.Offset:l.position.Offset]),
+		Span:  models.Span{Start: start, End: l.position},
+	})
 }
 
 /* TODO: Use newline to better and more intelligently report diagnostics */
@@ -354,9 +377,7 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 		if ch == '/' {
 			next, err := l.at(l.position.Offset + 1)
 			if err == nil && next == '/' {
-				_ = l.advance()
-				_ = l.advance()
-				l.skipLineComment()
+				l.skipLineComment(&tokens)
 			} else if err == nil && next == '*' {
 				l.skipBlockComment(&tokens)
 			} else {

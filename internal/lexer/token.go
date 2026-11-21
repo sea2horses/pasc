@@ -43,6 +43,9 @@ const (
 	// Special
 	NEWLINE
 	EOF
+
+	// COMMENT is only emitted when Lexer.KeepComments is set.
+	COMMENT
 )
 
 // Token struct
