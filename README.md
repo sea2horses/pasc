@@ -13,7 +13,7 @@
 
 </div>
 
-`pascc` es un compilador y analizador experimental para el lenguaje de PSeInt. Analiza un archivo `.psc`, genera código Go y utiliza la herramienta de Go para crear un ejecutable nativo. La interfaz de línea de comandos está organizada con Cobra y ofrece tres comandos: `run` para compilar y ejecutar temporalmente, `build` para conservar el ejecutable y `fmt` para dar formato al código.
+`pascc` es un compilador y analizador experimental para el lenguaje de PSeInt. Analiza un archivo `.psc`, genera código Go y utiliza la herramienta de Go para crear un ejecutable nativo. La interfaz de línea de comandos está organizada con Cobra y ofrece cuatro comandos: `run` para compilar y ejecutar temporalmente, `build` para conservar el ejecutable, `fmt` para dar formato al código y `highlight` para mostrarlo con resaltado de sintaxis.
 
 > [!IMPORTANT]
 > El proyecto sigue en desarrollo. Ya puede ejecutar programas útiles, pero todavía no implementa todo el lenguaje de PSeInt ni debe considerarse compatible al 100 %.
@@ -134,6 +134,18 @@ En los ejemplos anteriores, reemplaza `./pascc` por `pascc.exe` en Windows, o us
 
 Los archivos con errores de sintaxis no se modifican: se muestran sus diagnósticos. Se respeta la codificación del archivo (UTF-8 o Windows-1252) y sus saltos de línea.
 
+### Resaltado de sintaxis
+
+`highlight` (o su alias `hl`) muestra programas con colores en la terminal, o genera una página HTML lista para compartir. Distingue palabras clave, operadores, tipos, funciones definidas en el archivo, funciones predefinidas (`Raiz`, `Azar`, `PI`…), cadenas, números, valores lógicos y comentarios. También funciona con programas que tienen errores: lo que no se puede leer se subraya en rojo.
+
+```bash
+./pascc hl programa.psc                         # colores en la terminal
+./pascc hl --color always programa.psc | less -R
+./pascc hl --format html demos/ > demos.html    # página HTML con todos los ejemplos
+```
+
+Con `--color auto` (predeterminado) los colores se desactivan si la salida no es una terminal o si está definida la variable `NO_COLOR`.
+
 ### Base de los arreglos
 
 PSeInt permite que los arreglos empiecen en 0 o en 1 según el perfil. Tanto `build` como `run` aceptan `--index-base`:
@@ -168,6 +180,7 @@ pascc --help
 pascc run --help
 pascc build --help
 pascc fmt --help
+pascc highlight --help
 ```
 
 ### Ejemplo
