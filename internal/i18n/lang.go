@@ -196,6 +196,14 @@ const (
 	FmtNotFormattedMany
 	WriteFileFailed
 
+	// Highlighter
+	CmdHighlightShort
+	CmdHighlightLong
+	FlagFormat
+	FlagColor
+	InvalidFormat
+	InvalidColor
+
 	// Go toolchain setup
 	GoSetupMissing
 	GoSetupTooOld
@@ -395,6 +403,14 @@ var catalog = map[Lang]map[Msg]string{
 		FmtNotFormattedMany: "%[1]d archivos necesitan formato",
 		WriteFileFailed:     "no se pudo escribir '%[1]s'",
 
+		// Highlighter
+		CmdHighlightShort: "Muestra archivos .psc con resaltado de sintaxis",
+		CmdHighlightLong:  "Muestra programas PSeInt con colores en la terminal, o genera una página HTML con --format html. Funciona también con programas que tienen errores: lo que no se puede leer se marca en rojo.\nLas carpetas se recorren buscando archivos .psc.",
+		FlagFormat:        "Formato de salida: ansi (terminal) o html (página independiente)",
+		FlagColor:         "Cuándo usar colores en formato ansi: auto (solo en una terminal), always o never",
+		InvalidFormat:     "formato desconocido %[1]q (usa ansi o html)",
+		InvalidColor:      "valor de --color desconocido %[1]q (usa auto, always o never)",
+
 		// Go toolchain setup
 		GoSetupMissing:     "pascc necesita Go para convertir tus programas en ejecutables, y no lo encontró en este equipo.",
 		GoSetupTooOld:      "pascc necesita Go %[2]s o más reciente para convertir tus programas en ejecutables, pero este equipo tiene Go %[1]s.",
@@ -589,6 +605,14 @@ var catalog = map[Lang]map[Msg]string{
 		FmtNotFormatted:     "%[1]d file needs formatting",
 		FmtNotFormattedMany: "%[1]d files need formatting",
 		WriteFileFailed:     "could not write '%[1]s'",
+
+		// Highlighter
+		CmdHighlightShort: "Shows .psc files with syntax highlighting",
+		CmdHighlightLong:  "Prints PSeInt programs with colors in the terminal, or generates an HTML page with --format html. It also works on programs with errors: anything that cannot be read is marked in red.\nDirectories are searched for .psc files.",
+		FlagFormat:        "Output format: ansi (terminal) or html (standalone page)",
+		FlagColor:         "When to use colors in ansi format: auto (only on a terminal), always or never",
+		InvalidFormat:     "unknown format %[1]q (use ansi or html)",
+		InvalidColor:      "unknown --color value %[1]q (use auto, always or never)",
 
 		// Go toolchain setup
 		GoSetupMissing:     "pascc needs Go to turn your programs into executables, and it isn't installed on this computer.",

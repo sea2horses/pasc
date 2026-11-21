@@ -63,10 +63,11 @@ func langArg(args []string) (string, bool) {
 }
 
 var commandTexts = map[*cobra.Command]struct{ short, long i18n.Msg }{
-	rootCmd:  {i18n.CmdRootShort, i18n.CmdRootLong},
-	buildCmd: {i18n.CmdBuildShort, i18n.CmdBuildLong},
-	runCmd:   {i18n.CmdRunShort, i18n.CmdRunLong},
-	fmtCmd:   {i18n.CmdFmtShort, i18n.CmdFmtLong},
+	rootCmd:      {i18n.CmdRootShort, i18n.CmdRootLong},
+	buildCmd:     {i18n.CmdBuildShort, i18n.CmdBuildLong},
+	runCmd:       {i18n.CmdRunShort, i18n.CmdRunLong},
+	fmtCmd:       {i18n.CmdFmtShort, i18n.CmdFmtLong},
+	highlightCmd: {i18n.CmdHighlightShort, i18n.CmdHighlightLong},
 }
 
 var flagTexts = map[string]i18n.Msg{
@@ -79,6 +80,8 @@ var flagTexts = map[string]i18n.Msg{
 	"write":      i18n.FlagWrite,
 	"check":      i18n.FlagCheck,
 	"indent":     i18n.FlagIndent,
+	"format":     i18n.FlagFormat,
+	"color":      i18n.FlagColor,
 }
 
 // localize translates everything cobra shows: descriptions, flag help, the
@@ -96,8 +99,10 @@ func localize() {
 		cmd.Use = cmd.Name() + " " + i18n.T(i18n.CmdFileArg) + " " + i18n.T(i18n.UsageFlagsPlaceholder)
 		cmd.DisableFlagsInUseLine = true
 	}
-	fmtCmd.Use = fmtCmd.Name() + " " + i18n.T(i18n.CmdFilesArg) + " " + i18n.T(i18n.UsageFlagsPlaceholder)
-	fmtCmd.DisableFlagsInUseLine = true
+	for _, cmd := range []*cobra.Command{fmtCmd, highlightCmd} {
+		cmd.Use = cmd.Name() + " " + i18n.T(i18n.CmdFilesArg) + " " + i18n.T(i18n.UsageFlagsPlaceholder)
+		cmd.DisableFlagsInUseLine = true
+	}
 	// pflag hardcodes "(default ...)" in flag listings.
 	cobra.AddTemplateFunc("localizeFlags", func(usages string) string {
 		return strings.ReplaceAll(usages, " (default ", " ("+i18n.T(i18n.UsageDefault)+" ")
