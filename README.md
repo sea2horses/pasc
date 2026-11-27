@@ -74,8 +74,8 @@ Para compilar programas `.psc`, `pascc` ejecuta `go build`, así que Go debe est
 Clona el repositorio y compila la herramienta:
 
 ```bash
-git clone https://github.com/sea2horses/pasc.git
-cd pasc
+git clone https://github.com/sea2horses/pascc.git
+cd pascc
 go build -o pascc .
 ```
 
