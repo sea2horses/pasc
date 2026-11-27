@@ -2,9 +2,11 @@
 
 ![pasc-inverted-banner](assets/pasc-inverted-banner.svg)
 
-# `PASC`
+# `pascc`
 
-**Compilador experimental de pseudocódigo PSeInt**
+**PSeInt Ahead-of-Time Source Code Compiler**
+
+Compilador experimental de pseudocódigo PSeInt
 
 [![Go](https://img.shields.io/badge/go-1.25%2B-blue?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
 [![Pseint](https://img.shields.io/badge/compilador%20de-pseint-yellow?style=for-the-badge&logoColor=white)](https://pseint.sourceforge.net/)
@@ -34,6 +36,8 @@
 ![DonutDemo](assets/donut-demo.gif)
 
 La dona animada es un programa de PSeInt compilado con `pascc`: [ver demo](demos/donut.psc).
+- **Formateador integrado:** `pascc fmt` corrige la sangría, los espacios y las mayúsculas de las palabras clave sin cambiar el significado del programa, y con `--check` sirve para verificar el formato en CI (ver [Dar formato al código](#dar-formato-al-código)).
+- **Resaltado de sintaxis:** `pascc highlight` muestra el código con colores en la terminal o lo exporta como una página HTML, incluso si el programa tiene errores (ver [Resaltado de sintaxis](#resaltado-de-sintaxis)).
 - **Arquitectura modular:** El analizador, el generador, el runtime y los comandos están organizados en paquetes separados.
 
 </div>
