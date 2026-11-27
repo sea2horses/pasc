@@ -1,6 +1,6 @@
 <div align="center">
 
-![pasc-inverted-banner](assets/pasc-banner.svg)
+![pasc-inverted-banner](assets/pascc-banner.svg)
 
 # `pascc`
 
