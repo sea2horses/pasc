@@ -145,6 +145,7 @@ const (
 	RuntimeExtMissing
 	RuntimeModuleMissing
 	RuntimeVendorBroken
+	InvalidBuildTarget
 
 	// CLI
 	CmdRootShort
@@ -162,6 +163,7 @@ const (
 	FlagTemp
 	FlagIndexBase
 	FlagOutput
+	FlagTarget
 	FlagLang
 	FlagHelp
 	FlagVersion
@@ -352,6 +354,7 @@ var catalog = map[Lang]map[Msg]string{
 		RuntimeExtMissing:         "falta la extensión embebida del runtime (pascc se compiló incorrectamente)",
 		RuntimeModuleMissing:      "falta el módulo Go o las dependencias embebidas del runtime (pascc se compiló incorrectamente)",
 		RuntimeVendorBroken:       "a las dependencias embebidas del runtime les falta vendor/modules.txt (pascc se compiló incorrectamente)",
+		InvalidBuildTarget:        "objetivo de compilación inválido %[1]q (se esperaba native o wasm)",
 
 		// CLI
 		CmdRootShort:            "Compilador y analizador para el lenguaje PSeInt",
@@ -369,6 +372,7 @@ var catalog = map[Lang]map[Msg]string{
 		FlagTemp:                "Compila el programa temporalmente y descarta el resultado (útil para pruebas)",
 		FlagIndexBase:           "Primer índice de los arreglos: 0, 1 o auto (se deduce de cómo el programa indexa los arreglos)",
 		FlagOutput:              "Carpeta donde se guarda el ejecutable",
+		FlagTarget:              "Plataforma de destino: native (ejecutable del sistema) o wasm (módulo WebAssembly WASI)",
 		FlagLang:                "Idioma de los mensajes: es o en (por defecto se usa PASCC_LANG o el idioma del sistema)",
 		FlagHelp:                "ayuda para %[1]s",
 		FlagVersion:             "versión de %[1]s",
@@ -555,6 +559,7 @@ var catalog = map[Lang]map[Msg]string{
 		RuntimeExtMissing:         "the embedded runtime extension is missing (pascc was built incorrectly)",
 		RuntimeModuleMissing:      "the runtime Go module or its embedded dependencies are missing (pascc was built incorrectly)",
 		RuntimeVendorBroken:       "the embedded runtime dependencies are missing vendor/modules.txt (pascc was built incorrectly)",
+		InvalidBuildTarget:        "invalid build target %[1]q (expected native or wasm)",
 
 		// CLI
 		CmdRootShort:            "Compiler & analyzer tool for the PSeInt language",
@@ -572,6 +577,7 @@ var catalog = map[Lang]map[Msg]string{
 		FlagTemp:                "Builds the program temporarily and then discards the result (useful for testing)",
 		FlagIndexBase:           "First array index: 0, 1, or auto (deduced from how the program indexes arrays)",
 		FlagOutput:              "Directory to write the executable to",
+		FlagTarget:              "Target platform: native (system executable) or wasm (WASI WebAssembly module)",
 		FlagLang:                "Message language: es or en (defaults to PASCC_LANG or the system language)",
 		FlagHelp:                "help for %[1]s",
 		FlagVersion:             "version for %[1]s",

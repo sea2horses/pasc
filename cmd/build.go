@@ -20,6 +20,7 @@ func init() {
 	buildCmd.Flags().BoolVar(&Temp, "temp", false, "")
 	buildCmd.Flags().StringVar(&IndexBaseFlag, "index-base", "auto", "")
 	buildCmd.Flags().StringVarP(&OutputDir, "output", "o", defaultDir, "")
+	buildCmd.Flags().StringVarP(&TargetFlag, "target", "t", "native", "")
 }
 
 var buildCmd = &cobra.Command{
@@ -35,6 +36,7 @@ var (
 	Fast      bool
 
 	IndexBaseFlag string
+	TargetFlag    string
 )
 
 func compile(cmd *cobra.Command, args []string) error {
@@ -44,6 +46,11 @@ func compile(cmd *cobra.Command, args []string) error {
 	diagnostics.Debug = Debug
 
 	indexBase, err := analyzer.ParseIndexBase(IndexBaseFlag)
+	if err != nil {
+		return err
+	}
+
+	target, err := toolchain.ParseBuildTarget(TargetFlag)
 	if err != nil {
 		return err
 	}
@@ -60,6 +67,7 @@ func compile(cmd *cobra.Command, args []string) error {
 			Vendor:         runtime.EmbeddedVendor,
 			Fast:           Fast,
 			IndexBase:      indexBase,
+			Target:         target,
 		},
 	)
 }

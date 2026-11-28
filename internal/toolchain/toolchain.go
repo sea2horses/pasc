@@ -46,6 +46,7 @@ type ToolchainConfig struct {
 	Vendor         fs.FS
 	Fast           bool
 	IndexBase      analyzer.IndexBase /* Array base; IndexBaseAuto lets the analyzer deduce it */
+	Target         BuildTarget        /* Platform to compile for; the zero value is the host */
 }
 
 func RunToolchain(config *ToolchainConfig) (err error) {
@@ -116,6 +117,7 @@ func RunToolchain(config *ToolchainConfig) (err error) {
 		codegen,
 		output_dir,
 		exec_name,
+		config.Target,
 		config.Runtime,
 		config.ExtRuntime,
 		config.ExtFastRuntime,
@@ -207,7 +209,55 @@ func generate(tree tast.Node) ([]byte, error) {
 	return data, nil
 }
 
-func build(codegen []byte, output_dir string, target string, _runtime, extRuntime, extFastRuntime, runtimeMod []byte, vendor fs.FS, fast bool) (string, error) {
+type BuildTarget uint8
+
+const (
+	Native BuildTarget = iota /* The host's GOOS/GOARCH */
+	WASM                      /* WebAssembly with WASI preview 1 (wasmtime, wasmer, node --experimental-wasi...) */
+)
+
+func (t BuildTarget) String() string {
+	switch t {
+	case Native:
+		return "native"
+	case WASM:
+		return "wasm"
+	}
+	return fmt.Sprintf("BuildTarget(%d)", uint8(t))
+}
+
+func ParseBuildTarget(value string) (BuildTarget, error) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", "native":
+		return Native, nil
+	case "wasm", "wasi", "wasip1":
+		return WASM, nil
+	}
+	return Native, errors.New(i18n.T(i18n.InvalidBuildTarget, value))
+}
+
+/* goEnv returns the extra environment the go command needs to cross-compile */
+func (t BuildTarget) goEnv() []string {
+	switch t {
+	case WASM:
+		return []string{"GOOS=wasip1", "GOARCH=wasm", "CGO_ENABLED=0"}
+	}
+	return nil
+}
+
+/* outputName adds the extension the target expects to the executable name */
+func (t BuildTarget) outputName(name string) string {
+	switch t {
+	case WASM:
+		return name + ".wasm"
+	}
+	if runtime.GOOS == "windows" {
+		return name + ".exe"
+	}
+	return name
+}
+
+func build(codegen []byte, output_dir string, target_name string, target BuildTarget, _runtime, extRuntime, extFastRuntime, runtimeMod []byte, vendor fs.FS, fast bool) (string, error) {
 	var err error
 	output_dir, err = filepath.Abs(output_dir)
 	if err != nil {
@@ -215,17 +265,11 @@ func build(codegen []byte, output_dir string, target string, _runtime, extRuntim
 	}
 
 	/* code_path is the generated .go */
-	code_path := filepath.Join(output_dir, target+".go")
+	code_path := filepath.Join(output_dir, target_name+".go")
 	runtime_path := filepath.Join(output_dir, "runtime.go")
 	ext_path := filepath.Join(output_dir, "ext.go")
 
-	executable_name := target
-
-	/* Add windows executable name */
-	if runtime.GOOS == "windows" {
-		executable_name += ".exe"
-	}
-	out_path := filepath.Join(output_dir, executable_name)
+	out_path := filepath.Join(output_dir, target.outputName(target_name))
 
 	if err := os.MkdirAll(output_dir, 0755); err != nil {
 		return "", err
@@ -296,7 +340,7 @@ func build(codegen []byte, output_dir string, target string, _runtime, extRuntim
 	}
 	cmd := exec.Command(goCmd.path, args...)
 	cmd.Dir = module_dir
-	cmd.Env = append(os.Environ(), goCmd.env...)
+	cmd.Env = append(append(os.Environ(), goCmd.env...), target.goEnv()...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin

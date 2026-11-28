@@ -76,6 +76,7 @@ var flagTexts = map[string]i18n.Msg{
 	"temp":       i18n.FlagTemp,
 	"index-base": i18n.FlagIndexBase,
 	"output":     i18n.FlagOutput,
+	"target":     i18n.FlagTarget,
 	"lang":       i18n.FlagLang,
 	"write":      i18n.FlagWrite,
 	"check":      i18n.FlagCheck,
