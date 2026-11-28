@@ -71,18 +71,19 @@ var commandTexts = map[*cobra.Command]struct{ short, long i18n.Msg }{
 }
 
 var flagTexts = map[string]i18n.Msg{
-	"debug":      i18n.FlagDebug,
-	"fast":       i18n.FlagFast,
-	"temp":       i18n.FlagTemp,
-	"index-base": i18n.FlagIndexBase,
-	"output":     i18n.FlagOutput,
-	"target":     i18n.FlagTarget,
-	"lang":       i18n.FlagLang,
-	"write":      i18n.FlagWrite,
-	"check":      i18n.FlagCheck,
-	"indent":     i18n.FlagIndent,
-	"format":     i18n.FlagFormat,
-	"color":      i18n.FlagColor,
+	"debug":             i18n.FlagDebug,
+	"fast":              i18n.FlagFast,
+	"temp":              i18n.FlagTemp,
+	"index-base":        i18n.FlagIndexBase,
+	"output":            i18n.FlagOutput,
+	"target":            i18n.FlagTarget,
+	"diagnostic-format": i18n.FlagDiagnosticFormat,
+	"lang":              i18n.FlagLang,
+	"write":             i18n.FlagWrite,
+	"check":             i18n.FlagCheck,
+	"indent":            i18n.FlagIndent,
+	"format":            i18n.FlagFormat,
+	"color":             i18n.FlagColor,
 }
 
 // localize translates everything cobra shows: descriptions, flag help, the

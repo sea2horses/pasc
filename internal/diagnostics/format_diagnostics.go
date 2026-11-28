@@ -167,6 +167,12 @@ func PrintFileDiagnostic(
 }
 
 func PrintDiagnostics(ds []Diagnostic, filename string) {
+	if Format == FormatJSON {
+		if err := WriteJSONDiagnostics(os.Stderr, ds, filename); err != nil {
+			fmt.Fprintln(os.Stderr, i18n.T(i18n.WriteDiagnosticFailed), err)
+		}
+		return
+	}
 	for i, d := range ds {
 		err := PrintFileDiagnostic(filename, d)
 		if err != nil {

@@ -19,6 +19,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(fmtCmd)
+	fmtCmd.Flags().StringVar(&DiagnosticFormatFlag, "diagnostic-format", "text", "")
 	fmtCmd.Flags().BoolVarP(&FmtWrite, "write", "w", false, "")
 	fmtCmd.Flags().BoolVarP(&FmtCheck, "check", "c", false, "")
 	fmtCmd.Flags().StringVar(&FmtIndent, "indent", "tab", "")
@@ -37,6 +38,9 @@ var (
 )
 
 func formatFiles(cmd *cobra.Command, args []string) error {
+	if err := applyDiagnosticFormat(); err != nil {
+		return err
+	}
 	indent, err := parseIndent(FmtIndent)
 	if err != nil {
 		return err

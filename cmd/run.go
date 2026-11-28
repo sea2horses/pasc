@@ -11,6 +11,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(runCmd)
+	runCmd.Flags().StringVar(&DiagnosticFormatFlag, "diagnostic-format", "text", "")
 	runCmd.Flags().BoolVar(&Debug, "debug", false, "")
 	runCmd.Flags().StringVar(&IndexBaseFlag, "index-base", "auto", "")
 }
@@ -24,6 +25,9 @@ var runCmd = &cobra.Command{
 func run(cmd *cobra.Command, args []string) error {
 	filename := args[0]
 	diagnostics.Debug = Debug
+	if err := applyDiagnosticFormat(); err != nil {
+		return err
+	}
 
 	indexBase, err := analyzer.ParseIndexBase(IndexBaseFlag)
 	if err != nil {

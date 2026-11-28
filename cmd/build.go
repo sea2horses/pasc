@@ -13,6 +13,7 @@ const defaultDir = "build"
 
 func init() {
 	rootCmd.AddCommand(buildCmd)
+	buildCmd.Flags().StringVar(&DiagnosticFormatFlag, "diagnostic-format", "text", "")
 
 	// Flag help text is set per language by localize().
 	buildCmd.Flags().BoolVar(&Debug, "debug", false, "")
@@ -35,15 +36,29 @@ var (
 	OutputDir string
 	Fast      bool
 
-	IndexBaseFlag string
-	TargetFlag    string
+	IndexBaseFlag        string
+	TargetFlag           string
+	DiagnosticFormatFlag string
 )
+
+// applyDiagnosticFormat sets how diagnostics are emitted from --diagnostic-format.
+func applyDiagnosticFormat() error {
+	format, err := diagnostics.ParseOutputFormat(DiagnosticFormatFlag)
+	if err != nil {
+		return err
+	}
+	diagnostics.Format = format
+	return nil
+}
 
 func compile(cmd *cobra.Command, args []string) error {
 	filename := args[0]
 
 	/* Get the debug option on board */
 	diagnostics.Debug = Debug
+	if err := applyDiagnosticFormat(); err != nil {
+		return err
+	}
 
 	indexBase, err := analyzer.ParseIndexBase(IndexBaseFlag)
 	if err != nil {

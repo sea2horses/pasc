@@ -1,15 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"pascc/cmd"
+	"pascc/internal/diagnostics"
 )
 
 func main() {
 	if err := cmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		diagnostics.PrintError(err)
 		os.Exit(1)
 	}
 }

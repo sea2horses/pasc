@@ -164,6 +164,8 @@ const (
 	FlagIndexBase
 	FlagOutput
 	FlagTarget
+	FlagDiagnosticFormat
+	InvalidDiagnosticFormat
 	FlagLang
 	FlagHelp
 	FlagVersion
@@ -373,6 +375,8 @@ var catalog = map[Lang]map[Msg]string{
 		FlagIndexBase:           "Primer índice de los arreglos: 0, 1 o auto (se deduce de cómo el programa indexa los arreglos)",
 		FlagOutput:              "Carpeta donde se guarda el ejecutable",
 		FlagTarget:              "Plataforma de destino: native (ejecutable del sistema) o wasm (módulo WebAssembly WASI)",
+		FlagDiagnosticFormat:    "Formato de los diagnósticos: text (legible) o json (un objeto JSON por línea en stderr)",
+		InvalidDiagnosticFormat: "formato de diagnósticos inválido %[1]q (se esperaba text o json)",
 		FlagLang:                "Idioma de los mensajes: es o en (por defecto se usa PASCC_LANG o el idioma del sistema)",
 		FlagHelp:                "ayuda para %[1]s",
 		FlagVersion:             "versión de %[1]s",
@@ -578,6 +582,8 @@ var catalog = map[Lang]map[Msg]string{
 		FlagIndexBase:           "First array index: 0, 1, or auto (deduced from how the program indexes arrays)",
 		FlagOutput:              "Directory to write the executable to",
 		FlagTarget:              "Target platform: native (system executable) or wasm (WASI WebAssembly module)",
+		FlagDiagnosticFormat:    "Diagnostic output format: text (human readable) or json (one JSON object per line on stderr)",
+		InvalidDiagnosticFormat: "invalid diagnostic format %[1]q (expected text or json)",
 		FlagLang:                "Message language: es or en (defaults to PASCC_LANG or the system language)",
 		FlagHelp:                "help for %[1]s",
 		FlagVersion:             "version for %[1]s",
