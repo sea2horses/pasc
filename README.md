@@ -168,6 +168,25 @@ Con la base ya decidida, el compilador evalúa expresiones constantes y rangos d
 - dimensiones menores que 1 (error);
 - conversiones de real a entero: un valor constante con decimales es un error (`k = 7 / 2`), y un valor que no se puede demostrar entero genera una advertencia que sugiere usar `Redon()` (o su alias `Redondear()`) o `Trunc()`.
 
+### Diagnósticos en JSON
+
+Para integrar `pascc` con editores u otras herramientas, `build`, `run` y `fmt` aceptan `--diagnostic-format json`. En ese modo cada diagnóstico se escribe en stderr como un objeto JSON por línea ([JSON Lines](https://jsonlines.org/)), sin colores ni extractos de código:
+
+```bash
+./pascc build --diagnostic-format json programa.psc
+```
+
+```json
+{"level":"error","message":"tipo incorrecto: se esperaba 'Entero', pero se obtuvo 'Cadena'","file":"programa.psc","span":{"start":{"line":3,"column":2,"offset":36},"end":{"line":3,"column":12,"offset":46}}}
+{"level":"info","message":"'z' se declaró aquí con tipo 'Entero'","file":"programa.psc","span":{"start":{"line":2,"column":2,"offset":13},"end":{"line":2,"column":23,"offset":34}}}
+{"level":"error","message":"no se pudo compilar el programa por 1 error"}
+```
+
+- `level` es `error`, `warning` o `info` (siempre en inglés); `message` sigue el idioma de `--lang`.
+- `line` y `column` empiezan en 1, `offset` en 0; columnas y offsets cuentan caracteres Unicode, y `end` es exclusivo.
+- Los errores que no vienen del código fuente (archivo inexistente, fallo al compilar, etc.) no tienen `file` ni `span`.
+- El código de salida es distinto de 0 si hubo errores.
+
 ### Depuración
 
 Tanto `build` como `run` aceptan `--debug` para mostrar información de las etapas del compilador, incluidos tokens, AST, árbol tipado y código Go generado:
